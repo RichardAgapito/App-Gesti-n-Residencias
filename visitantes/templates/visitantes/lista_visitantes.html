@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block content %}
+    <h1>Últimos 5 Visitantes Registrados</h1>
+    <a href="{% url 'registrar_visitante' %}">➕ Registrar Nuevo Visitante</a>
+    <a href="{% url 'historial_visitantes' %}">Ver Historial Completo 📖</a> {# <-- NUEVO ENLACE #}
+    <hr>
+    
+    {# El resto del archivo (la tabla) se queda igual #}
+    {% if visitantes %}
+        <table> ... </table>
+    {% else %}
+        <p>No se han registrado visitantes.</p>
+    {% endif %}
+
+    <br>
+    <a href="{% url 'dashboard' %}">Volver al Dashboard</a>
+{% endblock %}

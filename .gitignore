@@ -1,0 +1,19 @@
+# Entorno virtual
+venv/
+.env
+
+# Archivos de Django
+__pycache__/
+*.pyc
+*.pyo
+*.db
+*.sqlite3
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
+
+# Archivos de compilación
+*.egg-info/
+dist/
+build/
