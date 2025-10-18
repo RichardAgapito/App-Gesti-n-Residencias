@@ -1,4 +1,3 @@
-# visitantes/views.py
 
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required, user_passes_test
@@ -6,7 +5,6 @@ from django.utils import timezone
 from .models import Visitante
 from .forms import VisitanteForm
 
-# --- Funciones de Verificación ---
 
 def es_portero(user):
     """
@@ -14,7 +12,6 @@ def es_portero(user):
     """
     return user.is_authenticated and user.profile.role == 'PORTERO'
 
-# --- Vistas del Módulo ---
 
 @login_required
 @user_passes_test(es_portero, login_url='/')
@@ -42,12 +39,10 @@ def historial_visitantes(request):
     """
     comunidad_portero = request.user.profile.comunidad_asignada
     
-    # Query base que obtiene todos los visitantes de la comunidad
     historial_qs = Visitante.objects.filter(
         comunidad=comunidad_portero
     ).order_by('-fecha_visita', '-hora_entrada')
 
-    # Lógica para el filtro por rango de fechas
     fecha_inicio = request.GET.get('fecha_inicio')
     fecha_fin = request.GET.get('fecha_fin')
 
@@ -69,15 +64,13 @@ def registrar_visitante(request):
     comunidad_portero = request.user.profile.comunidad_asignada
 
     if request.method == 'POST':
-        # Al procesar el formulario, le pasamos la comunidad para la validación
         form = VisitanteForm(request.POST, comunidad=comunidad_portero)
         if form.is_valid():
             visitante = form.save(commit=False)
-            visitante.comunidad = comunidad_portero  # Asigna la comunidad del portero
+            visitante.comunidad = comunidad_portero  
             visitante.save()
             return redirect('lista_visitantes')
     else:
-        # Al mostrar el formulario por primera vez, le pasamos la comunidad para que filtre los residentes
         form = VisitanteForm(comunidad=comunidad_portero)
     
     context = {

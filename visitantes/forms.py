@@ -1,14 +1,12 @@
-# visitantes/forms.py
 from django import forms
 from .models import Visitante
 from django.contrib.auth.models import User
-from django.utils import timezone # <-- AÑADE ESTA LÍNEA
+from django.utils import timezone 
 
 class VisitanteForm(forms.ModelForm):
-    # Usamos 'initial' para poner la fecha de hoy por defecto.
     fecha_visita = forms.DateField(
         widget=forms.DateInput(attrs={'type': 'date'}),
-        initial=timezone.now().date() # <-- AÑADE 'initial'
+        initial=timezone.now().date()
     )
     hora_entrada = forms.TimeField(widget=forms.TimeInput(attrs={'type': 'time'}))
     hora_salida = forms.TimeField(widget=forms.TimeInput(attrs={'type': 'time'}), required=False)
@@ -21,7 +19,6 @@ class VisitanteForm(forms.ModelForm):
         ]
         
     def __init__(self, *args, **kwargs):
-        # ... (El resto de la función __init__ se queda exactamente igual) ...
         comunidad = kwargs.pop('comunidad', None)
         super().__init__(*args, **kwargs)
 
