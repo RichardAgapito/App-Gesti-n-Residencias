@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h1>Gestión de Complejos 🏠</h1>
+    
+    <a href="{% url 'crear_complejo' %}" class="btn btn-primary">Registrar Nuevo Complejo</a>
+    <hr>
+    <h3>Complejos Registrados</h3>
+
+    {% if complejos %}
+        <div class="complejos-grid">
+            {% for complejo in complejos %}
+                <div class="complejo-card">
+                    <h4><a href="{% url 'detalle_complejo' complejo.id %}">{{ complejo.nombre }}</a></h4>
+                    <p><strong>Dirección:</strong> {{ complejo.calle }}, {{ complejo.ciudad }}</p>
+                    <p><strong>Tipo:</strong> {{ complejo.get_tipo_display }}</p>
+                    <p><strong>Unidades:</strong> {{ complejo.numero_total_unidades }}</p>
+                    <p><strong>Estado:</strong> {{ complejo.get_estado_display }}</p>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p>Aún no hay complejos registrados en el sistema.</p>
+    {% endif %}
+    
+    <br>
+    <a href="{% url 'dashboard' %}">← Volver al Dashboard</a>
+{% endblock %}

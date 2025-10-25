@@ -1,6 +1,6 @@
 from django.db import models
 from django.conf import settings
-from comunidades.models import Comunidad, Propiedad
+from complejos.models import Complejo, Propiedad
 
 class Visitante(models.Model):
     class TipoDocumento(models.TextChoices):
@@ -24,7 +24,7 @@ class Visitante(models.Model):
         null=True,
         related_name='visitas_recibidas'
     )
-    comunidad = models.ForeignKey(Comunidad, on_delete=models.CASCADE)
+    complejo = models.ForeignKey(Complejo, on_delete=models.CASCADE)
 
     def __str__(self):
         return f'{self.nombres} {self.apellidos} - Visita a {self.residente_visitado.username}'

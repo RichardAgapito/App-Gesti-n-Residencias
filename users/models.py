@@ -1,7 +1,7 @@
 # users/models.py
 from django.db import models
 from django.contrib.auth.models import User
-from comunidades.models import Comunidad 
+from complejos.models import Complejo 
 
 class Profile(models.Model):
     class Role(models.TextChoices):
@@ -14,12 +14,12 @@ class Profile(models.Model):
     telefono = models.CharField(max_length=20, blank=True, null=True)
 
    
-    comunidad_asignada = models.ForeignKey(
-        Comunidad, 
+    complejo_asignado = models.ForeignKey(
+        Complejo, 
         on_delete=models.SET_NULL, 
         null=True, 
         blank=True, 
-        help_text="Comunidad a la que está asignado el portero."
+        help_text="Complejo al que está asignado el portero."
     )
 
     def __str__(self):

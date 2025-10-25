@@ -6,10 +6,10 @@ body {
     color: #333;
     margin: 0;
     padding: 2rem;
+    min-height: 100vh;
     display: flex;
     justify-content: center;
-    align-items: center;
-    min-height: 100vh;
+    align-items: flex-start; /* Align items to the start to prevent vertical centering issues */
 }
 
 .container {
@@ -18,8 +18,9 @@ body {
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     width: 100%;
-    max-width: 500px;
+    max-width: 1200px; /* Increased max-width to allow more horizontal space */
     text-align: center;
+    margin: 0 auto; /* Center the container */
 }
 
 h1, h2 {
@@ -67,6 +68,69 @@ form input {
     border: 1px solid #ccc;
     border-radius: 4px;
     box-sizing: border-box; /* Importante para que el padding no afecte el ancho */
+}
+
+.amenidades-container {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+}
+
+.amenidad-choice {
+    display: flex;
+    align-items: center;
+}
+
+.complejos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.complejo-card {
+    background-color: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    text-align: left;
+}
+
+.complejo-card h4 {
+    margin-top: 0;
+    color: #0056b3;
+}
+
+.complejo-card p {
+    margin-bottom: 5px;
+    font-size: 0.95rem;
+}
+
+.propiedades-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.propiedad-card {
+    background-color: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    text-align: left;
+}
+
+.propiedad-card h4 {
+    margin-top: 0;
+    color: #0056b3;
+}
+
+.propiedad-card p {
+    margin-bottom: 5px;
+    font-size: 0.95rem;
 }
 
 hr {

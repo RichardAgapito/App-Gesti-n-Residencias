@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h2>Detalles de: {{ complejo.nombre }}</h2>
+    <p><strong>Dirección:</strong> {{ complejo.calle }}, {{ complejo.ciudad }}, {{ complejo.codigo_postal }}</p>
+    <p><strong>Tipo:</strong> {{ complejo.get_tipo_display }}</p>
+    <p><strong>Unidades:</strong> {{ complejo.numero_total_unidades }}</p>
+    <p><strong>Amenidades:</strong></p>
+    <ul>
+        {% for amenidad in complejo.amenidades.all %}
+            <li>{{ amenidad.nombre }}</li>
+        {% endfor %}
+    </ul>
+    <p><strong>Administrador:</strong> {{ complejo.administrador_responsable }}</p>
+    <p><strong>Teléfono:</strong> {{ complejo.telefono_contacto }}</p>
+    <p><strong>Estado:</strong> {{ complejo.get_estado_display }}</p>
+    
+    <hr>
+
+    <h3>Propiedades en este Complejo</h3>
+    <a href="{% url 'crear_propiedad' complejo.id %}" class="btn btn-primary">Registrar Nueva Propiedad</a>
+    
+    {% if propiedades %}
+        <div class="propiedades-grid">
+            {% for propiedad in propiedades %}
+                <div class="propiedad-card">
+                    <h4>{{ propiedad.numero_identificador }}</h4>
+                    <p><strong>Tipo:</strong> {{ propiedad.get_tipo_display }}</p>
+                    <p><strong>Área:</strong> {{ propiedad.area }} m²</p>
+                    <p><strong>Habitaciones:</strong> {{ propiedad.numero_habitaciones }}</p>
+                    <p><strong>Baños:</strong> {{ propiedad.numero_banos }}</p>
+                    <p><strong>Piso/Nivel:</strong> {{ propiedad.piso_nivel }}</p>
+                    <p><strong>Estado:</strong> {{ propiedad.get_estado_ocupacion_display }}</p>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p>No hay propiedades registradas para este complejo todavía.</p>
+    {% endif %}
+
+    <br>
+    <hr>
+    <a href="{% url 'lista_complejos' %}">← Volver a la lista de Complejos</a>
+{% endblock %}

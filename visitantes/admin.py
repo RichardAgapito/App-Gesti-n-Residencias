@@ -4,5 +4,5 @@ from .models import Visitante
 
 @admin.register(Visitante)
 class VisitanteAdmin(admin.ModelAdmin):
-    list_display = ('nombres', 'apellidos', 'residente_visitado', 'comunidad', 'fecha_visita', 'hora_entrada')
-    list_filter = ('comunidad', 'fecha_visita')
+    list_display = ('nombres', 'apellidos', 'residente_visitado', 'complejo', 'fecha_visita', 'hora_entrada')
+    list_filter = ('complejo', 'fecha_visita')
