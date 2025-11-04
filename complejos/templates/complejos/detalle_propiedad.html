@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h2>Detalles de la Propiedad: {{ propiedad.numero_identificador }}</h2>
+    
+    <hr>
+
+    <div class="propiedad-detalle">
+        <p><strong>Complejo:</strong> {{ propiedad.complejo.nombre }}</p>
+        <p><strong>Número Identificador:</strong> {{ propiedad.numero_identificador }}</p>
+        <p><strong>Tipo:</strong> {{ propiedad.get_tipo_display }}</p>
+        <p><strong>Área:</strong> {{ propiedad.area }} m²</p>
+        <p><strong>Habitaciones:</strong> {{ propiedad.numero_habitaciones }}</p>
+        <p><strong>Baños:</strong> {{ propiedad.numero_banos }}</p>
+        <p><strong>Piso/Nivel:</strong> {{ propiedad.piso_nivel }}</p>
+        <p><strong>Valor Estimado:</strong> ${{ propiedad.valor_estimado }}</p>
+        <p><strong>Estado de Ocupación:</strong> {{ propiedad.get_estado_ocupacion_display }}</p>
+        <p><strong>Fecha de Registro:</strong> {{ propiedad.fecha_registro|date:"d/m/Y H:i" }}</p>
+
+        <hr>
+        <h4>Personas Asociadas</h4>
+        {% for asociacion in propiedad.personas_asociadas.all %}
+            <div class="asociacion-card">
+                <p><strong>Persona:</strong> {{ asociacion.persona.first_name }} {{ asociacion.persona.last_name }}</p>
+                <p><strong>Relación:</strong> {{ asociacion.get_tipo_relacion_display }}</p>
+                <p><strong>Principal:</strong> {{ asociacion.es_principal|yesno:"Sí,No" }}</p>
+                <p><strong>Estado:</strong> {{ asociacion.get_estado_display }}</p>
+            </div>
+        {% empty %}
+            <p>No hay personas asociadas a esta propiedad.</p>
+        {% endfor %}
+
+        <hr>
+        <h4>Asignar Nueva Persona</h4>
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit">Asignar Persona</button>
+        </form>
+    </div>
+
+    <hr>
+    <a href="{% url 'editar_propiedad' propiedad.id %}" class="btn btn-warning">Editar Propiedad</a>
+    <a href="{% url 'detalle_complejo' propiedad.complejo.id %}">← Volver a los detalles del complejo</a>
+{% endblock %}

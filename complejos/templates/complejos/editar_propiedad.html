@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h2>Editar Propiedad: {{ propiedad.numero_identificador }}</h2>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Guardar Cambios</button>
+    </form>
+    <br>
+    <a href="{% url 'detalle_propiedad' propiedad.id %}">Cancelar</a>
+{% endblock %}

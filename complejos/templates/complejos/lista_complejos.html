@@ -7,6 +7,26 @@
     <hr>
     <h3>Complejos Registrados</h3>
 
+    <form method="get" action="{% url 'lista_complejos' %}" class="form-inline mt-3 mb-3">
+        <input class="form-control mr-sm-2" type="search" name="q" placeholder="Buscar por nombre..." value="{{ request.GET.q }}">
+        
+        <select name="tipo" class="form-control mr-sm-2">
+            <option value="">Todos los tipos</option>
+            {% for value, name in tipo_choices %}
+                <option value="{{ value }}" {% if current_tipo == value %}selected{% endif %}>{{ name }}</option>
+            {% endfor %}
+        </select>
+
+        <select name="estado" class="form-control mr-sm-2">
+            <option value="">Todos los estados</option>
+            {% for value, name in estado_choices %}
+                <option value="{{ value }}" {% if current_estado == value %}selected{% endif %}>{{ name }}</option>
+            {% endfor %}
+        </select>
+
+        <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Buscar y Filtrar</button>
+    </form>
+
     {% if complejos %}
         <div class="complejos-grid">
             {% for complejo in complejos %}

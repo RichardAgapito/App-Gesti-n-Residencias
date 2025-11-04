@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h2>Registrar Múltiples Propiedades en {{ complejo.nombre }}</h2>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+
+        <button type="submit">Crear Propiedades</button>
+    </form>
+    <br>
+    <a href="{% url 'detalle_complejo' complejo.id %}">Cancelar</a>
+{% endblock %}
