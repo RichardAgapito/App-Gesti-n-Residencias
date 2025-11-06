@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container">
+    <h2>Administrar Reservas</h2>
+
+    <form method="get" class="mb-4">
+        <div class="row">
+            <div class="col-md-4">
+                <label for="complejo">Complejo</label>
+                <select name="complejo" id="complejo" class="form-control">
+                    <option value="">Todos</option>
+                    {% for c in complejos %}
+                        <option value="{{ c.id }}">{{ c.nombre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label for="amenidad">Amenidad</label>
+                <select name="amenidad" id="amenidad" class="form-control">
+                    <option value="">Todas</option>
+                    {% for a in amenidades %}
+                        <option value="{{ a.id }}">{{ a.nombre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label for="estado">Estado</label>
+                <select name="estado" id="estado" class="form-control">
+                    <option value="">Todos</option>
+                    {% for val, name in estados %}
+                        <option value="{{ val }}">{{ name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary mt-4">Filtrar</button>
+            </div>
+        </div>
+    </form>
+
+    {% if reservas %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Complejo</th>
+                    <th>Amenidad</th>
+                    <th>Residente</th>
+                    <th>Fecha de Inicio</th>
+                    <th>Fecha de Fin</th>
+                    <th>Estado</th>
+                    <th>Acción</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for reserva in reservas %}
+                    <tr>
+                        <td>{{ reserva.amenidad.complejo_set.first.nombre }}</td>
+                        <td>{{ reserva.amenidad.nombre }}</td>
+                        <td>{{ reserva.residente.email }}</td>
+                        <td>{{ reserva.fecha_inicio }}</td>
+                        <td>{{ reserva.fecha_fin }}</td>
+                        <td>{{ reserva.get_estado_display }}</td>
+                        <td>
+                            {% if reserva.estado == 'confirmada' %}
+                                <a href="{% url 'cancelar_reserva' reserva.id %}" class="btn btn-danger btn-sm">Cancelar</a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No hay reservaciones.</p>
+    {% endif %}
+
+    <a href="{% url 'dashboard' %}" class="btn btn-secondary">Volver al Dashboard</a>
+</div>
+{% endblock %}

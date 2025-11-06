@@ -13,4 +13,13 @@ urlpatterns = [
     path('propiedades/<int:propiedad_id>/asignar-contrato/', views.asignar_contrato, name='asignar_contrato'),
     path('api/residentes/', views.get_residentes_json, name='get_residentes_json'),
     path('propiedades/<int:propiedad_id>/cancelar-contrato/<int:propiedad_persona_id>/', views.cancelar_contrato, name='cancelar_contrato'),
+
+    # URLs para el sistema de reservas
+    path('reservas/', views.crear_reserva_view, name='crear_reserva'),
+    path('mis-reservas/', views.mis_reservas_view, name='mis_reservas'),
+    path('admin/reservas/', views.admin_reservas_view, name='admin_reservas'),
+    path('admin/reservas/<int:reserva_id>/cancelar/', views.cancelar_reserva_view, name='cancelar_reserva'),
+    path('admin_dashboard/amenidades/', views.gestionar_amenidades_view, name='gestionar_amenidades'),
+    path('admin_dashboard/amenidades/<int:amenidad_id>/editar/', views.editar_amenidad_view, name='editar_amenidad'),
+    path('admin_dashboard/amenidades/<int:amenidad_id>/eliminar/', views.eliminar_amenidad_view, name='eliminar_amenidad'),
 ]

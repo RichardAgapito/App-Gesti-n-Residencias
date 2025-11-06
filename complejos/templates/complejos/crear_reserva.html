@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container">
+    <h2>Reservar Amenidades en {{ complejo.nombre }}</h2>
+
+    {% if amenidades %}
+        {% for amenidad in amenidades %}
+            <div class="card my-3">
+                <div class="card-body">
+                    <h5 class="card-title">{{ amenidad.nombre }}</h5>
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="amenidad_id" value="{{ amenidad.id }}">
+                        {{ form.as_p }}
+                        <button type="submit" class="btn btn-primary">Reservar</button>
+                    </form>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p>Este complejo no tiene amenidades para reservar.</p>
+    {% endif %}
+
+    <a href="{% url 'dashboard' %}" class="btn btn-secondary">Volver al Dashboard</a>
+</div>
+{% endblock %}

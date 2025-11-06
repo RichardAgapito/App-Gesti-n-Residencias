@@ -1,10 +1,58 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import user_passes_test
+from django.contrib.auth.decorators import user_passes_test, login_required
 from django.http import JsonResponse
-from .models import Complejo, Propiedad, PropiedadPersona
-from .forms import ComplejoForm, PropiedadForm, CrearPropiedadesMultiplesForm, EditarPropiedadForm, PropiedadPersonaForm
+from .models import Complejo, Propiedad, PropiedadPersona, Amenidad, Reserva
+from .forms import ComplejoForm, PropiedadForm, CrearPropiedadesMultiplesForm, EditarPropiedadForm, PropiedadPersonaForm, ReservaForm, AmenidadForm
 from users.views import es_admin
 from django.contrib.auth import get_user_model
+from users.models import CustomUser
+
+
+@user_passes_test(es_admin, login_url='/')
+def gestionar_amenidades_view(request):
+    if request.method == 'POST':
+        form = AmenidadForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('gestionar_amenidades')
+    else:
+        form = AmenidadForm()
+    
+    amenidades = Amenidad.objects.all()
+    context = {
+        'form': form,
+        'amenidades': amenidades
+    }
+    return render(request, 'complejos/gestionar_amenidades.html', context)
+
+@user_passes_test(es_admin, login_url='/')
+def editar_amenidad_view(request, amenidad_id):
+    amenidad = get_object_or_404(Amenidad, id=amenidad_id)
+    if request.method == 'POST':
+        form = AmenidadForm(request.POST, instance=amenidad)
+        if form.is_valid():
+            form.save()
+            return redirect('gestionar_amenidades')
+    else:
+        form = AmenidadForm(instance=amenidad)
+    
+    context = {
+        'form': form,
+        'amenidad': amenidad
+    }
+    return render(request, 'complejos/editar_amenidad.html', context)
+
+@user_passes_test(es_admin, login_url='/')
+def eliminar_amenidad_view(request, amenidad_id):
+    amenidad = get_object_or_404(Amenidad, id=amenidad_id)
+    if request.method == 'POST':
+        amenidad.delete()
+        return redirect('gestionar_amenidades')
+    
+    context = {
+        'amenidad': amenidad
+    }
+    return render(request, 'complejos/eliminar_amenidad.html', context)
 
 
 @user_passes_test(es_admin, login_url='/')
@@ -252,3 +300,78 @@ def cancelar_contrato(request, propiedad_id, propiedad_persona_id):
         propiedad_persona.save()
         
     return redirect('detalle_propiedad', propiedad_id=propiedad_id)
+
+def es_residente(user):
+    return user.is_authenticated and user.rol == CustomUser.Rol.RESIDENTE
+
+@login_required
+@user_passes_test(es_residente)
+def crear_reserva_view(request):
+    try:
+        propiedad_persona = PropiedadPersona.objects.get(persona=request.user, estado='activo')
+        complejo = propiedad_persona.propiedad.complejo
+        amenidades = complejo.amenidades.all()
+    except PropiedadPersona.DoesNotExist:
+        complejo = None
+        amenidades = []
+
+    if request.method == 'POST':
+        amenidad_id = request.POST.get('amenidad_id')
+        amenidad = get_object_or_404(Amenidad, id=amenidad_id)
+        form = ReservaForm(request.POST, amenidad=amenidad)
+        if form.is_valid():
+            reserva = form.save(commit=False)
+            reserva.amenidad = amenidad
+            reserva.residente = request.user
+            reserva.save()
+            return redirect('mis_reservas')
+    else:
+        form = ReservaForm()
+
+    context = {
+        'complejo': complejo,
+        'amenidades': amenidades,
+        'form': form,
+    }
+    return render(request, 'complejos/crear_reserva.html', context)
+
+@login_required
+@user_passes_test(es_residente)
+def mis_reservas_view(request):
+    reservas = Reserva.objects.filter(residente=request.user).order_by('-fecha_inicio')
+    context = {
+        'reservas': reservas
+    }
+    return render(request, 'complejos/mis_reservas.html', context)
+
+@user_passes_test(es_admin, login_url='/')
+def admin_reservas_view(request):
+    reservas = Reserva.objects.all().order_by('-fecha_inicio')
+
+    # Filtering
+    complejo_id = request.GET.get('complejo')
+    if complejo_id:
+        reservas = reservas.filter(amenidad__complejo__id=complejo_id)
+
+    amenidad_id = request.GET.get('amenidad')
+    if amenidad_id:
+        reservas = reservas.filter(amenidad__id=amenidad_id)
+
+    estado = request.GET.get('estado')
+    if estado:
+        reservas = reservas.filter(estado=estado)
+
+    context = {
+        'reservas': reservas,
+        'complejos': Complejo.objects.all(),
+        'amenidades': Amenidad.objects.all(),
+        'estados': Reserva.ESTADO_CHOICES,
+    }
+    return render(request, 'complejos/admin_reservas.html', context)
+
+@user_passes_test(es_admin, login_url='/')
+def cancelar_reserva_view(request, reserva_id):
+    reserva = get_object_or_404(Reserva, id=reserva_id)
+    reserva.estado = 'cancelada'
+    reserva.save()
+    return redirect('admin_reservas')

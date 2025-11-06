@@ -104,3 +104,20 @@ class PropiedadPersona(models.Model):
             if propiedad.estado_ocupacion != 'disponible':
                 propiedad.estado_ocupacion = 'disponible'
                 propiedad.save()
+
+class Reserva(models.Model):
+    ESTADO_CHOICES = (
+        ('confirmada', 'Confirmada'),
+        ('cancelada', 'Cancelada'),
+        ('completada', 'Completada'),
+    )
+
+    amenidad = models.ForeignKey(Amenidad, on_delete=models.CASCADE, related_name='reservas')
+    residente = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='reservas')
+    fecha_inicio = models.DateTimeField()
+    fecha_fin = models.DateTimeField()
+    estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='confirmada')
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f'Reserva de {self.amenidad.nombre} por {self.residente.email}' 

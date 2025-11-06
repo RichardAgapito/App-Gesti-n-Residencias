@@ -93,3 +93,22 @@ def editar_usuario_view(request, user_id):
         'user': user
     }
     return render(request, 'users/editar_usuario.html', context)
+
+@user_passes_test(es_admin, login_url='/')
+def eliminar_usuario_view(request, user_id):
+    user_to_change = get_object_or_404(CustomUser, id=user_id)
+
+    if user_to_change.is_superuser:
+        # No se puede desactivar a un superusuario
+        return redirect('lista_usuarios')
+
+    if request.method == 'POST':
+        # Cambia el estado en lugar de eliminar
+        user_to_change.is_active = not user_to_change.is_active
+        user_to_change.save()
+        return redirect('lista_usuarios')
+
+    context = {
+        'user': user_to_change
+    }
+    return render(request, 'users/confirmar_eliminar_usuario.html', context)
