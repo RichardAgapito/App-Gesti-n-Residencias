@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h1>Editar Usuario: {{ user.persona.nombres }} {{ user.persona.apellidos }}</h1>
+    
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+    </form>
+    
+    <br>
+    <a href="{% url 'detalle_usuario' user.id %}">← Volver al Detalle del Usuario</a>
+{% endblock %}

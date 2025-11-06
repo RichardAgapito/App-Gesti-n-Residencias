@@ -1,4 +1,10 @@
 {% extends 'base.html' %}
+{% load static %}
+
+{% block css_files %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'css/lista_usuarios.css' %}">
+{% endblock %}
 
 {% block content %}
     <h1>Gestión de Usuarios 👥</h1>

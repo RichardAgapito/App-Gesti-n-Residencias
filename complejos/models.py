@@ -59,16 +59,10 @@ class Propiedad(models.Model):
 
     def clean(self):
         super().clean()
-        if self.pk: # Check if the instance is saved
-            # 2. If there are multiple owners, the sum of their percentages must be 100%.
-            propietarios = self.personas_asociadas.filter(tipo_relacion__in=['propietario', 'co-propietario'])
-            if propietarios.count() > 1:
-                total_porcentaje = sum(p.porcentaje_propiedad for p in propietarios if p.porcentaje_propiedad is not None)
-                if total_porcentaje != 100:
-                    raise ValidationError(f'La suma de los porcentajes de los propietarios debe ser 100%. Actualmente es {total_porcentaje}%.')
 
     def save(self, *args, **kwargs):
-        self.full_clean()
+        if not kwargs.pop('skip_validation', False):
+            self.full_clean()
         super().save(*args, **kwargs)
 
 class PropiedadPersona(models.Model):

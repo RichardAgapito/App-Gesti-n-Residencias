@@ -38,13 +38,16 @@
         </style>
 
         <div class="asociaciones-container">
-            {% for asociacion in propiedad.personas_asociadas.all %}
+            {% for asociacion in personas_asociadas_activas %}
                 <div class="asociacion-card">
                     <p><strong>Persona:</strong> {{ asociacion.persona.persona.nombres }} {{ asociacion.persona.persona.apellidos }}</p>
                     <p><strong>Documento:</strong> {{ asociacion.persona.persona.numero_documento }}</p>
                     <p><strong>Relación:</strong> {{ asociacion.get_tipo_relacion_display }}</p>
                     <p><strong>Principal:</strong> {{ asociacion.es_principal|yesno:"Sí,No" }}</p>
                     <p><strong>Estado:</strong> {{ asociacion.get_estado_display }}</p>
+                    {% if asociacion.estado == 'activo' %}
+                        <a href="{% url 'cancelar_contrato' propiedad.id asociacion.id %}" class="btn btn-danger btn-sm">Cancelar Contrato</a>
+                    {% endif %}
                 </div>
             {% empty %}
                 <p>No hay personas asociadas a esta propiedad.</p>
@@ -54,7 +57,9 @@
     </div>
 
     <hr>
-    <a href="{% url 'asignar_contrato' propiedad.id %}" class="btn btn-primary">Asignar Persona</a>
+    {% if not has_active_contract %}
+        <a href="{% url 'asignar_contrato' propiedad.id %}" class="btn btn-primary">Asignar Contrato</a>
+    {% endif %}
     <a href="{% url 'editar_propiedad' propiedad.id %}" class="btn btn-warning">Editar Propiedad</a>
     <a href="{% url 'detalle_complejo' propiedad.complejo.id %}" class="btn btn-secondary">← Volver</a>
 {% endblock %}

@@ -5,6 +5,60 @@ from django.core.validators import MinLengthValidator, MaxLengthValidator, Regex
 
 from datetime import date
 
+class EditarUsuarioForm(forms.ModelForm):
+    tipo_documento = forms.ChoiceField(choices=Persona.TipoDocumento.choices, required=True)
+    numero_documento = forms.CharField(
+        max_length=8, # Set max_length to 8 for consistency
+        validators=[
+            RegexValidator(
+                r'^\d{8}$',
+                message="El número de documento debe contener 8 dígitos."
+            )
+        ],
+        required=True
+    )
+    nombres = forms.CharField(
+        max_length=100,
+        validators=[
+            RegexValidator(
+                r'^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$',
+                message="El nombre solo debe contener letras y espacios."
+            )
+        ],
+        required=True
+    )
+    apellidos = forms.CharField(
+        max_length=100,
+        validators=[
+            RegexValidator(
+                r'^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$',
+                message="Los apellidos solo deben contener letras y espacios."
+            )
+        ],
+        required=True
+    )
+    telefono = forms.CharField(
+        max_length=9, # Set max_length to 9 for consistency
+        validators=[
+            RegexValidator(
+                r'^9\d{8}$',
+                message="Número de telefono inválido."
+            )
+        ],
+        required=True
+    )
+    is_active = forms.BooleanField(required=False, label='Activo')
+
+    class Meta:
+        model = Persona
+        fields = ['tipo_documento', 'numero_documento', 'nombres', 'apellidos', 'telefono']
+
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        if user:
+            self.fields['is_active'].initial = user.is_active
+
 class CustomUserCreationForm(forms.ModelForm):
     tipo_documento = forms.ChoiceField(choices=Persona.TipoDocumento.choices)
     numero_documento = forms.CharField(
@@ -12,7 +66,7 @@ class CustomUserCreationForm(forms.ModelForm):
         validators=[
             RegexValidator(
                 r'^\d{8}$',
-                message="El número de documento debe contener exactamente 8 dígitos numéricos."
+                message="El número de documento debe contener 8 dígitos."
             )
         ]
     )
@@ -39,7 +93,7 @@ class CustomUserCreationForm(forms.ModelForm):
         validators=[
             RegexValidator(
                 r'^9\d{8}$',
-                message="El número de teléfono debe contener exactamente 9 dígitos numéricos y empezar con el número 9."
+                message="Número de telefono inválido."
             )
         ]
     )
@@ -72,7 +126,6 @@ class CustomUserCreationForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # self.fields['complejo_asignado'].widget.attrs['style'] = 'display:none;' # Removed to allow frontend control
 
     def clean(self):
         cleaned_data = super().clean()
@@ -101,7 +154,7 @@ class CustomUserCreationForm(forms.ModelForm):
             today = date.today()
             age = today.year - fecha_nacimiento.year - ((today.month, today.day) < (fecha_nacimiento.month, fecha_nacimiento.day))
             if age < 18:
-                self.add_error('fecha_nacimiento', 'Debes tener al menos 18 años para registrarte.')
+                self.add_error('fecha_nacimiento', 'El usuario debe tener al menos 18 años para registrarse.')
 
         return cleaned_data
 

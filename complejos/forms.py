@@ -36,24 +36,47 @@ class EditarPropiedadForm(forms.ModelForm):
         return self.cleaned_data
 
 class PropiedadPersonaForm(forms.ModelForm):
-    persona2 = forms.ModelChoiceField(queryset=get_user_model().objects.filter(rol='RESIDENTE'), required=False, label="Segunda Persona")
     porcentaje_propiedad = forms.DecimalField(max_digits=5, decimal_places=2, widget=forms.TextInput(attrs={'readonly': 'readonly'}))
 
     def __init__(self, *args, **kwargs):
         self.propiedad = kwargs.pop('propiedad', None)
         super().__init__(*args, **kwargs)
+        
+        active_residents = get_user_model().objects.filter(rol='RESIDENTE', is_active=True)
+        
+        persona_initial = None
+        if self.instance and self.instance.pk:
+            persona_initial = self.instance.persona
+
+        self.fields['persona'] = forms.ModelChoiceField(
+            queryset=active_residents,
+            label="Persona",
+            initial=persona_initial
+        )
+
+        persona2_initial = None
+        # The persona2 is not part of the model, so we don't need to set an initial value for it
+        # when editing. It will be populated from the form data.
+
+        self.fields['persona2'] = forms.ModelChoiceField(
+            queryset=active_residents,
+            required=False,
+            label="Segunda Persona",
+            initial=persona2_initial
+        )
+
         if 'persona' in self.data:
             try:
                 persona_id = int(self.data.get('persona'))
-                self.fields['persona2'].queryset = get_user_model().objects.filter(rol='RESIDENTE').exclude(pk=persona_id)
+                self.fields['persona2'].queryset = active_residents.exclude(pk=persona_id)
             except (ValueError, TypeError):
                 pass
-        elif self.instance.pk:
-            self.fields['persona2'].queryset = get_user_model().objects.filter(rol='RESIDENTE').exclude(pk=self.instance.persona.pk)
+        elif self.instance.pk and self.instance.persona:
+            self.fields['persona2'].queryset = active_residents.exclude(pk=self.instance.persona.pk)
 
     class Meta:
         model = PropiedadPersona
-        fields = ['tipo_relacion', 'persona', 'persona2', 'porcentaje_propiedad', 'fecha_inicio', 'fecha_fin', 'estado']
+        fields = ['tipo_relacion', 'porcentaje_propiedad', 'fecha_inicio', 'fecha_fin', 'estado']
         widgets = {
             'fecha_inicio': forms.DateInput(attrs={'type': 'date'}),
             'fecha_fin': forms.DateInput(attrs={'type': 'date'}),

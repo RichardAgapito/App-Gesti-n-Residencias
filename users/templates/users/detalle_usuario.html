@@ -14,6 +14,6 @@
 
     <hr>
 
-    <a href="#" class="btn btn-warning">Editar Usuario</a> {# Placeholder for edit user functionality #}
+    <a href="{% url 'editar_usuario' user.id %}" class="btn btn-warning">Editar Usuario</a>
     <a href="{% url 'lista_usuarios' %}" class="btn btn-secondary">← Volver a la lista de Usuarios</a>
 {% endblock %}

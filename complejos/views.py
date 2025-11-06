@@ -161,8 +161,17 @@ def editar_complejo(request, complejo_id):
 @user_passes_test(es_admin, login_url='/')
 def detalle_propiedad(request, propiedad_id):
     propiedad = get_object_or_404(Propiedad, id=propiedad_id)
+    
+    # Filter only active PropiedadPersona objects
+    personas_asociadas_activas = propiedad.personas_asociadas.filter(estado='activo')
+    
+    # Check if there are any active contracts
+    has_active_contract = personas_asociadas_activas.exists()
+
     context = {
         'propiedad': propiedad,
+        'personas_asociadas_activas': personas_asociadas_activas,
+        'has_active_contract': has_active_contract, # Pass the flag to the template
     }
     return render(request, 'complejos/detalle_propiedad.html', context)
 
@@ -213,12 +222,33 @@ def editar_propiedad(request, propiedad_id):
     if request.method == 'POST':
         form = EditarPropiedadForm(request.POST, instance=propiedad)
         if form.is_valid():
-            form.save()
+            propiedad = form.save(commit=False)
+            propiedad.save(skip_validation=True)
             return redirect('detalle_propiedad', propiedad_id=propiedad.id)
     else:
         form = EditarPropiedadForm(instance=propiedad)
     return render(request, 'complejos/editar_propiedad.html', {'form': form, 'propiedad': propiedad})
 
 def get_residentes_json(request):
-    residentes = get_user_model().objects.filter(rol='RESIDENTE').values('id', 'persona__nombres', 'persona__apellidos')
+    residentes = get_user_model().objects.filter(rol='RESIDENTE', is_active=True).values('id', 'persona__nombres', 'persona__apellidos')
     return JsonResponse(list(residentes), safe=False)
+
+@user_passes_test(es_admin, login_url='/')
+def cancelar_contrato(request, propiedad_id, propiedad_persona_id):
+    propiedad_persona = get_object_or_404(PropiedadPersona, id=propiedad_persona_id)
+    
+    if propiedad_persona.tipo_relacion in ['co-propietario', 'co-inquilino']:
+        # Find all related co-owners/co-tenants for the same property and contract
+        co_contratos = PropiedadPersona.objects.filter(
+            propiedad_id=propiedad_id,
+            tipo_relacion=propiedad_persona.tipo_relacion,
+            fecha_inicio=propiedad_persona.fecha_inicio # Assuming fecha_inicio defines a unique contract
+        )
+        for contrato in co_contratos:
+            contrato.estado = 'inactivo'
+            contrato.save()
+    else:
+        propiedad_persona.estado = 'inactivo'
+        propiedad_persona.save()
+        
+    return redirect('detalle_propiedad', propiedad_id=propiedad_id)

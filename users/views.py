@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.db.models import Q
-from .forms import CustomUserCreationForm
+from .forms import CustomUserCreationForm, EditarUsuarioForm
 from .models import CustomUser # Import the new CustomUser model
 
 @login_required
@@ -58,3 +58,25 @@ def detalle_usuario_view(request, user_id):
         'user': user
     }
     return render(request, 'users/detalle_usuario.html', context)
+
+@user_passes_test(es_admin, login_url='/')
+def editar_usuario_view(request, user_id):
+    user = get_object_or_404(CustomUser, id=user_id)
+    persona = user.persona
+
+    if request.method == 'POST':
+        form = EditarUsuarioForm(request.POST, instance=persona, user=user)
+        if form.is_valid():
+            persona = form.save(commit=False)
+            user.is_active = form.cleaned_data['is_active']
+            persona.save()
+            user.save()
+            return redirect('detalle_usuario', user_id=user.id)
+    else:
+        form = EditarUsuarioForm(instance=persona, user=user)
+
+    context = {
+        'form': form,
+        'user': user
+    }
+    return render(request, 'users/editar_usuario.html', context)
