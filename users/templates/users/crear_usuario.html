@@ -13,13 +13,16 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const rolField = document.getElementById('id_rol');
-            const complejoField = document.getElementById('id_complejo_asignado').parentNode;
+            const complejoSelect = document.getElementById('id_complejo_asignado');
+            const complejoFieldContainer = complejoSelect.parentNode; // The <p> tag containing the select
 
             function toggleComplejoField() {
                 if (rolField.value === 'GUARDIA') {
-                    complejoField.style.display = 'block';
+                    complejoFieldContainer.style.display = 'block';
+                    complejoSelect.removeAttribute('disabled'); // Enable the select
                 } else {
-                    complejoField.style.display = 'none';
+                    complejoFieldContainer.style.display = 'none';
+                    complejoSelect.setAttribute('disabled', 'disabled'); // Disable the select
                 }
             }
 
