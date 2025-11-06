@@ -1,53 +1,112 @@
-{% extends 'base.html' %}
 {% load static %}
 
-{# ========================================================== #}
-{# BLOQUE DE CSS: Carga estilos adicionales solo para el ADMIN #}
-{# ========================================================== #}
 {% block extra_css %}
-{% if request.user.rol == 'ADMIN' %}
-<link rel="stylesheet" href="{% static 'css/admin_dashboard.css' %}">
-{% endif %}
+    <link rel="stylesheet" href="{% static 'css/admin_dashboard.css' %}">
 {% endblock extra_css %}
 
-
-{# ========================================================== #}
-{# BLOQUE DE CONTENIDO: Muestra el panel según el rol del usuario #}
-{# ========================================================== #}
 {% block content %}
-<h1>Bienvenido, {{ request.user.persona.nombres|default:request.user.email }}</h1>
-
-{# --- PANEL DEL ADMINISTRADOR --- #}
 {% if request.user.rol == 'ADMIN' %}
-<div class="admin-panel">
-    <h2>Panel de Administrador</h2>
-    <p>Gestiona el sistema desde aquí.</p>
-    <a href="{% url 'lista_usuarios' %}">Gestionar Usuarios</a>
-    <a href="{% url 'lista_complejos' %}">Gestionar Complejos</a>
+<div class="dashboard-container">
+    <!-- 1. Barra Lateral (Sidebar) -->
+    <div class="sidebar">
+        <h2><i class="fa-solid fa-shield-halved"></i> Admin Panel</h2>
+        <a href="{% url 'lista_usuarios' %}"><i class="fa-solid fa-users"></i> Gestionar Usuarios</a>
+        <a href="{% url 'lista_complejos' %}"><i class="fa-solid fa-building-user"></i> Gestionar Complejos</a>
+        <a href="/admin/" class="dev-panel-link"><i class="fa-solid fa-code"></i> Panel Avanzado (Dev)</a>
+    </div>
+
+    <!-- 2. Contenido Principal -->
+    <div class="main-content">
+        <!-- Encabezado con Logout -->
+        <header>
+            <h1>Bienvenido, {{ request.user.persona.nombres|default:request.user.email }}</h1>
+            <form method="post" action="{% url 'logout' %}">
+                {% csrf_token %}
+                <button type="submit"><i class="fa-solid fa-right-from-bracket"></i> Cerrar Sesión</button>
+            </form>
+        </header>
+
+        <!-- (NUEVO) SECCIÓN DE ESTADÍSTICAS -->
+        <section class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-info">
+                    <h3>Total Usuarios</h3>
+                    <p>{{ total_usuarios }}</p>
+                </div>
+                <div class="stat-icon" style="color: #3498db;">
+                    <i class="fa-solid fa-user-group"></i>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-info">
+                    <h3>Complejos Registrados</h3>
+                    <p>{{ total_complejos }}</p>
+                </div>
+                <div class="stat-icon" style="color: #2ecc71;">
+                    <i class="fa-solid fa-building-lock"></i>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-info">
+                    <h3>Visitas Hoy</h3>
+                    <p>{{ visitas_hoy }}</p>
+                </div>
+                <div class="stat-icon" style="color: #f39c12;">
+                    <i class="fa-solid fa-car"></i>
+                </div>
+            </div>
+        </section>
+        <!-- (FIN) SECCIÓN DE ESTADÍSTICAS -->
+
+        <!-- (NUEVO) SECCIÓN DE ACCIONES RÁPIDAS -->
+        <section class="quick-actions">
+            <h2><i class="fa-solid fa-bolt"></i> Acciones Rápidas</h2>
+            <p>Selecciona una de las operaciones más comunes para empezar:</p>
+            <div class="quick-actions-grid">
+                <a href="{% url 'lista_usuarios' %}" class="action-card">
+                    <div class="action-icon">
+                        <i class="fa-solid fa-user-plus"></i>
+                    </div>
+                    <h3>Gestionar Usuarios</h3>
+                    <p>Añadir, editar o eliminar usuarios del sistema.</p>
+                </a>
+                <a href="{% url 'lista_complejos' %}" class="action-card">
+                    <div class="action-icon">
+                        <i class="fa-solid fa-circle-plus"></i>
+                    </div>
+                    <h3>Gestionar Complejos</h3>
+                    <p>Ver, crear o administrar los complejos residenciales.</p>
+                </a>
+                <a href="#" class="action-card">
+                    <div class="action-icon">
+                        <i class="fa-solid fa-chart-line"></i>
+                    </div>
+                    <h3>Ver Reportes</h3>
+                    <p>Generar reportes de visitas, incidencias o finanzas.</p>
+                </a>
+            </div>
+        </section>
+        <!-- (FIN) SECCIÓN DE ACCIONES RÁPIDAS -->
+
+    </div>
+</div>
+
+{% else %}
+{# --- PANELES PARA OTROS ROLES --- #}
+<div class="other-role-panel">
+    {% if request.user.rol == 'GUARDIA' %}
+        <h2><i class="fa-solid fa-id-card"></i> Panel de Portería</h2>
+        <a href="#">Gestionar Visitantes</a>
+    {% elif request.user.rol == 'RESIDENTE' %}
+        <h2><i class="fa-solid fa-house-user"></i> Panel de Residente</h2>
+        <p>Aquí puedes reportar incidencias y reservar áreas comunes.</p>
+    {% endif %}
+
     <hr>
-    <a href="/admin/">Panel Avanzado (Dev)</a>
-</div>
-
-{# --- PANEL DEL PORTERO (ACTUALIZADO) --- #}
-{% elif request.user.rol == 'GUARDIA' %}
-<div class="portero-panel">
-    <h2>Panel de Portería 🚪</h2>
-    {# This part needs to be adapted once complejo_asignado is added to the CustomUser model #}
-    <a href="{% url 'lista_visitantes' %}">Gestionar Visitantes</a>
-</div>
-
-{# --- PANEL DEL CLIENTE/RESIDENTE --- #}
-{% elif request.user.rol == 'RESIDENTE' %}
-<div class="client-panel">
-    <h2>Panel de Cliente 🏡</h2>
-    <p>Aquí puedes reportar incidencias y reservar áreas comunes.</p>
+    <form method="post" action="{% url 'logout' %}">
+        {% csrf_token %}
+        <button type="submit">Cerrar Sesión</button>
+    </form>
 </div>
 {% endif %}
-
-<hr>
-
-<form method="post" action="{% url 'logout' %}">
-    {% csrf_token %}
-    <button type="submit">Cerrar Sesión</button>
-</form>
 {% endblock content %}

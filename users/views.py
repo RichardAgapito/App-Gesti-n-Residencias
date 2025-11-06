@@ -2,10 +2,23 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.db.models import Q
 from .forms import CustomUserCreationForm, EditarUsuarioForm
-from .models import CustomUser # Import the new CustomUser model
+from .models import CustomUser
+from complejos.models import Complejo
 
 @login_required
 def dashboard(request):
+    if request.user.rol == 'ADMIN':
+        total_usuarios = CustomUser.objects.count()
+        total_complejos = Complejo.objects.count()
+        visitas_hoy = 0  # Placeholder
+
+        context = {
+            'total_usuarios': total_usuarios,
+            'total_complejos': total_complejos,
+            'visitas_hoy': visitas_hoy,
+        }
+        return render(request, 'users/dashboard.html', context)
+    
     return render(request, 'users/dashboard.html')
 
 def es_admin(user):
