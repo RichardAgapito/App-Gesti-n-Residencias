@@ -1,54 +1,104 @@
-{% extends 'base.html' %}
 {% load static %}
 
 {% block css_files %}
-{{ block.super }}
-<link rel="stylesheet" href="{% static 'css/lista_usuarios.css' %}">
+    <link rel="stylesheet" href="{% static 'css/lista_usuarios.css' %}">
 {% endblock %}
 
 {% block content %}
-    <h1>Gestión de Usuarios 👥</h1>
+<div class="user-list-container">
     
-    <a href="{% url 'crear_usuario' %}" class="btn btn-primary">Registrar Nuevo Usuario</a>
+    <!-- Encabezado y botón se quedan arriba -->
+    <div class="list-header">
+        <h1>Gestión de Usuarios 👥</h1>
+        <a href="{% url 'crear_usuario' %}" class="btn btn-primary">
+            <i class="fa-solid fa-user-plus"></i> Registrar Nuevo Usuario
+        </a>
+    </div>
     <hr>
-    <h3>Usuarios Registrados</h3>
 
-    <form method="get" action="{% url 'lista_usuarios' %}" class="form-inline mt-3 mb-3">
-        <input class="form-control mr-sm-2" type="search" name="q" placeholder="Buscar por email o nombre..." value="{{ request.GET.q }}">
-        
-        <select name="rol" class="form-control mr-sm-2">
-            <option value="">Todos los roles</option>
-            {% for value, name in rol_choices %}
-                <option value="{{ value }}" {% if current_rol == value %}selected{% endif %}>{{ name }}</option>
-            {% endfor %}
-        </select>
+    <!-- (NUEVO) Contenedor para el layout de 2 columnas -->
+    <div class="list-layout-container">
 
-        <select name="estado" class="form-control mr-sm-2">
-            <option value="">Todos los estados</option>
-            <option value="True" {% if current_estado == 'True' %}selected{% endif %}>Activo</option>
-            <option value="False" {% if current_estado == 'False' %}selected{% endif %}>Inactivo</option>
-        </select>
-
-        <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Buscar y Filtrar</button>
-    </form>
-
-    {% if users %}
-        <div class="user-grid">
-            {% for user in users %}
-                <div class="user-card">
-                    <h4><a href="{% url 'detalle_usuario' user.id %}">{{ user.persona.nombres }} {{ user.persona.apellidos }}</a></h4>
-                    <p><strong>Email:</strong> {{ user.email }}</p>
-                    <p><strong>Rol:</strong> {{ user.get_rol_display }}</p>
-                    <p><strong>Documento:</strong> {{ user.persona.get_tipo_documento_display }} - {{ user.persona.numero_documento }}</p>
-                    <p><strong>Teléfono:</strong> {{ user.persona.telefono }}</p>
-                    <p><strong>Estado:</strong> {% if user.is_active %}Activo{% else %}Inactivo{% endif %}</p>
+        <!-- (NUEVO) Columna Izquierda: Filtros -->
+        <aside class="filter-sidebar">
+            <h3><i class="fa-solid fa-filter"></i> Filtrar Usuarios</h3>
+            
+            <form method="get" action="{% url 'lista_usuarios' %}" class="filters-form-vertical">
+                
+                <div class="form-group">
+                    <label for="id_q">Buscar:</label>
+                    <input id="id_q" type="search" name="q" placeholder="Email, nombre..." value="{{ request.GET.q }}">
                 </div>
-            {% endfor %}
-        </div>
-    {% else %}
-        <p>Aún no hay usuarios registrados en el sistema.</p>
-    {% endif %}
-    
-    <br>
-    <a href="{% url 'dashboard' %}">← Volver al Dashboard</a>
+                
+                <div class="form-group">
+                    <label for="id_rol">Rol:</label>
+                    <select id="id_rol" name="rol">
+                        <option value="">Todos los roles</option>
+                        {% for value, name in rol_choices %}
+                            <option value="{{ value }}" {% if current_rol == value %}selected{% endif %}>{{ name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="id_estado">Estado:</label>
+                    <select id="id_estado" name="estado">
+                        <option value="">Todos los estados</option>
+                        <option value="True" {% if current_estado == 'True' %}selected{% endif %}>Activo</option>
+                        <option value="False" {% if current_estado == 'False' %}selected{% endif %}>Inactivo</option>
+                    </select>
+                </div>
+
+                <button type="submit">Buscar y Filtrar</button>
+            </form>
+        </aside>
+
+        <!-- (NUEVO) Columna Derecha: Resultados con Scroll -->
+        <main class="results-content">
+            <h3>Usuarios Registrados</h3>
+
+            {% if users %}
+                <div class="user-grid">
+                    {% for user in users %}
+                        <div class="user-card">
+                            <h4>{{ user.persona.nombres|default:"Usuario" }} {{ user.persona.apellidos|default:"" }}</h4>
+                            <p><strong>Email:</strong> {{ user.email }}</p>
+                            <p><strong>Rol:</strong> {{ user.get_rol_display }}</p>
+                            <p><strong>Documento:</strong> {{ user.persona.get_tipo_documento_display|default:"-" }} - {{ user.persona.numero_documento|default:"" }}</p>
+                            <p><strong>Teléfono:</strong> {{ user.persona.telefono|default:"-" }}</p>
+                            <p>
+                                <strong>Estado:</strong> 
+                                {% if user.is_active %}
+                                    <span class="status-active">Activo</span>
+                                {% else %}
+                                    <span class="status-inactive">Inactivo</span>
+                                {% endif %}
+                            </p>
+                            
+                            <!-- (MODIFICADO) Los 3 botones de Gemini -->
+                            <div class="action-links">
+                                <a href="{% url 'detalle_usuario' user.id %}" class="btn btn-info btn-sm">
+                                    <i class="fa-solid fa-eye"></i> Detalles
+                                </a>
+                                <a href="{% url 'editar_usuario' user.id %}" class="btn btn-warning btn-sm">
+                                    <i class="fa-solid fa-pencil"></i> Editar
+                                </a>
+                                {% if not user.is_superuser %}
+                                <a href="{% url 'eliminar_usuario' user.id %}" class="btn {% if user.is_active %}btn-danger{% else %}btn-success{% endif %} btn-sm">
+                                    <i class="fa-solid {% if user.is_active %}fa-toggle-off{% else %}fa-toggle-on{% endif %}"></i> {% if user.is_active %}Desactivar{% else %}Activar{% endif %}
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="no-results-message">No se encontraron usuarios con esos filtros.</p>
+            {% endif %}
+        </main> <!-- Fin de .results-content -->
+
+    </div> <!-- Fin de .list-layout-container -->
+
+    <a href="{% url 'dashboard' %}" class="back-link">← Volver al Dashboard</a>
+</div>
 {% endblock %}

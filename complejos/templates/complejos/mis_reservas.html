@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container">
+    <h2>Mis Reservas</h2>
+
+    <a href="{% url 'crear_reserva' %}" class="btn btn-primary mb-3">Hacer una nueva reserva</a>
+
+    {% if reservas %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Amenidad</th>
+                    <th>Fecha de Inicio</th>
+                    <th>Fecha de Fin</th>
+                    <th>Estado</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for reserva in reservas %}
+                    <tr>
+                        <td>{{ reserva.amenidad.nombre }}</td>
+                        <td>{{ reserva.fecha_inicio }}</td>
+                        <td>{{ reserva.fecha_fin }}</td>
+                        <td>{{ reserva.get_estado_display }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No tienes ninguna reserva.</p>
+    {% endif %}
+
+    <a href="{% url 'dashboard' %}" class="btn btn-secondary">Volver al Dashboard</a>
+</div>
+{% endblock %}

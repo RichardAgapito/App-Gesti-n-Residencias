@@ -12,6 +12,8 @@
         <h2><i class="fa-solid fa-shield-halved"></i> Admin Panel</h2>
         <a href="{% url 'lista_usuarios' %}"><i class="fa-solid fa-users"></i> Gestionar Usuarios</a>
         <a href="{% url 'lista_complejos' %}"><i class="fa-solid fa-building-user"></i> Gestionar Complejos</a>
+        <a href="{% url 'admin_reservas' %}"><i class="fa-solid fa-calendar-days"></i> Gestionar Reservas</a>
+        <a href="{% url 'gestionar_amenidades' %}"><i class="fa-solid fa-star"></i> Gestionar Amenidades</a>
         <a href="/admin/" class="dev-panel-link"><i class="fa-solid fa-code"></i> Panel Avanzado (Dev)</a>
     </div>
 
@@ -77,12 +79,19 @@
                     <h3>Gestionar Complejos</h3>
                     <p>Ver, crear o administrar los complejos residenciales.</p>
                 </a>
-                <a href="#" class="action-card">
+                <a href="{% url 'admin_reservas' %}" class="action-card">
                     <div class="action-icon">
-                        <i class="fa-solid fa-chart-line"></i>
+                        <i class="fa-solid fa-calendar-check"></i>
                     </div>
-                    <h3>Ver Reportes</h3>
-                    <p>Generar reportes de visitas, incidencias o finanzas.</p>
+                    <h3>Gestionar Reservas</h3>
+                    <p>Ver y cancelar reservas de amenidades.</p>
+                </a>
+                <a href="{% url 'gestionar_amenidades' %}" class="action-card">
+                    <div class="action-icon">
+                        <i class="fa-solid fa-star"></i>
+                    </div>
+                    <h3>Gestionar Amenidades</h3>
+                    <p>Crear y listar las amenidades de los complejos.</p>
                 </a>
             </div>
         </section>
@@ -100,6 +109,8 @@
     {% elif request.user.rol == 'RESIDENTE' %}
         <h2><i class="fa-solid fa-house-user"></i> Panel de Residente</h2>
         <p>Aquí puedes reportar incidencias y reservar áreas comunes.</p>
+        <a href="{% url 'crear_reserva' %}" class="btn btn-primary">Reservar Amenidades</a>
+        <a href="{% url 'mis_reservas' %}" class="btn btn-secondary">Mis Reservas</a>
     {% endif %}
 
     <hr>
