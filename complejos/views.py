@@ -1,8 +1,10 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import user_passes_test
+from django.http import JsonResponse
 from .models import Complejo, Propiedad, PropiedadPersona
 from .forms import ComplejoForm, PropiedadForm, CrearPropiedadesMultiplesForm, EditarPropiedadForm, PropiedadPersonaForm
 from users.views import es_admin
+from django.contrib.auth import get_user_model
 
 
 @user_passes_test(es_admin, login_url='/')
@@ -171,10 +173,12 @@ def asignar_contrato(request, propiedad_id):
     if request.method == 'POST':
         form = PropiedadPersonaForm(request.POST, propiedad=propiedad)
         if form.is_valid():
+            print(f"Persona 2: {form.cleaned_data['persona2']}")
+            tipo_relacion = form.cleaned_data['tipo_relacion']
             propiedad_persona = PropiedadPersona(
                 propiedad=propiedad,
                 persona=form.cleaned_data['persona'],
-                tipo_relacion=form.cleaned_data['tipo_relacion'],
+                tipo_relacion=tipo_relacion,
                 porcentaje_propiedad=form.cleaned_data['porcentaje_propiedad'],
                 fecha_inicio=form.cleaned_data['fecha_inicio'],
                 fecha_fin=form.cleaned_data['fecha_fin'],
@@ -214,3 +218,7 @@ def editar_propiedad(request, propiedad_id):
     else:
         form = EditarPropiedadForm(instance=propiedad)
     return render(request, 'complejos/editar_propiedad.html', {'form': form, 'propiedad': propiedad})
+
+def get_residentes_json(request):
+    residentes = get_user_model().objects.filter(rol='RESIDENTE').values('id', 'persona__nombres', 'persona__apellidos')
+    return JsonResponse(list(residentes), safe=False)

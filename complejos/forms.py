@@ -32,14 +32,24 @@ class EditarPropiedadForm(forms.ModelForm):
         model = Propiedad
         fields = ['area', 'numero_habitaciones', 'numero_banos', 'piso_nivel', 'valor_estimado', 'estado_ocupacion']
 
+    def clean(self):
+        return self.cleaned_data
+
 class PropiedadPersonaForm(forms.ModelForm):
-    persona = forms.ModelChoiceField(queryset=get_user_model().objects.filter(rol='RESIDENTE'), label="Persona Principal")
     persona2 = forms.ModelChoiceField(queryset=get_user_model().objects.filter(rol='RESIDENTE'), required=False, label="Segunda Persona")
     porcentaje_propiedad = forms.DecimalField(max_digits=5, decimal_places=2, widget=forms.TextInput(attrs={'readonly': 'readonly'}))
 
     def __init__(self, *args, **kwargs):
         self.propiedad = kwargs.pop('propiedad', None)
         super().__init__(*args, **kwargs)
+        if 'persona' in self.data:
+            try:
+                persona_id = int(self.data.get('persona'))
+                self.fields['persona2'].queryset = get_user_model().objects.filter(rol='RESIDENTE').exclude(pk=persona_id)
+            except (ValueError, TypeError):
+                pass
+        elif self.instance.pk:
+            self.fields['persona2'].queryset = get_user_model().objects.filter(rol='RESIDENTE').exclude(pk=self.instance.persona.pk)
 
     class Meta:
         model = PropiedadPersona
@@ -105,4 +115,3 @@ class PropiedadPersonaForm(forms.ModelForm):
                     raise ValidationError(f'No se pueden agregar más de 2 {tipo_relacion}s a esta propiedad.')
 
         return cleaned_data
-

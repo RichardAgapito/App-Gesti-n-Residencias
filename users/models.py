@@ -27,7 +27,10 @@ class CustomUserManager(BaseUserManager):
         persona_data = extra_fields.pop('persona', None)
         persona = None
         if persona_data:
-            persona = Persona.objects.create(**persona_data)
+            if isinstance(persona_data, dict):
+                persona = Persona.objects.create(**persona_data)
+            elif isinstance(persona_data, Persona):
+                persona = persona_data
         
         user = self.model(email=email, persona=persona, **extra_fields)
         user.set_password(password)
@@ -58,13 +61,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     is_staff = models.BooleanField(default=False)
     date_joined = models.DateTimeField(default=timezone.now)
 
-    complejo_asignado = models.ForeignKey(
-        Complejo, 
-        on_delete=models.SET_NULL, 
-        null=True, 
-        blank=True, 
-        help_text="Complejo al que está asignado el guardia."
-    )
+
 
     objects = CustomUserManager()
 

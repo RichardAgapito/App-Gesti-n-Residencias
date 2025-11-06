@@ -52,7 +52,7 @@ class Propiedad(models.Model):
     valor_estimado = models.DecimalField(max_digits=12, decimal_places=2)
     fecha_registro = models.DateTimeField(auto_now_add=True)
     estado_ocupacion = models.CharField(max_length=20, choices=ESTADO_OCUPACION_CHOICES, default='disponible')
-    residentes = models.ManyToManyField(settings.AUTH_USER_MODEL, through='PropiedadPersona', related_name='propiedades_habitadas')
+    residentes = models.ManyToManyField('users.CustomUser', through='PropiedadPersona', related_name='propiedades_habitadas')
 
     def __str__(self):
         return f'{self.numero_identificador} ({self.complejo.nombre})'
@@ -66,13 +66,6 @@ class Propiedad(models.Model):
                 total_porcentaje = sum(p.porcentaje_propiedad for p in propietarios if p.porcentaje_propiedad is not None)
                 if total_porcentaje != 100:
                     raise ValidationError(f'La suma de los porcentajes de los propietarios debe ser 100%. Actualmente es {total_porcentaje}%.')
-
-            # 4. The occupancy status of the property should be consistent.
-            if self.personas_asociadas.filter(tipo_relacion='inquilino', estado='activo').exists():
-                if self.estado_ocupacion != 'ocupado':
-                    self.estado_ocupacion = 'ocupado'
-            elif self.estado_ocupacion == 'ocupado' and not self.personas_asociadas.filter(tipo_relacion='inquilino', estado='activo').exists():
-                self.estado_ocupacion = 'disponible'
 
     def save(self, *args, **kwargs):
         self.full_clean()
@@ -107,5 +100,13 @@ class PropiedadPersona(models.Model):
         return f'{self.propiedad} - {self.persona} ({self.tipo_relacion})'
 
     def save(self, *args, **kwargs):
-        self.full_clean()
         super().save(*args, **kwargs)
+        propiedad = self.propiedad
+        if propiedad.personas_asociadas.filter(tipo_relacion='inquilino', estado='activo').exists():
+            if propiedad.estado_ocupacion != 'ocupado':
+                propiedad.estado_ocupacion = 'ocupado'
+                propiedad.save()
+        else:
+            if propiedad.estado_ocupacion != 'disponible':
+                propiedad.estado_ocupacion = 'disponible'
+                propiedad.save()
