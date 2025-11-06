@@ -1,0 +1,106 @@
+/* --- Reseteo Básico --- */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    margin: 0;
+    color: #333;
+    display: flex;
+    justify-content: center;
+    align-items: center ;
+    min-height: 100vh;
+    background: linear-gradient(120deg, #f0f4f8, #d9e8f5);
+}
+
+/* --- Contenedor del Login --- */
+.login-container {
+    background-color: #ffffff;
+    padding: 2.5rem 3rem;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    width: 350px;
+    text-align: center;
+    border: 1px solid #e0e0e0;
+}
+
+.login-container h1 {
+    color: #2c3e50;
+    font-size: 2rem;
+    font-weight: 600;
+    margin-top: 0;
+    margin-bottom: 2rem;
+}
+
+/* --- Formulario --- */
+form {
+    width: 100%;
+    text-align: left;
+}
+
+form p {
+    margin-bottom: 1.5rem;
+}
+
+form label {
+    display: block;
+    font-weight: 600;
+    color: #34495e;
+    margin-bottom: 0.5rem;
+}
+
+form input[type="text"],
+form input[type="email"],
+form input[type="password"] {
+    width: 100%;
+    padding: 14px 16px;
+    border: 1px solid #ccd5de;
+    border-radius: 8px;
+    box-sizing: border-box; 
+    font-size: 1rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+form input[type="text"]:focus,
+form input[type="email"]:focus,
+form input[type="password"]:focus {
+    border-color: #3498db;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.15);
+    outline: none;
+}
+
+/* --- Botón de Entrar --- */
+button[type="submit"],
+input[type="submit"] {
+    background-color: #3498db;
+    color: white;
+    border: none;
+    padding: 15px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1.1rem;
+    font-weight: 600;
+    width: 100%;
+    margin-top: 1rem;
+    transition: background-color 0.2s, transform 0.1s;
+}
+
+button[type="submit"]:hover,
+input[type="submit"]:hover {
+    background-color: #2980b9;
+}
+
+button[type="submit"]:active,
+input[type="submit"]:active {
+    transform: translateY(1px);
+}
+
+/* --- Mensajes de Error --- */
+.errorlist {
+    list-style-type: none;
+    padding: 0;
+    margin: 1rem 0;
+    color: #e74c3c;
+    background-color: #fbeae9;
+    border: 1px solid #e74c3c;
+    border-radius: 8px;
+    padding: 10px;
+    text-align: center;
+}
