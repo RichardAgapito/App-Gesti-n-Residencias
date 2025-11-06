@@ -1,30 +1,60 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, user_passes_test
-from .forms import CustomUserCreationForm # <-- Importamos nuestro nuevo formulario
-from .models import Profile 
+from django.db.models import Q
+from .forms import CustomUserCreationForm
+from .models import CustomUser # Import the new CustomUser model
 
 @login_required
 def dashboard(request):
     return render(request, 'users/dashboard.html')
 
-
-
 def es_admin(user):
-    return user.is_authenticated and user.profile.role == 'ADMIN'
+    return user.is_authenticated and user.rol == CustomUser.Rol.ADMIN
 
-@user_passes_test(es_admin, login_url='/') 
+@user_passes_test(es_admin, login_url='/')
 def crear_usuario_view(request):
     if request.method == 'POST':
         form = CustomUserCreationForm(request.POST)
         if form.is_valid():
-            new_user = form.save()
-            
-            Profile.objects.create(
-                user=new_user,
-                role=form.cleaned_data.get('role')
-            )
-            return redirect('/') 
+            form.save()
+            return redirect('/')
     else:
         form = CustomUserCreationForm()
-        
+
     return render(request, 'users/crear_usuario.html', {'form': form})
+
+@user_passes_test(es_admin, login_url='/')
+def lista_usuarios_view(request):
+    users = CustomUser.objects.all().select_related('persona')
+
+    query = request.GET.get('q')
+    if query:
+        users = users.filter(
+            Q(email__icontains=query) |
+            Q(persona__nombres__icontains=query) |
+            Q(persona__apellidos__icontains=query)
+        )
+
+    rol_filter = request.GET.get('rol')
+    if rol_filter:
+        users = users.filter(rol=rol_filter)
+
+    estado_filter = request.GET.get('estado')
+    if estado_filter is not None and estado_filter != '':
+        users = users.filter(is_active=(estado_filter == 'True'))
+
+    context = {
+        'users': users,
+        'rol_choices': CustomUser.Rol.choices,
+        'current_rol': rol_filter,
+        'current_estado': estado_filter,
+    }
+    return render(request, 'users/lista_usuarios.html', context)
+
+@user_passes_test(es_admin, login_url='/')
+def detalle_usuario_view(request, user_id):
+    user = get_object_or_404(CustomUser, id=user_id)
+    context = {
+        'user': user
+    }
+    return render(request, 'users/detalle_usuario.html', context)

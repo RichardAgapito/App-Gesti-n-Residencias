@@ -30,16 +30,10 @@
             <p>No hay personas asociadas a esta propiedad.</p>
         {% endfor %}
 
-        <hr>
-        <h4>Asignar Nueva Persona</h4>
-        <form method="post">
-            {% csrf_token %}
-            {{ form.as_p }}
-            <button type="submit">Asignar Persona</button>
-        </form>
     </div>
 
     <hr>
+    <a href="{% url 'asignar_contrato' propiedad.id %}" class="btn btn-primary">Asignar Persona</a>
     <a href="{% url 'editar_propiedad' propiedad.id %}" class="btn btn-warning">Editar Propiedad</a>
-    <a href="{% url 'detalle_complejo' propiedad.complejo.id %}">← Volver a los detalles del complejo</a>
+    <a href="{% url 'detalle_complejo' propiedad.complejo.id %}" class="btn btn-secondary">← Volver</a>
 {% endblock %}

@@ -9,4 +9,22 @@
     </form>
     <br>
     <a href="{% url 'dashboard' %}">Volver al Dashboard</a>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const rolField = document.getElementById('id_rol');
+            const complejoField = document.getElementById('id_complejo_asignado').parentNode;
+
+            function toggleComplejoField() {
+                if (rolField.value === 'GUARDIA') {
+                    complejoField.style.display = 'block';
+                } else {
+                    complejoField.style.display = 'none';
+                }
+            }
+
+            toggleComplejoField();
+            rolField.addEventListener('change', toggleComplejoField);
+        });
+    </script>
 {% endblock %}

@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h2>Detalles de: {{ user.persona.nombres }} {{ user.persona.apellidos }}</h2>
+    <p><strong>Email:</strong> {{ user.email }}</p>
+    <p><strong>Rol:</strong> {{ user.get_rol_display }}</p>
+    <p><strong>Documento:</strong> {{ user.persona.get_tipo_documento_display }} - {{ user.persona.numero_documento }}</p>
+    <p><strong>Teléfono:</strong> {{ user.persona.telefono }}</p>
+    <p><strong>Fecha de Nacimiento:</strong> {{ user.persona.fecha_nacimiento }}</p>
+    <p><strong>Estado:</strong> {% if user.is_active %}Activo{% else %}Inactivo{% endif %}</p>
+    {% if user.rol == 'GUARDIA' and user.complejo_asignado %}
+        <p><strong>Complejo Asignado:</strong> {{ user.complejo_asignado.nombre }}</p>
+    {% endif %}
+
+    <hr>
+
+    <a href="#" class="btn btn-warning">Editar Usuario</a> {# Placeholder for edit user functionality #}
+    <a href="{% url 'lista_usuarios' %}" class="btn btn-secondary">← Volver a la lista de Usuarios</a>
+{% endblock %}

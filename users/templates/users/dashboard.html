@@ -5,7 +5,7 @@
 {# BLOQUE DE CSS: Carga estilos adicionales solo para el ADMIN #}
 {# ========================================================== #}
 {% block extra_css %}
-{% if request.user.profile.role == 'ADMIN' %}
+{% if request.user.rol == 'ADMIN' %}
 <link rel="stylesheet" href="{% static 'css/admin_dashboard.css' %}">
 {% endif %}
 {% endblock extra_css %}
@@ -15,34 +15,29 @@
 {# BLOQUE DE CONTENIDO: Muestra el panel según el rol del usuario #}
 {# ========================================================== #}
 {% block content %}
-<h1>Bienvenido, {{ request.user.first_name|default:request.user.username }}</h1>
+<h1>Bienvenido, {{ request.user.persona.nombres|default:request.user.email }}</h1>
 
 {# --- PANEL DEL ADMINISTRADOR --- #}
-{% if request.user.profile.role == 'ADMIN' %}
+{% if request.user.rol == 'ADMIN' %}
 <div class="admin-panel">
     <h2>Panel de Administrador</h2>
     <p>Gestiona el sistema desde aquí.</p>
-    <a href="{% url 'crear_usuario' %}">Gestionar Usuarios</a>
+    <a href="{% url 'lista_usuarios' %}">Gestionar Usuarios</a>
     <a href="{% url 'lista_complejos' %}">Gestionar Complejos</a>
     <hr>
     <a href="/admin/">Panel Avanzado (Dev)</a>
 </div>
 
 {# --- PANEL DEL PORTERO (ACTUALIZADO) --- #}
-{% elif request.user.profile.role == 'PORTERO' %}
+{% elif request.user.rol == 'GUARDIA' %}
 <div class="portero-panel">
     <h2>Panel de Portería 🚪</h2>
-    {% if request.user.profile.complejo_asignado %}
-    <p><strong>Complejo Asignado:</strong> {{ request.user.profile.complejo_asignado.nombre }}</p>
-    {# ACTUALIZA ESTE ENLACE #}
+    {# This part needs to be adapted once complejo_asignado is added to the CustomUser model #}
     <a href="{% url 'lista_visitantes' %}">Gestionar Visitantes</a>
-    {% else %}
-    <p><strong>No estás asignado a ningún complejo.</strong> Contacta al administrador.</p>
-    {% endif %}
 </div>
 
 {# --- PANEL DEL CLIENTE/RESIDENTE --- #}
-{% elif request.user.profile.role == 'CLIENTE' %}
+{% elif request.user.rol == 'RESIDENTE' %}
 <div class="client-panel">
     <h2>Panel de Cliente 🏡</h2>
     <p>Aquí puedes reportar incidencias y reservar áreas comunes.</p>

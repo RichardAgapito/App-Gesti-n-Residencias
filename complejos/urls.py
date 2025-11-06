@@ -10,4 +10,5 @@ urlpatterns = [
     path('complejos/<int:complejo_id>/editar/', views.editar_complejo, name='editar_complejo'),
     path('complejos/<int:complejo_id>/añadir-propiedad/', views.crear_propiedad, name='crear_propiedad'),
     path('complejos/<int:complejo_id>/añadir-multiples-propiedades/', views.crear_propiedades_multiples, name='crear_propiedades_multiples'),
+    path('propiedades/<int:propiedad_id>/asignar-contrato/', views.asignar_contrato, name='asignar_contrato'),
 ]

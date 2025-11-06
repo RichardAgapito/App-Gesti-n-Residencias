@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h1>Gestión de Usuarios 👥</h1>
+    
+    <a href="{% url 'crear_usuario' %}" class="btn btn-primary">Registrar Nuevo Usuario</a>
+    <hr>
+    <h3>Usuarios Registrados</h3>
+
+    <form method="get" action="{% url 'lista_usuarios' %}" class="form-inline mt-3 mb-3">
+        <input class="form-control mr-sm-2" type="search" name="q" placeholder="Buscar por email o nombre..." value="{{ request.GET.q }}">
+        
+        <select name="rol" class="form-control mr-sm-2">
+            <option value="">Todos los roles</option>
+            {% for value, name in rol_choices %}
+                <option value="{{ value }}" {% if current_rol == value %}selected{% endif %}>{{ name }}</option>
+            {% endfor %}
+        </select>
+
+        <select name="estado" class="form-control mr-sm-2">
+            <option value="">Todos los estados</option>
+            <option value="True" {% if current_estado == 'True' %}selected{% endif %}>Activo</option>
+            <option value="False" {% if current_estado == 'False' %}selected{% endif %}>Inactivo</option>
+        </select>
+
+        <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Buscar y Filtrar</button>
+    </form>
+
+    {% if users %}
+        <div class="user-grid">
+            {% for user in users %}
+                <div class="user-card">
+                    <h4><a href="{% url 'detalle_usuario' user.id %}">{{ user.persona.nombres }} {{ user.persona.apellidos }}</a></h4>
+                    <p><strong>Email:</strong> {{ user.email }}</p>
+                    <p><strong>Rol:</strong> {{ user.get_rol_display }}</p>
+                    <p><strong>Documento:</strong> {{ user.persona.get_tipo_documento_display }} - {{ user.persona.numero_documento }}</p>
+                    <p><strong>Teléfono:</strong> {{ user.persona.telefono }}</p>
+                    <p><strong>Estado:</strong> {% if user.is_active %}Activo{% else %}Inactivo{% endif %}</p>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p>Aún no hay usuarios registrados en el sistema.</p>
+    {% endif %}
+    
+    <br>
+    <a href="{% url 'dashboard' %}">← Volver al Dashboard</a>
+{% endblock %}

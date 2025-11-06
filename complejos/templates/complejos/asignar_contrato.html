@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h2>Asignar Contrato a {{ propiedad.numero_identificador }}</h2>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+        <p>
+            <label for="{{ form.tipo_relacion.id_for_label }}">Tipo de relación:</label>
+            {{ form.tipo_relacion }}
+            {{ form.tipo_relacion.errors }}
+        </p>
+        <p>
+            <label for="{{ form.persona.id_for_label }}">Persona:</label>
+            {{ form.persona }}
+            {{ form.persona.errors }}
+        </p>
+        <p>
+            <label for="{{ form.persona2.id_for_label }}">Segunda Persona:</label>
+            {{ form.persona2 }}
+            {{ form.persona2.errors }}
+        </p>
+        <p>
+            <label for="{{ form.porcentaje_propiedad.id_for_label }}">Porcentaje de propiedad:</label>
+            {{ form.porcentaje_propiedad }}
+            {{ form.porcentaje_propiedad.errors }}
+        </p>
+        <p>
+            <label for="{{ form.fecha_inicio.id_for_label }}">Fecha de inicio:</label>
+            {{ form.fecha_inicio }}
+            {{ form.fecha_inicio.errors }}
+        </p>
+        <p>
+            <label for="{{ form.fecha_fin.id_for_label }}">Fecha de fin:</label>
+            {{ form.fecha_fin }}
+            {{ form.fecha_fin.errors }}
+        </p>
+        <p>
+            <label for="{{ form.estado.id_for_label }}">Estado:</label>
+            {{ form.estado }}
+            {{ form.estado.errors }}
+        </p>
+
+        <div id="miembro-principal-display"></div>
+
+        <button type="submit">Guardar</button>
+    </form>
+    <br>
+    <a href="{% url 'detalle_propiedad' propiedad.id %}">Cancelar</a>
+
+    <p><small>Nota: La primera persona seleccionada será considerada el co-propietario/co-inquilino principal.</small></p>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const tipoRelacionField = document.getElementById('id_tipo_relacion');
+            const personaField = document.getElementById('id_persona');
+            const porcentajePropiedadField = document.getElementById('id_porcentaje_propiedad');
+            const fechaFinField = document.getElementById('id_fecha_fin');
+            const persona2Field = document.getElementById('id_persona2');
+            const persona2Container = persona2Field.closest('p');
+            const miembroPrincipalDisplay = document.getElementById('miembro-principal-display');
+
+            function updateFormFields() {
+                const selectedValue = tipoRelacionField.value;
+
+                // Update porcentaje_propiedad
+                if (selectedValue === 'propietario' || selectedValue === 'inquilino') {
+                    porcentajePropiedadField.value = '100.00';
+                } else if (selectedValue === 'co-propietario' || selectedValue === 'co-inquilino') {
+                    porcentajePropiedadField.value = '50.00';
+                }
+
+                // Update fecha_fin
+                if (selectedValue === 'inquilino' || selectedValue === 'co-inquilino') {
+                    fechaFinField.disabled = false;
+                } else {
+                    fechaFinField.disabled = true;
+                    fechaFinField.value = ''; // Clear the value when disabled
+                }
+
+                // Update persona2 visibility
+                if (selectedValue === 'co-propietario' || selectedValue === 'co-inquilino') {
+                    persona2Container.style.display = 'block';
+                } else {
+                    persona2Container.style.display = 'none';
+                }
+
+                // Update miembro principal display
+                const selectedPersona = personaField.options[personaField.selectedIndex].text;
+                miembroPrincipalDisplay.textContent = 'Miembro principal: ' + selectedPersona;
+            }
+
+            // Set initial state on page load
+            updateFormFields();
+
+            // Add event listener for changes
+            tipoRelacionField.addEventListener('change', updateFormFields);
+            personaField.addEventListener('change', updateFormFields);
+
+            // Make the porcentaje_propiedad field readonly
+            porcentajePropiedadField.readOnly = true;
+        });
+    </script>
+{% endblock %}
