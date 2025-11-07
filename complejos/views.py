@@ -267,7 +267,56 @@ def detalle_propiedad(request, propiedad_id):
     return render(request, 'complejos/detalle_propiedad.html', context)
 
 
+@user_passes_test(es_admin, login_url='/')
+def asignar_contrato(request, propiedad_id):
+    propiedad = get_object_or_404(Propiedad, id=propiedad_id)
+    if request.method == 'POST':
+        form = PropiedadPersonaForm(request.POST, propiedad=propiedad)
+        if form.is_valid():
+            # Determine the actual tipo_relacion for the first person
+            tipo_relacion_form = form.cleaned_data['tipo_relacion']
+            if tipo_relacion_form == 'co-propietario':
+                first_person_role = 'propietario'
+                second_person_role = 'co-propietario'
+            elif tipo_relacion_form == 'co-inquilino':
+                first_person_role = 'inquilino'
+                second_person_role = 'co-inquilino'
+            else:
+                # For single propietario or inquilino, roles are as submitted
+                first_person_role = tipo_relacion_form
+                second_person_role = None # No second person
 
+            # Create the first PropiedadPersona object
+            propiedad_persona = PropiedadPersona(
+                propiedad=propiedad,
+                persona=form.cleaned_data['persona'],
+                tipo_relacion=first_person_role,
+                porcentaje_propiedad=form.cleaned_data['porcentaje_propiedad'],
+                fecha_inicio=form.cleaned_data['fecha_inicio'],
+                fecha_fin=form.cleaned_data['fecha_fin'],
+                es_principal=True, # The first person is always principal
+                estado=form.cleaned_data['estado']
+            )
+            propiedad_persona.save()
+
+            # If it's a 'co-' relationship, create the second PropiedadPersona object
+            if second_person_role:
+                asignacion2 = PropiedadPersona(
+                    propiedad=propiedad,
+                    persona=form.cleaned_data['persona2'],
+                    tipo_relacion=second_person_role,
+                    porcentaje_propiedad=form.cleaned_data['porcentaje_propiedad'],
+                    fecha_inicio=form.cleaned_data['fecha_inicio'],
+                    fecha_fin=form.cleaned_data['fecha_fin'],
+                    es_principal=False,
+                    estado=form.cleaned_data['estado']
+                )
+                asignacion2.save()
+
+            return redirect('detalle_propiedad', propiedad_id=propiedad.id)
+    else:
+        form = PropiedadPersonaForm(propiedad=propiedad)
+    return render(request, 'complejos/asignar_contrato.html', {'form': form, 'propiedad': propiedad})
 
 
 @user_passes_test(es_admin, login_url='/')
