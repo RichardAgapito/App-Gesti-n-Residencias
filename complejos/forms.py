@@ -134,25 +134,28 @@ class PropiedadPersonaForm(forms.ModelForm):
                 if PropiedadPersona.objects.filter(
                     propiedad=self.propiedad,
                     persona=persona,
-                    tipo_relacion='inquilino'
+                    tipo_relacion='inquilino',
+                    estado='activo' # Only check active contracts
                 ).exists():
-                    raise ValidationError('Esta persona ya es inquilino de esta propiedad.')
+                    raise ValidationError('Esta persona ya es inquilino activo de esta propiedad.')
             
             if tipo_relacion == 'inquilino':
                 if PropiedadPersona.objects.filter(
                     propiedad=self.propiedad,
                     persona=persona,
-                    tipo_relacion__in=['propietario', 'co-propietario']
+                    tipo_relacion__in=['propietario', 'co-propietario'],
+                    estado='activo' # Only check active contracts
                 ).exists():
-                    raise ValidationError('Esta persona ya es propietaria de esta propiedad.')
+                    raise ValidationError('Esta persona ya es propietaria activa de esta propiedad.')
 
             if tipo_relacion in ['co-propietario', 'co-inquilino']:
                 co_relations = PropiedadPersona.objects.filter(
                     propiedad=self.propiedad,
-                    tipo_relacion=tipo_relacion
+                    tipo_relacion=tipo_relacion,
+                    estado='activo' # Only check active contracts
                 )
                 if co_relations.count() >= 2:
-                    raise ValidationError(f'No se pueden agregar más de 2 {tipo_relacion}s a esta propiedad.')
+                    raise ValidationError(f'No se pueden agregar más de 2 {tipo_relacion}s activos a esta propiedad.')
 
         return cleaned_data
 
