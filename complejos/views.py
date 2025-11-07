@@ -503,3 +503,29 @@ def reject_reserva(request, reserva_id):
     reserva.estado = 'cancelada'
     reserva.save()
     return redirect('admin_reservas')
+
+@user_passes_test(es_admin, login_url='/')
+def lista_contratos(request):
+    contratos_qs = PropiedadPersona.objects.select_related(
+        'propiedad__complejo', 
+        'persona__persona'
+    ).order_by('-fecha_inicio')
+
+    tipo_relacion = request.GET.get('tipo_relacion', '')
+    estado = request.GET.get('estado', '')
+
+    if tipo_relacion:
+        contratos_qs = contratos_qs.filter(tipo_relacion=tipo_relacion)
+    
+    if estado:
+        contratos_qs = contratos_qs.filter(estado=estado)
+
+    context = {
+        'contratos': contratos_qs,
+        'tipo_relacion_choices': PropiedadPersona.TIPO_RELACION_CHOICES,
+        'estado_choices': PropiedadPersona.ESTADO_CHOICES,
+        'current_tipo_relacion': tipo_relacion,
+        'current_estado': estado,
+    }
+    return render(request, 'complejos/lista_contratos.html', context)
+

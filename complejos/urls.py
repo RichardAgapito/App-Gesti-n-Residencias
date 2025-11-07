@@ -13,6 +13,7 @@ urlpatterns = [
     path('propiedades/<int:propiedad_id>/asignar-contrato/', views.asignar_contrato, name='asignar_contrato'),
     path('api/residentes/', views.get_residentes_json, name='get_residentes_json'),
     path('propiedades/<int:propiedad_id>/cancelar-contrato/<int:propiedad_persona_id>/', views.cancelar_contrato, name='cancelar_contrato'),
+    path('contratos/', views.lista_contratos, name='lista_contratos'),
 
     # URLs para el sistema de reservas
     path('reservas/', views.crear_reserva_view, name='crear_reserva'),
