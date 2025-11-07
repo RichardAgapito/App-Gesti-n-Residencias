@@ -4,7 +4,7 @@ from complejos.models import PropiedadPersona
 
 def get_residentes_por_propiedad(request, propiedad_id):
     residentes = PropiedadPersona.objects.filter(propiedad_id=propiedad_id, estado='activo').select_related('persona')
-    residentes_data = [{'id': pp.persona.id, 'nombre': pp.persona.get_full_name()} for pp in residentes]
+    residentes_data = [{'id': pp.persona.id, 'nombre': pp.persona.get_username()} for pp in residentes]
     return JsonResponse(residentes_data, safe=False)
 from .models import Visitante, Visita, PreAutorizacion
 from .forms import VisitanteForm, VisitaForm, PreAutorizacionForm
