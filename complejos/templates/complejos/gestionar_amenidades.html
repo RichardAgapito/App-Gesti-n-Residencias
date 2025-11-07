@@ -149,6 +149,45 @@
                 grid-template-columns: 1fr;
             }
         }
+
+        .bloqueos-list {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #f1f3f5;
+            text-align: left;
+        }
+        .bloqueos-list h4 {
+            font-size: 0.95rem;
+            color: #555;
+            margin-bottom: 0.8rem;
+        }
+        .bloqueos-list ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .bloqueos-list li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 0;
+            font-size: 0.9rem;
+            color: #666;
+            border-bottom: 1px dashed #e0e0e0;
+        }
+        .bloqueos-list li:last-child {
+            border-bottom: none;
+        }
+        .btn-unblock {
+            background-color: #2ecc71; /* Green color for unblock */
+            padding: 8px 12px; /* Reusing existing button padding */
+            border-radius: 5px;
+            text-decoration: none;
+            color: white;
+            font-size: 0.85rem;
+            transition: opacity 0.2s;
+        }
+        .btn-unblock:hover { opacity: 0.85; }
     </style>
 {% endblock %}
 
@@ -204,6 +243,21 @@
                                 </a>
                             </div>
                         </li>
+                        {% if amenidad.bloqueos %}
+                            <div class="bloqueos-list">
+                                <h4>Horarios Bloqueados:</h4>
+                                <ul>
+                                    {% for bloqueo in amenidad.bloqueos %}
+                                        <li>
+                                            {{ bloqueo.fecha_inicio|date:"d M Y H:i" }} - {{ bloqueo.fecha_fin|date:"d M Y H:i" }}
+                                            <a href="{% url 'unblock_horario' bloqueo.id %}" class="btn-unblock" title="Desbloquear">
+                                                <i class="fas fa-unlock"></i>
+                                            </a>
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        {% endif %}
                     {% empty %}
                         <li class="amenidad-item-empty">No hay amenidades creadas.</li>
                     {% endfor %}

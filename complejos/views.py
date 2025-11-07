@@ -69,14 +69,23 @@ def bloquear_horario_view(request, amenidad_id):
             reserva = form.save(commit=False)
             reserva.amenidad = amenidad
             reserva.estado = 'bloqueada'
+            reserva.residente = None # A block does not have a resident
             reserva.save()
             return redirect('gestionar_amenidades')
     else:
         form = BloquearHorarioForm(amenidad=amenidad)
+
+    # Fetch existing reservations to display on the calendar
+    reservas = Reserva.objects.filter(
+        amenidad=amenidad, 
+        estado__in=['confirmada', 'bloqueada'], 
+        fecha_fin__gt=timezone.now()
+    )
     
     context = {
         'form': form,
         'amenidad': amenidad,
+        'reservas': reservas, # Pass reservations to the template
     }
     return render(request, 'complejos/bloquear_horario.html', context)
 

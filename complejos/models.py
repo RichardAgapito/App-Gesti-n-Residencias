@@ -1,13 +1,15 @@
 from django.db import models
 from django.conf import settings
 from django.core.exceptions import ValidationError
+import datetime
 
 class Amenidad(models.Model):
     nombre = models.CharField(max_length=100, unique=True)
     descripcion = models.TextField(blank=True, null=True)
     capacidad = models.PositiveIntegerField(default=1, help_text="Capacidad máxima de personas")
     reglas = models.TextField(blank=True, null=True, help_text="Reglas de uso de la amenidad")
-    horario_disponibilidad = models.CharField(max_length=255, blank=True, null=True, help_text="Ej: Lunes a Viernes de 9:00 a 22:00")
+    hora_inicio = models.TimeField(default=datetime.time(8, 0))
+    hora_fin = models.TimeField(default=datetime.time(22, 0))
 
     def __str__(self):
         return self.nombre
@@ -128,4 +130,5 @@ class Reserva(models.Model):
     def __str__(self):
         if self.estado == 'bloqueada':
             return f'Horario bloqueado para {self.amenidad.nombre}'
-        return f'Reserva de {self.amenidad.nombre} por {self.residente.email}' 
+        return f'Reserva de {self.amenidad.nombre} por {self.residente.email}'
+ 

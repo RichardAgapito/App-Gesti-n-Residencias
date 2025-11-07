@@ -75,6 +75,10 @@
             text-decoration: line-through;
             color: #adb5bd;
         }
+        .calendar td.fully-booked .day-number {
+            text-decoration: line-through;
+            color: #e74c3c;
+        }
 
         .calendar-nav {
             display: flex;
@@ -90,6 +94,7 @@
             border-radius: 5px;
             transition: background-color 0.2s, box-shadow 0.2s;
             width:50px;
+            color:blue;
         }
         .calendar-nav button:hover {
             background-color: #f8f9fa;
@@ -103,6 +108,10 @@
             padding: 0, 18px;
             text-align: center;
         
+        }
+
+        .calendar-nav button i {
+            font-weight: 900;
         }
 
         #time-slots-display {
@@ -218,7 +227,7 @@
     <div class="sidebar">
         <h2><i class="fa-solid fa-house-user"></i> Panel Residente</h2>
         <a href="{% url 'crear_reserva' %}" class="active"><i class="fa-solid fa-calendar-plus"></i> Reservar Amenidad</a>
-        <a href="{% url 'mis_reservas' %}"><i class="fa-solid fa-calendar-check"></i> Mis Reservas</a>
+        <a href="{% url 'mis_reservas' %} "><i class="fa-solid fa-calendar-check"></i> Mis Reservas</a>
     </div>
 
     <div class="main-content">
@@ -251,6 +260,18 @@
 
             <form method="post" id="reservation-form">
                 {% csrf_token %}
+                {% if form.errors %}
+                    <div class="alert alert-danger">
+                        <strong>Error:</strong>
+                        <ul>
+                        {% for field, error_list in form.errors.items %}
+                            {% for error in error_list %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
                 <h3>Confirmar Reserva</h3>
                 <div class="form-row">
                     <div class="form-group">
@@ -294,11 +315,15 @@ document.addEventListener('DOMContentLoaded', function() {
     const bookedDates = [
         {% for reserva in reservas %}
         {
-            start: new Date('{{ reserva.fecha_inicio|date:"c" }}'),
-            end: new Date('{{ reserva.fecha_fin|date:"c" }}')
+            start: new Date('{{ reserva.fecha_inicio|date:"Y-m-d\TH:i:s" }}'),
+            end: new Date('{{ reserva.fecha_fin|date:"Y-m-d\TH:i:s" }}')
         },
         {% endfor %}
     ];
+
+    const startHour = {{ amenidad.hora_inicio.hour }};
+    const endHour = {{ amenidad.hora_fin.hour }};
+    const interval = 60;
 
     // Helper function to format date to local ISO string (YYYY-MM-DDTHH:mm)
     function toLocalISOString(date) {
@@ -309,6 +334,30 @@ document.addEventListener('DOMContentLoaded', function() {
         const minutes = date.getMinutes().toString().padStart(2, '0');
 
         return `${year}-${month}-${day}T${hours}:${minutes}`;
+    }
+
+    function isDayFullyBooked(date) {
+        for (let hour = startHour; hour < endHour; hour++) {
+            const slotStart = new Date(date);
+            slotStart.setHours(hour, 0, 0, 0);
+            const slotEnd = new Date(date);
+            slotEnd.setHours(hour + (interval / 60), 0, 0, 0);
+
+            let isSlotBooked = false;
+            for (const reserva of bookedDates) {
+                const bookedStart = new Date(reserva.start);
+                const bookedEnd = new Date(reserva.end);
+                if (slotStart < bookedEnd && slotEnd > bookedStart) {
+                    isSlotBooked = true;
+                    break;
+                }
+            }
+
+            if (!isSlotBooked && slotStart >= new Date()) {
+                return false; // Found at least one available slot in the future
+            }
+        }
+        return true; // All slots for this day are booked or in the past
     }
 
     function renderCalendar() {
@@ -355,28 +404,20 @@ document.addEventListener('DOMContentLoaded', function() {
                         cell.classList.add('disabled');
                     }
                     else {
-                        cell.dataset.date = currentDate.toISOString().split('T')[0];
-                        cell.addEventListener('click', () => {
-                            if (cell.classList.contains('disabled')) return;
-                            if (selectedCalendarCell) {
-                                selectedCalendarCell.classList.remove('selected');
-                            }
-                            cell.classList.add('selected');
-                            selectedCalendarCell = cell;
-                            displayTimeSlots(currentDate);
-                        });
-                    }
-
-                    // Check if the day has any booked slots
-                    const hasBookedSlot = bookedDates.some(reserva => {
-                        const start = new Date(reserva.start);
-                        const end = new Date(reserva.end);
-                        return (currentDate.toDateString() === start.toDateString() || currentDate.toDateString() === end.toDateString()) ||
-                               (currentDate > start && currentDate < end);
-                    });
-
-                    if (hasBookedSlot) {
-                        dayNumber.classList.add('booked');
+                        if (isDayFullyBooked(currentDate)) {
+                            cell.classList.add('disabled', 'fully-booked');
+                        } else {
+                            cell.dataset.date = currentDate.toISOString().split('T')[0];
+                            cell.addEventListener('click', () => {
+                                if (cell.classList.contains('disabled')) return;
+                                if (selectedCalendarCell) {
+                                    selectedCalendarCell.classList.remove('selected');
+                                }
+                                cell.classList.add('selected');
+                                selectedCalendarCell = cell;
+                                displayTimeSlots(currentDate);
+                            });
+                        }
                     }
                     date++;
                 }
@@ -388,10 +429,6 @@ document.addEventListener('DOMContentLoaded', function() {
     function displayTimeSlots(selectedDate) {
         slotsGrid.innerHTML = '';
         selectedDateDisplay.textContent = selectedDate.toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-
-        const startHour = 8; // Amenity opens at 8 AM
-        const endHour = 22;  // Amenity closes at 10 PM
-        const interval = 60; // 1-hour slots
 
         let availableSlotsFound = false;
 

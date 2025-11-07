@@ -145,12 +145,9 @@
 
         <div class="amenidad-grid">
             {% for amenidad in amenidades %}
-                <div class="amenidad-card {% if amenidad.bloqueos_activos %}bloqueada{% endif %}">
+                <div class="amenidad-card">
                     <h3>
                         {{ amenidad.nombre }}
-                        {% if amenidad.bloqueos_activos %}
-                            <span class="badge">Bloqueada</span>
-                        {% endif %}
                     </h3>
 
                     <!-- (NUEVO) Detalles de la Amenidad -->
@@ -181,15 +178,9 @@
                         {% endif %}
                     </div>
 
-                    {% if amenidad.bloqueos_activos %}
-                        <p class="text-danger">Esta amenidad no está disponible para reservar en este momento.</p>
-                        <a href="#" class="btn-availability disabled">No Disponible</a>
-                    {% else %}
-                        <!-- (TODO) El enlace debe llevar a una vista de disponibilidad para esta amenidad -->
-                        <a href="{% url 'ver_disponibilidad' amenidad.id %}" class="btn-availability">
-                           <i class="fa-solid fa-calendar-days"></i> Ver Disponibilidad
-                        </a>
-                    {% endif %}
+                    <a href="{% url 'ver_disponibilidad' amenidad.id %}" class="btn-availability">
+                       <i class="fa-solid fa-calendar-days"></i> Ver Disponibilidad
+                    </a>
                 </div>
             {% empty %}
                 <p class="no-results-message">Este complejo no tiene amenidades para reservar.</p>
