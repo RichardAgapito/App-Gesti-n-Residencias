@@ -273,30 +273,42 @@ def asignar_contrato(request, propiedad_id):
     if request.method == 'POST':
         form = PropiedadPersonaForm(request.POST, propiedad=propiedad)
         if form.is_valid():
-            print(f"Persona 2: {form.cleaned_data['persona2']}")
-            tipo_relacion = form.cleaned_data['tipo_relacion']
+            # Determine the actual tipo_relacion for the first person
+            tipo_relacion_form = form.cleaned_data['tipo_relacion']
+            if tipo_relacion_form == 'co-propietario':
+                first_person_role = 'propietario'
+                second_person_role = 'co-propietario'
+            elif tipo_relacion_form == 'co-inquilino':
+                first_person_role = 'inquilino'
+                second_person_role = 'co-inquilino'
+            else:
+                # For single propietario or inquilino, roles are as submitted
+                first_person_role = tipo_relacion_form
+                second_person_role = None # No second person
+
+            # Create the first PropiedadPersona object
             propiedad_persona = PropiedadPersona(
                 propiedad=propiedad,
                 persona=form.cleaned_data['persona'],
-                tipo_relacion=tipo_relacion,
+                tipo_relacion=first_person_role,
                 porcentaje_propiedad=form.cleaned_data['porcentaje_propiedad'],
                 fecha_inicio=form.cleaned_data['fecha_inicio'],
                 fecha_fin=form.cleaned_data['fecha_fin'],
-                es_principal=True,
+                es_principal=True, # The first person is always principal
                 estado=form.cleaned_data['estado']
             )
             propiedad_persona.save()
 
-            if tipo_relacion in ['co-propietario', 'co-inquilino']:
-                # Create second person
+            # If it's a 'co-' relationship, create the second PropiedadPersona object
+            if second_person_role:
                 asignacion2 = PropiedadPersona(
                     propiedad=propiedad,
                     persona=form.cleaned_data['persona2'],
-                    tipo_relacion=tipo_relacion,
+                    tipo_relacion=second_person_role,
                     porcentaje_propiedad=form.cleaned_data['porcentaje_propiedad'],
                     fecha_inicio=form.cleaned_data['fecha_inicio'],
                     fecha_fin=form.cleaned_data['fecha_fin'],
-                    es_principal=False,  # The second person cannot be principal
+                    es_principal=False,
                     estado=form.cleaned_data['estado']
                 )
                 asignacion2.save()
@@ -516,3 +528,4 @@ def lista_contratos(request):
         'current_estado': estado,
     }
     return render(request, 'complejos/lista_contratos.html', context)
+
