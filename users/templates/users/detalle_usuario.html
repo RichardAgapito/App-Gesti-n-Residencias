@@ -1,21 +1,30 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block css_files %}
-    {{ block.super }}
+{% block bootstrap_css %}{% endblock %}
+{% block global_styles %}{% endblock %}
+
+{% block extra_css %}
     <link rel="stylesheet" href="{% static 'css/detalle_usuario.css' %}">
 {% endblock %}
 
 {% block content %}
 <div class="user-detail-container">
-    <h2>Detalles de: {{ user.persona.nombres }} {{ user.persona.apellidos }}</h2>
+    <div class="list-header">
+        <h1><i class="fa-solid fa-user-circle"></i> Detalles de: {{ user.persona.nombres }} {{ user.persona.apellidos }}</h1>
+        <a href="{% url 'editar_usuario' user.id %}" class="btn btn-warning">
+            <i class="fa-solid fa-pencil"></i> Editar Usuario
+        </a>
+    </div>
+    <hr>
+
     <div class="user-detail-info">
         <p><strong>Email:</strong> {{ user.email }}</p>
         <p><strong>Rol:</strong> {{ user.get_rol_display }}</p>
         <p><strong>Documento:</strong> {{ user.persona.get_tipo_documento_display }} - {{ user.persona.numero_documento }}</p>
         <p><strong>Teléfono:</strong> {{ user.persona.telefono }}</p>
         <p><strong>Fecha de Nacimiento:</strong> {{ user.persona.fecha_nacimiento }}</p>
-        <p><strong>Estado:</strong> {% if user.is_active %}Activo{% else %}Inactivo{% endif %}</p>
+        <p><strong>Estado:</strong> <span class="status-{% if user.is_active %}active{% else %}inactive{% endif %}">{% if user.is_active %}Activo{% else %}Inactivo{% endif %}</span></p>
         {% if user.rol == 'GUARDIA' and user.complejo_asignado %}
             <p><strong>Complejo Asignado:</strong> {{ user.complejo_asignado.nombre }}</p>
         {% endif %}
@@ -24,7 +33,6 @@
     <hr>
 
     <div class="action-links">
-        <a href="{% url 'editar_usuario' user.id %}" class="edit-link">Editar Usuario</a>
         <a href="{% url 'lista_usuarios' %}" class="back-link">← Volver a la lista de Usuarios</a>
     </div>
 </div>

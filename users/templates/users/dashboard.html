@@ -1,8 +1,16 @@
+{% extends 'base.html' %}
 {% load static %}
 
+{% block bootstrap_css %}{% endblock %}
+{% block global_styles %}{% endblock %}
+
 {% block extra_css %}
-    <link rel="stylesheet" href="{% static 'css/admin_dashboard.css' %}">
-{% endblock extra_css %}
+    {% if request.user.rol == 'ADMIN' %}
+        <link rel="stylesheet" href="{% static 'css/admin_dashboard.css' %}">
+    {% else %}
+        <link rel="stylesheet" href="{% static 'css/resident_dashboard.css' %}">
+    {% endif %}
+{% endblock %}
 
 {% block content %}
 {% if request.user.rol == 'ADMIN' %}
@@ -99,25 +107,68 @@
 
     </div>
 </div>
-
 {% else %}
-{# --- PANELES PARA OTROS ROLES --- #}
-<div class="other-role-panel">
-    {% if request.user.rol == 'GUARDIA' %}
-        <h2><i class="fa-solid fa-id-card"></i> Panel de Portería</h2>
-        <a href="#">Gestionar Visitantes</a>
-    {% elif request.user.rol == 'RESIDENTE' %}
-        <h2><i class="fa-solid fa-house-user"></i> Panel de Residente</h2>
-        <p>Aquí puedes reportar incidencias y reservar áreas comunes.</p>
-        <a href="{% url 'crear_reserva' %}" class="btn btn-primary">Reservar Amenidades</a>
-        <a href="{% url 'mis_reservas' %}" class="btn btn-secondary">Mis Reservas</a>
-    {% endif %}
+<!-- (INICIO) NUEVA ESTRUCTURA PARA RESIDENTE -->
+<div class="dashboard-container">
+    
+    <!-- 1. Barra Lateral (Sidebar) del Residente -->
+    <div class="sidebar">
+        <h2><i class="fa-solid fa-house-user"></i> Panel Residente</h2>
+        <a href="{% url 'crear_reserva' %}" class="active"><i class="fa-solid fa-calendar-plus"></i> Reservar Amenidad</a>
+        <a href="{% url 'mis_reservas' %}"><i class="fa-solid fa-calendar-check"></i> Mis Reservas</a>
+        <!-- <a href="#"><i class="fa-solid fa-triangle-exclamation"></i> Reportar Incidencia</a> -->
+        <!-- <a href="#"><i class="fa-solid fa-user-pen"></i> Mi Perfil</a> -->
+    </div>
 
-    <hr>
-    <form method="post" action="{% url 'logout' %}">
-        {% csrf_token %}
-        <button type="submit">Cerrar Sesión</button>
-    </form>
+    <!-- 2. Contenido Principal del Residente -->
+    <div class="main-content">
+        <!-- Encabezado con Logout -->
+        <header>
+            <h1>Bienvenido, {{ request.user.persona.nombres|default:request.user.email }}</h1>
+            <form method="post" action="{% url 'logout' %}">
+                {% csrf_token %}
+                <button type="submit"><i class="fa-solid fa-right-from-bracket"></i> Cerrar Sesión</button>
+            </form>
+        </header>
+
+        <!-- (NUEVO) SECCIÓN DE ACCIONES RÁPIDAS -->
+        <section class="quick-actions">
+            <h2><i class="fa-solid fa-bolt"></i> Acciones Rápidas</h2>
+            <p>Selecciona una de las operaciones más comunes:</p>
+            <div class="quick-actions-grid">
+                
+                <a href="{% url 'crear_reserva' %}" class="action-card">
+                    <div class="action-icon">
+                        <i class="fa-solid fa-calendar-plus"></i>
+                    </div>
+                    <h3>Reservar Amenidades</h3>
+                    <p>Crea una nueva reserva para las áreas comunes.</p>
+                </a>
+                
+                <a href="{% url 'mis_reservas' %}" class="action-card">
+                    <div class="action-icon">
+                        <i class="fa-solid fa-calendar-check"></i>
+                    </div>
+                    <h3>Mis Reservas</h3>
+                    <p>Consulta tus reservas activas y pasadas.</p>
+                </a>
+
+                <!--
+                <a href="#" class="action-card">
+                    <div class="action-icon">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                    </div>
+                    <h3>Reportar Incidencia</h3>
+                    <p>Informa sobre un problema o avería en el complejo.</p>
+                </a>
+                -->
+
+            </div>
+        </section>
+        <!-- (FIN) SECCIÓN DE ACCIONES RÁPIDAS -->
+
+    </div>
 </div>
+<!-- (FIN) NUEVA ESTRUCTURA PARA RESIDENTE -->
 {% endif %}
 {% endblock content %}

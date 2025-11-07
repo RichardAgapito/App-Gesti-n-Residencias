@@ -1,37 +1,218 @@
 {% extends 'base.html' %}
 {% load static %}
 
+{% block bootstrap_css %}{% endblock %}
+{% block global_styles %}{% endblock %}
+
+{% block extra_css %}
+    <!-- 1. (ELIMINADO) Ya no carga el CSS del dashboard -->
+    
+    <!-- 2. Estilos de esta página -->
+    <style>
+        /* (NUEVO) Estilos de Body y Contenedor Principal */
+        body {
+            background-color: #f0f2f5 !important;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            color: #333;
+        }
+        .amenidades-container {
+            max-width: 1400px;
+            margin: 2rem auto;
+            padding: 2rem;
+        }
+
+        .amenidades-container h2 {
+            color: #2c3e50;
+            margin-bottom: 2rem;
+            text-align: center;
+            font-size: 2rem;
+            font-weight: 600;
+        }
+        
+        /* (TUS ESTILOS ORIGINALES) */
+        .amenidades-content {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 2rem;
+        }
+        .amenidad-card {
+            background-color: #fff;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.07);
+        }
+        .amenidad-card h3 {
+            color: #34495e;
+            margin-top: 0;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Form Styles */
+        form .form-group {
+            margin-bottom: 1.2rem;
+        }
+        form label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #555;
+        }
+        form input[type="text"],
+        form input[type="number"],
+        form textarea {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid #ced4da;
+            border-radius: 5px;
+            font-size: 1rem;
+            box-sizing: border-box; /* Añadido para consistencia */
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        form input:focus, form textarea:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.15);
+        }
+        form .form-errors {
+            color: #e74c3c;
+            font-size: 0.9rem;
+            margin-top: 0.3rem;
+        }
+        .btn-submit {
+            width: 100%;
+            padding: 12px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .btn-submit:hover {
+            background-color: #2980b9;
+        }
+
+        /* Amenity List Styles */
+        .amenidades-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .amenidad-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            border-bottom: 1px solid #f1f3f5;
+        }
+        .amenidad-item:last-child {
+            border-bottom: none;
+        }
+        .amenidad-item span {
+            font-weight: 500;
+            color: #333;
+        }
+        .amenidad-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+        .amenidad-actions a {
+            padding: 8px 12px;
+            border-radius: 5px;
+            text-decoration: none;
+            color: white;
+            font-size: 0.85rem;
+            transition: opacity 0.2s;
+        }
+        .amenidad-actions a:hover { opacity: 0.85; }
+        .btn-edit { background-color: #f39c12; }
+        .btn-block { background-color: #e74c3c; }
+        .btn-delete { background-color: #95a5a6; }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 2rem;
+            text-decoration: none;
+            color: #3498db;
+            font-weight: 500;
+        }
+
+        /* Responsive */
+        @media (max-width: 992px) {
+            .amenidades-content {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+{% endblock %}
+
 {% block content %}
-<div class="container">
-    <h2>Gestionar Amenidades</h2>
-
-    <div class="row">
-        <div class="col-md-6">
-            <h3>Crear Nueva Amenidad</h3>
+<!-- (INICIO) ESTRUCTURA STANDALONE -->
+<div class="amenidades-container">
+    
+    <h2><i class="fas fa-concierge-bell"></i> Gestionar Amenidades</h2>
+            
+    <div class="amenidades-content">
+        <div class="amenidad-card">
+            <h3><i class="fas fa-plus-circle"></i> Crear Nueva Amenidad</h3>
             <form method="post">
-                {% csrf_token %}
-                {{ form.as_p }}
-                <button type="submit" class="btn btn-primary">Crear Amenidad</button>
-            </form>
-        </div>
-        <div class="col-md-6">
-            <h3>Amenidades Existentes</h3>
-            <ul class="list-group">
-                {% for amenidad in amenidades %}
-                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                        {{ amenidad.nombre }}
-                        <div>
-                            <a href="{% url 'editar_amenidad' amenidad.id %}" class="btn btn-sm btn-warning">Editar</a>
-                            <a href="{% url 'eliminar_amenidad' amenidad.id %}" class="btn btn-sm btn-danger">Eliminar</a>
+                    {% csrf_token %}
+                    {% if form.non_field_errors %}
+                        <div class="form-errors">
+                            {{ form.non_field_errors }}
                         </div>
-                    </li>
-                {% empty %}
-                    <li class="list-group-item">No hay amenidades creadas.</li>
-                {% endfor %}
-            </ul>
-        </div>
-    </div>
+                    {% endif %}
+                    
+                    {% for field in form %}
+                        <div class="form-group">
+                            {{ field.label_tag }}
+                            {{ field }}
+                            {% if field.help_text %}
+                                <small style="color: #777;">{{ field.help_text }}</small>
+                            {% endif %}
+                            {% for error in field.errors %}
+                                <div class="form-errors">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endfor %}
+                    
+                    <button type="submit" class="btn-submit">Guardar Amenidad</button>
+                </form>
+            </div>
 
-    <a href="{% url 'dashboard' %}" class="btn btn-secondary mt-3">Volver al Dashboard</a>
+            <div class="amenidad-card">
+                <h3><i class="fas fa-list-ul"></i> Amenidades Existentes</h3>
+                <ul class="amenidades-list">
+                    {% for amenidad in amenidades %}
+                        <li class="amenidad-item">
+                            <span>{{ amenidad.nombre }}</span>
+                            <div class="amenidad-actions">
+                                <a href="{% url 'editar_amenidad' amenidad.id %}" class="btn-edit" title="Editar">
+                                    <i class="fas fa-pencil-alt"></i>
+                                </a>
+                                <a href="{% url 'bloquear_horario' amenidad.id %}" class="btn-block" title="Bloquear Horario">
+                                    <i class="fas fa-ban"></i>
+                                </a>
+                                <a href="{% url 'eliminar_amenidad' amenidad.id %}" class="btn-delete" title="Eliminar">
+                                    <i class="fas fa-trash-alt"></i>
+                                </a>
+                            </div>
+                        </li>
+                    {% empty %}
+                        <li class="amenidad-item-empty">No hay amenidades creadas.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+
+        <a href="{% url 'dashboard' %}" class="back-link"> <i class="fas fa-arrow-left"></i> Volver al Dashboard</a>
+        
 </div>
+<!-- (FIN) ESTRUCTURA STANDALONE -->
 {% endblock %}

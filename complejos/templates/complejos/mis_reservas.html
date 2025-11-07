@@ -1,37 +1,129 @@
 {% extends 'base.html' %}
 {% load static %}
 
+{% block bootstrap_css %}{% endblock %}
+{% block global_styles %}{% endblock %}
+
+{% block extra_css %}
+    <!-- 1. Carga los estilos del dashboard (sidebar, header, etc.) -->
+    <link rel="stylesheet" href="{% static 'css/resident_dashboard.css' %}">
+    
+    <!-- 2. (OPCIONAL) Estilos solo para la tabla de esta página -->
+    <style>
+        .reservas-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1.5rem;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            overflow: hidden; /* Para que los bordes redondeados se apliquen a la tabla */
+        }
+        .reservas-table th, .reservas-table td {
+            border-bottom: 1px solid #e0e0e0;
+            padding: 1rem 1.5rem;
+            text-align: left;
+        }
+        .reservas-table thead {
+            background-color: #f4f7f6;
+        }
+        .reservas-table th {
+            font-weight: 600;
+            color: #34495e;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .reservas-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+        .reservas-table tbody tr:hover {
+            background-color: #f8faff;
+        }
+        
+        .status-confirmada {
+            color: #27ae60;
+            font-weight: 600;
+        }
+        .status-pendiente {
+            color: #f39c12;
+            font-weight: 600;
+        }
+        .status-cancelada {
+            color: #e74c3c;
+            font-weight: 600;
+        }
+
+        /* Estilo para el botón de "Nueva Reserva" en el header */
+        .btn-primary {
+            background-color: #2ecc71;
+            color: white;
+            padding: 10px 18px;
+            border-radius: 4px;
+        }
+        .btn-primary:hover {
+            background-color: #27ae60;
+         
+        }
+    </style>
+{% endblock %}
+
 {% block content %}
-<div class="container">
-    <h2>Mis Reservas</h2>
+<!-- (INICIO) ESTRUCTURA DEL DASHBOARD DE RESIDENTE -->
+<div class="dashboard-container">
+    
+    <!-- 1. Barra Lateral (Sidebar) del Residente -->
+    <div class="sidebar">
+        <h2><i class="fa-solid fa-house-user"></i> Panel Residente</h2>
+        <a href="{% url 'crear_reserva' %}"><i class="fa-solid fa-calendar-plus"></i> Reservar Amenidad</a>
+        <a href="{% url 'mis_reservas' %}" class="active"><i class="fa-solid fa-calendar-check"></i> Mis Reservas</a>
+        <!-- <a href="#"><i class="fa-solid fa-triangle-exclamation"></i> Reportar Incidencia</a> -->
+        <!-- <a href="#"><i class="fa-solid fa-user-pen"></i> Mi Perfil</a> -->
+    </div>
 
-    <a href="{% url 'crear_reserva' %}" class="btn btn-primary mb-3">Hacer una nueva reserva</a>
+    <!-- 2. Contenido Principal del Residente -->
+    <div class="main-content">
+        
+        <!-- Encabezado con Logout (¡Ahora dentro de main-content!) -->
+        <header>
+            <h1><i class="fa-solid fa-calendar-check"></i> Mis Reservas</h1>
+            <a href="{% url 'crear_reserva' %}" class="btn btn-primary">
+                <i class="fa-solid fa-plus"></i> Nueva Reserva
+            </a>
+        </header>
 
-    {% if reservas %}
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Amenidad</th>
-                    <th>Fecha de Inicio</th>
-                    <th>Fecha de Fin</th>
-                    <th>Estado</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for reserva in reservas %}
+        <!-- (INICIO) TU CONTENIDO DE "MIS RESERVAS" -->
+        
+        {% if reservas %}
+            <table class="reservas-table">
+                <thead>
                     <tr>
-                        <td>{{ reserva.amenidad.nombre }}</td>
-                        <td>{{ reserva.fecha_inicio }}</td>
-                        <td>{{ reserva.fecha_fin }}</td>
-                        <td>{{ reserva.get_estado_display }}</td>
+                        <th>Amenidad</th>
+                        <th>Fecha de Inicio</th>
+                        <th>Fecha de Fin</th>
+                        <th>Estado</th>
                     </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% else %}
-        <p>No tienes ninguna reserva.</p>
-    {% endif %}
+                </thead>
+                <tbody>
+                    {% for reserva in reservas %}
+                        <tr>
+                            <td>{{ reserva.amenidad.nombre }}</td>
+                            <td>{{ reserva.fecha_inicio|date:"d M Y, H:i" }}</td>
+                            <td>{{ reserva.fecha_fin|date:"d M Y, H:i" }}</td>
+                            <td>
+                                <span class="status-{{ reserva.estado }}">{{ reserva.get_estado_display }}</span>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>No tienes ninguna reserva.</p>
+        {% endif %}
 
-    <a href="{% url 'dashboard' %}" class="btn btn-secondary">Volver al Dashboard</a>
+        <!-- (FIN) TU CONTENIDO DE "MIS RESERVAS" -->
+
+    </div>
 </div>
+<!-- (FIN) ESTRUCTURA DEL DASHBOARD DE RESIDENTE -->
 {% endblock %}

@@ -84,9 +84,12 @@
                                     <i class="fa-solid fa-pencil"></i> Editar
                                 </a>
                                 {% if not user.is_superuser %}
-                                <a href="{% url 'eliminar_usuario' user.id %}" class="btn {% if user.is_active %}btn-danger{% else %}btn-success{% endif %} btn-sm">
-                                    <i class="fa-solid {% if user.is_active %}fa-toggle-off{% else %}fa-toggle-on{% endif %}"></i> {% if user.is_active %}Desactivar{% else %}Activar{% endif %}
-                                </a>
+                                <form action="{% url 'toggle_user_active' user.id %}" method="post" style="display: inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn {% if user.is_active %}btn-danger{% else %}btn-success{% endif %} btn-sm">
+                                        <i class="fa-solid {% if user.is_active %}fa-toggle-off{% else %}fa-toggle-on{% endif %}"></i> {% if user.is_active %}Desactivar{% else %}Activar{% endif %}
+                                    </button>
+                                </form>
                                 {% endif %}
                             </div>
                         </div>

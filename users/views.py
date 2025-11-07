@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, user_passes_test
+from django.views.decorators.http import require_POST
 from django.db.models import Q
 from .forms import CustomUserCreationForm, EditarUsuarioForm
 from .models import CustomUser
@@ -97,20 +98,10 @@ def editar_usuario_view(request, user_id):
     return render(request, 'users/editar_usuario.html', context)
 
 @user_passes_test(es_admin, login_url='/')
-def eliminar_usuario_view(request, user_id):
-    user_to_change = get_object_or_404(CustomUser, id=user_id)
-
-    if user_to_change.is_superuser:
-        # No se puede desactivar a un superusuario
-        return redirect('lista_usuarios')
-
-    if request.method == 'POST':
-        # Cambia el estado en lugar de eliminar
-        user_to_change.is_active = not user_to_change.is_active
-        user_to_change.save()
-        return redirect('lista_usuarios')
-
-    context = {
-        'user': user_to_change
-    }
-    return render(request, 'users/confirmar_eliminar_usuario.html', context)
+@require_POST
+def toggle_user_active(request, user_id):
+    user = get_object_or_404(CustomUser, id=user_id)
+    if not user.is_superuser:
+        user.is_active = not user.is_active
+        user.save()
+    return redirect('lista_usuarios')

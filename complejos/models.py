@@ -4,6 +4,10 @@ from django.core.exceptions import ValidationError
 
 class Amenidad(models.Model):
     nombre = models.CharField(max_length=100, unique=True)
+    descripcion = models.TextField(blank=True, null=True)
+    capacidad = models.PositiveIntegerField(default=1, help_text="Capacidad máxima de personas")
+    reglas = models.TextField(blank=True, null=True, help_text="Reglas de uso de la amenidad")
+    horario_disponibilidad = models.CharField(max_length=255, blank=True, null=True, help_text="Ej: Lunes a Viernes de 9:00 a 22:00")
 
     def __str__(self):
         return self.nombre
@@ -107,17 +111,21 @@ class PropiedadPersona(models.Model):
 
 class Reserva(models.Model):
     ESTADO_CHOICES = (
+        ('pendiente', 'Pendiente'),
         ('confirmada', 'Confirmada'),
         ('cancelada', 'Cancelada'),
         ('completada', 'Completada'),
+        ('bloqueada', 'Bloqueada'),
     )
 
     amenidad = models.ForeignKey(Amenidad, on_delete=models.CASCADE, related_name='reservas')
-    residente = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='reservas')
+    residente = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='reservas', null=True, blank=True)
     fecha_inicio = models.DateTimeField()
     fecha_fin = models.DateTimeField()
-    estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='confirmada')
+    estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='pendiente')
     fecha_creacion = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
+        if self.estado == 'bloqueada':
+            return f'Horario bloqueado para {self.amenidad.nombre}'
         return f'Reserva de {self.amenidad.nombre} por {self.residente.email}' 
