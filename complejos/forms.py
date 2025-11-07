@@ -172,7 +172,83 @@ class ReservaForm(forms.ModelForm):
         if self.amenidad and fecha_inicio and fecha_fin:
             reservas_en_conflicto = Reserva.objects.filter(
                 amenidad=self.amenidad,
-                estado='confirmada',
+                estado__in=['confirmada', 'bloqueada'],
+                fecha_inicio__lt=fecha_fin,
+                fecha_fin__gt=fecha_inicio
+            ).exists()
+
+            if reservas_en_conflicto:
+                raise ValidationError("Este horario ya no está disponible. Por favor, elige otro.")
+
+        return cleaned_data
+
+class AdminReservaForm(forms.ModelForm):
+    residente = forms.ModelChoiceField(
+        queryset=get_user_model().objects.filter(rol='RESIDENTE', is_active=True),
+        label="Residente"
+    )
+
+    class Meta:
+        model = Reserva
+        fields = ['residente', 'amenidad', 'fecha_inicio', 'fecha_fin', 'estado']
+        widgets = {
+            'fecha_inicio': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
+            'fecha_fin': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
+        }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        fecha_inicio = cleaned_data.get('fecha_inicio')
+        fecha_fin = cleaned_data.get('fecha_fin')
+        amenidad = cleaned_data.get('amenidad')
+
+        if fecha_inicio and fecha_inicio < timezone.now():
+            raise ValidationError("La fecha de inicio no puede ser en el pasado.")
+
+        if fecha_inicio and fecha_fin and fecha_fin <= fecha_inicio:
+            raise ValidationError("La fecha de fin debe ser posterior a la fecha de inicio.")
+
+        if amenidad and fecha_inicio and fecha_fin:
+            reservas_en_conflicto = Reserva.objects.filter(
+                amenidad=amenidad,
+                estado__in=['confirmada', 'bloqueada'],
+                fecha_inicio__lt=fecha_fin,
+                fecha_fin__gt=fecha_inicio
+            ).exclude(pk=self.instance.pk)
+
+            if reservas_en_conflicto.exists():
+                raise ValidationError("Este horario ya no está disponible. Por favor, elige otro.")
+
+        return cleaned_data
+
+class BloquearHorarioForm(forms.ModelForm):
+    class Meta:
+        model = Reserva
+        fields = ['fecha_inicio', 'fecha_fin']
+        widgets = {
+            'fecha_inicio': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
+            'fecha_fin': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        self.amenidad = kwargs.pop('amenidad', None)
+        super().__init__(*args, **kwargs)
+
+    def clean(self):
+        cleaned_data = super().clean()
+        fecha_inicio = cleaned_data.get('fecha_inicio')
+        fecha_fin = cleaned_data.get('fecha_fin')
+
+        if fecha_inicio and fecha_inicio < timezone.now():
+            raise ValidationError("La fecha de inicio no puede ser en el pasado.")
+
+        if fecha_inicio and fecha_fin and fecha_fin <= fecha_inicio:
+            raise ValidationError("La fecha de fin debe ser posterior a la fecha de inicio.")
+
+        if self.amenidad and fecha_inicio and fecha_fin:
+            reservas_en_conflicto = Reserva.objects.filter(
+                amenidad=self.amenidad,
+                estado__in=['confirmada', 'bloqueada'],
                 fecha_inicio__lt=fecha_fin,
                 fecha_fin__gt=fecha_inicio
             ).exists()

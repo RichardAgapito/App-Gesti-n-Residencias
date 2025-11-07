@@ -1,55 +1,65 @@
 {% extends 'base.html' %}
+{% load static %}
+
+{% block bootstrap_css %}{% endblock %}
+{% block global_styles %}{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/crear_complejo.css' %}">
+{% endblock %}
 
 {% block content %}
-    <h2>Asignar Contrato a {{ propiedad.numero_identificador }}</h2>
+<div class="form-container">
+    <h2><i class="fa-solid fa-file-signature"></i> Asignar Contrato a {{ propiedad.numero_identificador }}</h2>
     <form method="post">
         {% csrf_token %}
         {{ form.non_field_errors }}
-        <p>
+        <div class="form-group">
             <label for="{{ form.tipo_relacion.id_for_label }}">Tipo de relación:</label>
             {{ form.tipo_relacion }}
             {{ form.tipo_relacion.errors }}
-        </p>
-        <p>
+        </div>
+        <div class="form-group">
             <label for="{{ form.persona.id_for_label }}">Persona:</label>
             {{ form.persona }}
             {{ form.persona.errors }}
-        </p>
-        <p id="persona2-container" style="display: none;">
+        </div>
+        <div class="form-group" id="persona2-container" style="display: none;">
             <label for="{{ form.persona2.id_for_label }}">Segunda Persona:</label>
             {{ form.persona2 }}
             {{ form.persona2.errors }}
-        </p>
-        <p>
+        </div>
+        <div class="form-group">
             <label for="{{ form.porcentaje_propiedad.id_for_label }}">Porcentaje de propiedad:</label>
             {{ form.porcentaje_propiedad }}
             {{ form.porcentaje_propiedad.errors }}
-        </p>
-        <p>
+        </div>
+        <div class="form-group">
             <label for="{{ form.fecha_inicio.id_for_label }}">Fecha de inicio:</label>
             {{ form.fecha_inicio }}
             {{ form.fecha_inicio.errors }}
-        </p>
-        <p>
+        </div>
+        <div class="form-group">
             <label for="{{ form.fecha_fin.id_for_label }}">Fecha de fin:</label>
             {{ form.fecha_fin }}
             {{ form.fecha_fin.errors }}
-        </p>
-        <p>
+        </div>
+        <div class="form-group">
             <label for="{{ form.estado.id_for_label }}">Estado:</label>
             {{ form.estado }}
             {{ form.estado.errors }}
-        </p>
+        </div>
 
         <div id="miembro-principal-display"></div>
 
-        <button type="submit">Guardar</button>
+        <button type="submit" class="btn-submit">Guardar Contrato</button>
     </form>
-    <br>
-    <a href="{% url 'detalle_propiedad' propiedad.id %}">Cancelar</a>
-
+    <a href="{% url 'detalle_propiedad' propiedad.id %}" class="back-link">Cancelar y Volver a los Detalles</a>
     <p><small>Nota: La primera persona seleccionada será considerada el co-propietario/co-inquilino principal.</small></p>
+</div>
+{% endblock %}
 
+{% block extra_js %}
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const tipoRelacionField = document.getElementById('id_tipo_relacion');

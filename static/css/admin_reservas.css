@@ -1,0 +1,273 @@
+/* Estilos para la página de administración de reservas */
+
+body {
+    background-color: #f0f2f5;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    color: #333;
+}
+
+.reservas-container {
+    max-width: 1400px;
+    margin: 2rem auto;
+    padding: 2rem 2.5rem; /* Más padding lateral */
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.header-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 1.5rem;
+}
+
+.reservas-container h2 {
+    color: #2c3e50;
+    margin: 0; /* Reset margin for h2 inside header-actions */
+    font-size: 2rem;
+    font-weight: 600;
+}
+
+.btn-create {
+    background-color: #28a745; /* Green for create */
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 500;
+    text-decoration: none;
+    transition: background-color 0.2s;
+}
+
+.btn-create:hover {
+    background-color: #218838;
+}
+
+/* --- Formulario de Filtros --- */
+.filter-form {
+    background-color: #f8f9fa;
+    padding: 1.5rem 2rem;
+    border-radius: 6px;
+    margin-bottom: 2rem;
+    border: 1px solid #e9ecef;
+}
+
+.filter-form .form-row {
+    display: flex;
+    flex-wrap: wrap; /* Para que sea responsive en pantallas pequeñas */
+    align-items: flex-end; /* Alinea los elementos por la base */
+    gap: 1.5rem;
+}
+
+.filter-form .form-group {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1; /* Permite que los inputs crezcan */
+    min-width: 180px; /* Ancho mínimo para cada filtro */
+}
+
+.filter-form .form-group label {
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: #495057;
+    font-size: 0.9rem;
+}
+
+.filter-form .form-group select {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    border: 1px solid #ced4da;
+    border-radius: 5px;
+    background-color: #fff;
+    box-sizing: border-box;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.filter-form .form-group select:focus {
+    border-color: #3498db;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+    outline: none;
+}
+
+/* El grupo del botón no necesita crecer tanto */
+.filter-form .form-group:last-child {
+    flex-grow: 0;
+}
+
+.btn-filter {
+    background-color: #3498db;
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 500;
+    transition: background-color 0.2s;
+    white-space: nowrap; /* Evita que el texto se parta */
+}
+
+.btn-filter:hover {
+    background-color: #2980b9;
+}
+
+/* --- Tabla de Reservas --- */
+.reservas-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 2rem;
+    font-size: 0.95rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    border-radius: 8px;
+    overflow: hidden; /* Para que los bordes redondeados se apliquen a la tabla */
+}
+
+.reservas-table thead {
+    background-color: #f1f4f8;
+}
+
+.reservas-table th {
+    color: #34495e;
+    font-weight: 600;
+    padding: 1rem;
+    text-align: left;
+    border-bottom: 2px solid #e0e6ed;
+}
+
+.reservas-table tbody tr {
+    border-bottom: 1px solid #eef1f5;
+    transition: background-color 0.15s;
+}
+
+.reservas-table tbody tr:last-child {
+    border-bottom: none;
+}
+
+.reservas-table tbody tr:hover {
+    background-color: #f8faff;
+}
+
+.reservas-table td {
+    padding: 1rem;
+    color: #555;
+    vertical-align: middle;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-start;
+}
+
+.btn-edit {
+    display: inline-block;
+    background-color: #ffc107; /* Warning yellow */
+    color: #212529; /* Dark text for contrast */
+    padding: 6px 12px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-size: 0.85rem;
+    font-weight: 500;
+    transition: background-color 0.2s;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-edit:hover {
+    background-color: #e0a800;
+}
+
+.btn-approve {
+    display: inline-block;
+    background-color: #28a745; /* Success green */
+    color: #fff;
+    padding: 6px 12px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-size: 0.85rem;
+    font-weight: 500;
+    transition: background-color 0.2s;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-approve:hover {
+    background-color: #218838;
+}
+
+.btn-reject {
+    display: inline-block;
+    background-color: #dc3545; /* Danger red */
+    color: #fff;
+    padding: 6px 12px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-size: 0.85rem;
+    font-weight: 500;
+    transition: background-color 0.2s;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-reject:hover {
+    background-color: #c82333;
+
+
+
+}
+
+/* --- Botón de Acción en la Tabla --- */
+.btn-cancel {
+    display: inline-block;
+    background-color: #dc3545; /* Danger red */
+    color: #fff;
+    padding: 6px 12px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-size: 0.85rem;
+    font-weight: 500;
+    transition: background-color 0.2s;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-cancel:hover {
+    background-color: #c82333;
+}
+
+/* --- Mensajes y Enlaces --- */
+.no-reservas {
+    text-align: center;
+    font-size: 1.1rem;
+    color: #777;
+    padding: 3rem 0;
+    background-color: #fdfdfd;
+    border-radius: 8px;
+    margin-top: 2rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+}
+
+.back-link {
+    display: inline-block;
+    margin-top: 2rem;
+    color: #007bff; /* Primary blue */
+    text-decoration: none;
+    font-weight: 600;
+    padding: 0.75rem 1.5rem;
+    border: 1px solid #007bff;
+    border-radius: 5px;
+    transition: all 0.2s;
+}
+
+.back-link:hover {
+    background-color: #007bff;
+    color: white;
+    text-decoration: none;
+}

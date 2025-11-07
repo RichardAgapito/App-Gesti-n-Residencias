@@ -1,0 +1,21 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+
+{% block bootstrap_css %}{% endblock %}
+{% block global_styles %}{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/admin_reserva_form.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <h2>{% if form.instance.pk %}Editar{% else %}Crear{% endif %} Reserva</h2>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn-submit">Guardar</button>
+    </form>
+    <a href="{% url 'admin_reservas' %}" class="back-link">Cancelar</a>
+</div>
+{% endblock %}

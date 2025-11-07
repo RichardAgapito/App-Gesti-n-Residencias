@@ -1,67 +1,104 @@
 {% extends 'base.html' %}
+{% load static %}
+
+{% block bootstrap_css %}{% endblock %}
+{% block global_styles %}{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/complejos.css' %}">
+{% endblock %}
 
 {% block content %}
-    <h2>Detalles de: {{ complejo.nombre }}</h2>
-    <p><strong>Dirección:</strong> {{ complejo.calle }}, {{ complejo.ciudad }}, {{ complejo.codigo_postal }}</p>
-    <p><strong>Tipo:</strong> {{ complejo.get_tipo_display }}</p>
-    <p><strong>Unidades:</strong> {{ complejo.numero_total_unidades }}</p>
-    <p><strong>Amenidades:</strong></p>
-    <ul>
-        {% for amenidad in complejo.amenidades.all %}
-            <li>{{ amenidad.nombre }}</li>
-        {% empty %}
-            <li>No hay amenidades registradas para este complejo.</li>
-        {% endfor %}
-    </ul>
-    <p><strong>Administrador:</strong> {{ complejo.administrador_responsable }}</p>
-    <p><strong>Teléfono:</strong> {{ complejo.telefono_contacto }}</p>
-    <p><strong>Estado:</strong> {{ complejo.get_estado_display }}</p>
-    
-    <hr>
-
-    <h3>Propiedades en este Complejo</h3>
-    <a href="{% url 'editar_complejo' complejo.id %}" class="btn btn-warning">Editar Complejo</a>
-    <a href="{% url 'crear_propiedad' complejo.id %}" class="btn btn-primary">Registrar Nueva Propiedad</a>
-    <a href="{% url 'crear_propiedades_multiples' complejo.id %}" class="btn btn-secondary">Registro Múltiple de Propiedades</a>
-
-    <form method="get" action="{% url 'detalle_complejo' complejo.id %}" class="form-inline mt-3 mb-3">
-        <input class="form-control mr-sm-2" type="search" placeholder="Buscar por ID..." name="q" value="{{ query|default:'' }}">
-        
-        <select name="estado" class="form-control mr-sm-2">
-            <option value="">Todos los estados</option>
-            {% for value, name in estado_choices %}
-                <option value="{{ value }}" {% if current_estado == value %}selected{% endif %}>{{ name }}</option>
-            {% endfor %}
-        </select>
-
-        <input class="form-control mr-sm-2" type="number" placeholder="Habitaciones" name="habitaciones" value="{{ current_habitaciones|default:'' }}">
-        
-        <input class="form-control mr-sm-2" type="number" placeholder="Baños" name="banos" value="{{ current_banos|default:'' }}">
-
-        <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Buscar y Filtrar</button>
-    </form>
-    
-    {% if propiedades %}
-        <div class="propiedades-grid">
-            {% for propiedad in propiedades %}
-                <a href="{% url 'detalle_propiedad' propiedad.id %}" class="propiedad-card-link">
-                    <div class="propiedad-card">
-                        <h4>{{ propiedad.numero_identificador }}</h4>
-                        <p><strong>Tipo:</strong> {{ propiedad.get_tipo_display }}</p>
-                        <p><strong>Área:</strong> {{ propiedad.area }} m²</p>
-                        <p><strong>Habitaciones:</strong> {{ propiedad.numero_habitaciones }}</p>
-                        <p><strong>Baños:</strong> {{ propiedad.numero_banos }}</p>
-                        <p><strong>Piso/Nivel:</strong> {{ propiedad.piso_nivel }}</p>
-                        <p><strong>Estado:</strong> {{ propiedad.get_estado_ocupacion_display }}</p>
-                    </div>
-                </a>
-            {% endfor %}
+<div class="complejos-container">
+    <div class="list-header">
+        <h1><i class="fa-solid fa-building-user"></i> Detalles de: {{ complejo.nombre }}</h1>
+        <div>
+            <a href="{% url 'editar_complejo' complejo.id %}" class="btn btn-warning">
+                <i class="fa-solid fa-pencil"></i> Editar Complejo
+            </a>
+            <a href="{% url 'crear_propiedad' complejo.id %}" class="btn btn-primary">
+                <i class="fa-solid fa-plus"></i> Registrar Nueva Propiedad
+            </a>
         </div>
-    {% else %}
-        <p>No hay propiedades registradas para este complejo todavía.</p>
-    {% endif %}
-
-    <br>
+    </div>
     <hr>
-    <a href="{% url 'lista_complejos' %}">← Volver a la lista de Complejos</a>
+
+    <div class="list-layout-container">
+        <aside class="filter-sidebar">
+            <h3><i class="fa-solid fa-info-circle"></i> Información General</h3>
+            <div class="complejo-details">
+                <p><strong>Dirección:</strong> {{ complejo.calle }}, {{ complejo.ciudad }}, {{ complejo.codigo_postal }}</p>
+                <p><strong>Tipo:</strong> {{ complejo.get_tipo_display }}</p>
+                <p><strong>Unidades:</strong> {{ complejo.numero_total_unidades }}</p>
+                <p><strong>Administrador:</strong> {{ complejo.administrador_responsable }}</p>
+                <p><strong>Teléfono:</strong> {{ complejo.telefono_contacto }}</p>
+                <p><strong>Estado:</strong> <span class="status-{% if complejo.estado == 'activo' %}active{% else %}inactive{% endif %}">{{ complejo.get_estado_display }}</span></p>
+                <p><strong>Amenidades:</strong></p>
+                <ul>
+                    {% for amenidad in complejo.amenidades.all %}
+                        <li>{{ amenidad.nombre }}</li>
+                    {% empty %}
+                        <li>No hay amenidades registradas.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <hr>
+            <h3><i class="fa-solid fa-filter"></i> Filtros de Propiedades</h3>
+            <form method="get" action="{% url 'detalle_complejo' complejo.id %}" class="filters-form-vertical">
+                <div class="form-group">
+                    <label for="q">Buscar por ID</label>
+                    <input type="search" id="q" name="q" value="{{ query|default:'' }}">
+                </div>
+                <div class="form-group">
+                    <label for="estado">Estado de Ocupación</label>
+                    <select id="estado" name="estado">
+                        <option value="">Todos los estados</option>
+                        {% for value, name in estado_choices %}
+                            <option value="{{ value }}" {% if current_estado == value %}selected{% endif %}>{{ name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="habitaciones">Habitaciones</label>
+                    <input type="number" id="habitaciones" name="habitaciones" value="{{ current_habitaciones|default:'' }}">
+                </div>
+                <div class="form-group">
+                    <label for="banos">Baños</label>
+                    <input type="number" id="banos" name="banos" value="{{ current_banos|default:'' }}">
+                </div>
+                <button type="submit">Aplicar Filtros</button>
+            </form>
+        </aside>
+
+        <main class="results-content">
+            <h3><i class="fa-solid fa-door-closed"></i> Propiedades en este Complejo</h3>
+            <a href="{% url 'crear_propiedades_multiples' complejo.id %}" class="btn btn-secondary mb-3">
+                <i class="fa-solid fa-plus-circle"></i> Registro Múltiple de Propiedades
+            </a>
+            {% if propiedades %}
+                <div class="complejo-grid">
+                    {% for propiedad in propiedades %}
+                        <div class="complejo-card">
+                            <h4>{{ propiedad.numero_identificador }}</h4>
+                            <p><strong>Tipo:</strong> {{ propiedad.get_tipo_display }}</p>
+                            <p><strong>Área:</strong> {{ propiedad.area }} m²</p>
+                            <p><strong>Habitaciones:</strong> {{ propiedad.numero_habitaciones }}</p>
+                            <p><strong>Baños:</strong> {{ propiedad.numero_banos }}</p>
+                            <p><strong>Piso/Nivel:</strong> {{ propiedad.piso_nivel }}</p>
+                            <p><strong>Estado:</strong> {{ propiedad.get_estado_ocupacion_display }}</p>
+                            <div class="action-links">
+                                <a href="{% url 'detalle_propiedad' propiedad.id %}" class="btn btn-info">
+                                    <i class="fa-solid fa-eye"></i> Ver Detalles
+                                </a>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="no-results-message">No hay propiedades registradas para este complejo todavía.</p>
+            {% endif %}
+        </main>
+    </div>
+    <a href="{% url 'lista_complejos' %}" class="back-link">← Volver a la lista de Complejos</a>
+</div>
 {% endblock %}

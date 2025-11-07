@@ -3,26 +3,22 @@ body {
     background-color: #f4f7f6 !important;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     color: #333;
-    /* 1. Forzamos el body a no tener scroll */
     margin: 0;
     padding: 0;
-    overflow: hidden; /* ¡CLAVE! */
+    overflow: hidden;
 }
 
 /* --- Contenedor Principal --- */
-.user-list-container {
-    /* 2. Hacemos que el contenedor ocupe toda la pantalla */
+.complejos-container {
     width: 100%;
-    height: 100vh; /* ¡CLAVE! */
+    height: 100vh;
     max-width: none;
     margin: 0;
     padding: 2rem 3rem;
     background-color: #ffffff;
     border-radius: 0;
     box-shadow: none;
-    box-sizing: border-box; /* Importante para que el padding no desborde */
-    
-    /* 3. Lo convertimos en un contenedor flex vertical */
+    box-sizing: border-box;
     display: flex;
     flex-direction: column;
 }
@@ -33,7 +29,7 @@ body {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 1rem;
-    flex-shrink: 0; /* Evita que se encoja */
+    flex-shrink: 0;
 }
 
 .list-header h1 {
@@ -41,9 +37,8 @@ body {
     margin: 0;
 }
 
-.btn.btn-primary {
+.btn.btn-primary, .btn.btn-warning, .btn.btn-secondary {
     display: inline-block;
-    background-color: #3498db;
     color: #ffffff;
     padding: 12px 20px;
     border-radius: 5px;
@@ -53,42 +48,54 @@ body {
     transition: background-color 0.2s;
     border: none;
     cursor: pointer;
+    
+}
+.btn.btn-primary {
+    background-color: #3498db;
 }
 .btn.btn-primary:hover {
     background-color: #2980b9;
 }
-.btn.btn-primary .fa-solid {
+.btn.btn-warning {
+    background-color: #f39c12;
+}
+.btn.btn-warning:hover {
+    background-color: #e67e22;
+}
+.btn.btn-secondary {
+    background-color: #95a5a6;
+}
+.btn.btn-secondary:hover {
+    background-color: #7f8c8d;
+}
+.btn .fa-solid {
     margin-right: 8px;
 }
 
-.user-list-container hr {
+.complejos-container hr {
     border: 0;
     height: 1px;
     background: #dde3e9;
     margin: 1.5rem 0;
-    flex-shrink: 0; /* Evita que se encoja */
+    flex-shrink: 0;
 }
 
 /* --- Layout de 2 Columnas --- */
 .list-layout-container {
     display: flex;
-    gap: 2rem; /* Espacio entre la sidebar y el contenido */
-    
-    /* 4. Hacemos que este contenedor crezca y ocupe el espacio sobrante */
+    gap: 2rem;
     flex-grow: 1;
-    /* Importante: evitamos que este contenedor tenga scroll */
-    overflow: hidden; /* ¡CLAVE! */
+    overflow: hidden;
 }
 
 /* --- 1. Barra de Filtros (Izquierda) --- */
 .filter-sidebar {
-    width: 280px;
-    flex-shrink: 0; /* Evita que se encoja */
+    width: 350px;
+    flex-shrink: 0;
     padding: 1.5rem;
     border-radius: 8px;
-    
     overflow-y: auto;
-    height: 100%; /* Hacemos que ocupe el 100% de su contenedor padre */
+    height: 100%;
     box-sizing: border-box;
 }
 
@@ -116,13 +123,14 @@ body {
 }
 
 .filters-form-vertical input[type="search"],
+.filters-form-vertical input[type="number"],
 .filters-form-vertical select {
     width: 100%;
     padding: 12px 15px !important;
     font-size: 1rem !important;
     border: 1px solid #ccc !important;
     border-radius: 5px !important;
-    box-sizing: border-box; /* Importante */
+    box-sizing: border-box;
 }
 
 .filters-form-vertical button[type="submit"] {
@@ -142,16 +150,34 @@ body {
     background-color: #27ae60;
 }
 
+.complejo-details p {
+    margin: 0.5rem 0;
+    font-size: 0.95rem;
+    color: #555;
+}
+.complejo-details p strong {
+    color: #333;
+    min-width: 90px;
+    display: inline-block;
+    margin-right: 5px;
+}
+.complejo-details ul {
+    list-style: none;
+    padding: 0;
+    margin: 0.5rem 0 0 0;
+}
+.complejo-details li {
+    margin-bottom: 0.25rem;
+}
+
 
 /* --- 2. Contenido de Resultados (Derecha) --- */
 .results-content {
-    flex-grow: 1; /* Ocupa el resto del espacio */
-    min-width: 0; /* Soluciona problemas de flexbox */
-    
-    /* 5. ¡LA CLAVE! Habilitamos el scroll SÓLO en esta columna */
+    flex-grow: 1;
+    min-width: 0;
     overflow-y: auto;
-    height: 100%; /* Hacemos que ocupe el 100% de su contenedor padre */
-    padding-right: 1rem; /* Espacio para que el scroll no se pegue a las tarjetas */
+    height: 100%;
+    padding-right: 1rem;
 }
 
 .results-content h3 {
@@ -162,45 +188,46 @@ body {
     margin-bottom: 1.5rem;
 }
 
-/* --- Grid de Tarjetas de Usuario --- */
-.user-grid {
+/* --- Grid de Tarjetas de Complejo/Propiedad --- */
+.complejo-grid, .propiedad-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     gap: 20px;
-    padding-bottom: 2rem; /* Espacio al final del scroll */
+    padding-bottom: 2rem;
 }
 
-.user-card {
+.complejo-card, .propiedad-card {
     background-color: #ffffff;
     border: 1px solid #e0e0e0;
     border-radius: 8px;
     padding: 1.5rem;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     transition: transform 0.2s, box-shadow 0.2s;
-    display: flex; /* Para alinear el contenido verticalmente */
-    flex-direction: column; /* Apila el contenido y los botones */
+    display: flex;
+    flex-direction: column;
+    margin-top: 15px;
 }
 
-.user-card:hover {
+.complejo-card:hover, .propiedad-card:hover {
     transform: translateY(-5px);
     box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
     border-color: #3498db;
 }
 
-.user-card h4 {
+.complejo-card h4, .propiedad-card h4 {
     color: #2c3e50;
     font-size: 1.25rem;
     margin-top: 0;
     margin-bottom: 1rem;
 }
 
-.user-card p {
+.complejo-card p, .propiedad-card p {
     margin: 0.5rem 0;
     font-size: 0.95rem;
     color: #555;
     display: flex;
 }
-.user-card p strong {
+.complejo-card p strong, .propiedad-card p strong {
     color: #333;
     min-width: 90px;
     display: inline-block;
@@ -223,26 +250,19 @@ body {
     color: #e74c3c;
 }
 
-/* --- (ACTUALIZADO) Acciones de la Tarjeta (Botones) --- */
-.user-card .action-links form {
-    display: inline-flex !important; /* 'important' para sobrescribir el style inline del HTML si es necesario */
-    margin: 0;
-    padding: 0;
+/* --- Acciones de la Tarjeta (Botones) --- */
+.complejo-card .action-links, .propiedad-card .action-links {
+    margin-top: auto; /* Empuja los botones al final */
+    padding-top: 1rem;
+    display: flex;
+    gap: 0.5rem;
 }
 
 .action-links .btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 8px 12px; 
-    
-    margin: 0; 
-    border: none;
-    box-sizing: border-box;
-    font-family: inherit;
-    vertical-align: middle;
-    line-height: 1.5; 
-    
+    padding: 8px 12px;
     font-size: 0.9rem;
     font-weight: 500;
     text-decoration: none;
@@ -250,6 +270,7 @@ body {
     border-radius: 5px;
     cursor: pointer;
     transition: all 0.2s;
+    border: none;
 }
 .action-links .btn .fa-solid {
     margin-right: 5px;
@@ -257,35 +278,20 @@ body {
 
 /* Colores de los botones */
 .action-links .btn-info {
-    background-color: #3498db; /* Azul */
+    background-color: #3498db;
 }
 .action-links .btn-info:hover {
     background-color: #2980b9;
 }
 
 .action-links .btn-warning {
-    background-color: #f39c12; /* Naranja */
-    color: #ffffff;
+    background-color: #f39c12;
 }
 .action-links .btn-warning:hover {
     background-color: #e67e22;
 }
 
-.action-links .btn-danger {
-    background-color: #e74c3c; /* Rojo */
-}
-.action-links .btn-danger:hover {
-    background-color: #c0392b;
-}
-
-.action-links .btn-success {
-    background-color: #2ecc71; /* Verde */
-}
-.action-links .btn-success:hover {
-    background-color: #27ae60;
-}
-
-/* Mensaje "No hay usuarios" */
+/* Mensaje "No hay complejos" */
 .no-results-message {
     font-size: 1.1rem;
     color: #777;
@@ -294,15 +300,15 @@ body {
 }
 
 /* Enlace "Volver al Dashboard" */
-.user-list-container > a.back-link {
+.complejos-container > a.back-link {
     display: inline-block;
     margin-top: 1.5rem;
     color: #555;
     font-size: 0.95rem;
     text-decoration: none;
-    flex-shrink: 0; /* Evita que se encoja */
+    flex-shrink: 0;
 }
-.user-list-container > a.back-link:hover {
+.complejos-container > a.back-link:hover {
     color: #3498db;
     text-decoration: underline;
 }

@@ -1,7 +1,16 @@
 {% extends 'base.html' %}
+{% load static %}
+
+{% block bootstrap_css %}{% endblock %}
+{% block global_styles %}{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/crear_complejo.css' %}">
+{% endblock %}
 
 {% block content %}
-    <h2>Editar Complejo: {{ complejo.nombre }}</h2>
+<div class="form-container">
+    <h2><i class="fa-solid fa-pencil"></i> Editar Complejo: {{ complejo.nombre }}</h2>
     <form method="post">
         {% csrf_token %}
         {% for field in form %}
@@ -27,8 +36,8 @@
                 {% endfor %}
             </div>
         {% endfor %}
-        <button type="submit">Guardar Cambios</button>
+        <button type="submit" class="btn-submit">Guardar Cambios</button>
     </form>
-    <br>
-    <a href="{% url 'detalle_complejo' complejo.id %}">Cancelar</a>
+    <a href="{% url 'detalle_complejo' complejo.id %}" class="back-link">Cancelar y Volver a los Detalles</a>
+</div>
 {% endblock %}

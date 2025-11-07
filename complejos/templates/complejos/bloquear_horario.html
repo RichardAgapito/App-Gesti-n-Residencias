@@ -1,0 +1,21 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+
+{% block bootstrap_css %}{% endblock %}
+{% block global_styles %}{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/admin_reserva_form.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <h2>Bloquear Horario para {{ amenidad.nombre }}</h2>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn-submit">Bloquear</button>
+    </form>
+    <a href="{% url 'gestionar_amenidades' %}" class="back-link">Cancelar</a>
+</div>
+{% endblock %}

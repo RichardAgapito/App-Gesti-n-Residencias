@@ -1,0 +1,479 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/resident_dashboard.css' %}">
+    <style>
+        .availability-container {
+            max-width: 100%%;
+            margin: 2rem auto;
+            padding: 2rem;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+        }
+        .availability-header h2 {
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+        }
+        .availability-header p {
+            font-size: 1.1rem;
+            color: #7f8c8d;
+            margin-bottom: 2rem;
+        }
+
+        .calendar {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 2rem;
+        }
+        .calendar th {
+            text-align: center;
+            padding: 0.8rem;
+            background-color: #f8f9fa;
+            color: #34495e;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        .calendar td {
+            text-align: center;
+            padding: 0.5rem;
+            border: 1px solid #f1f3f5;
+            height: 90px;
+            vertical-align: top;
+            position: relative;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .calendar td:hover:not(.disabled):not(.selected) {
+            background-color: #eef5ff;
+        }
+        .calendar td.today .day-number {
+            background-color: #e9ecef;
+            border-radius: 50%;
+        }
+        .calendar td.disabled {
+            color: #ced4da;
+            cursor: not-allowed;
+            background-color: #f8f9fa;
+        }
+        .calendar td.selected .day-number {
+            background-color: #3498db;
+            color: white;
+            border-radius: 50%;
+        }
+        .calendar .day-number {
+            font-size: 1rem;
+            font-weight: 500;
+            width: 32px;
+            height: 32px;
+            line-height: 32px;
+            display: inline-block;
+            transition: all 0.2s;
+        }
+        .calendar .day-number.booked {
+            text-decoration: line-through;
+            color: #adb5bd;
+        }
+
+        .calendar-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        .calendar-nav button {
+            background: #fff;
+            border: 1px solid #dee2e6;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.2s, box-shadow 0.2s;
+            width:50px;
+        }
+        .calendar-nav button:hover {
+            background-color: #f8f9fa;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .calendar-nav h2 {
+            margin: 0;
+            font-size: 1.5rem;
+            color: #2c3e50;
+            text-transform: capitalize;
+            padding: 0, 18px;
+            text-align: center;
+        
+        }
+
+        #time-slots-display {
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #f1f3f5;
+        }
+        #time-slots-display h3 {
+            color: #2c3e50;
+            margin-bottom: 1.5rem;
+        }
+        .time-slots-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 12px;
+        }
+        .time-slot {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            font-weight: 500;
+            color: #495057;
+            background-color: #fff;
+        }
+        .time-slot i {
+            color: #868e96;
+            transition: color 0.2s;
+        }
+        .time-slot.available:hover {
+            background-color: #eef5ff;
+            border-color: #a5d8ff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+        }
+        .time-slot.selected {
+            background-color: #2ecc71;
+            color: white;
+            border-color: #2ecc71;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(46, 204, 113, 0.3);
+        }
+        .time-slot.selected i {
+            color: white;
+        }
+        .time-slot.booked {
+            background-color: #f8f9fa;
+            color: #adb5bd;
+            border-color: #e9ecef;
+            cursor: not-allowed;
+            text-decoration: line-through;
+        }
+        .time-slot.booked i {
+            color: #adb5bd;
+        }
+
+        #reservation-form {
+            margin-top: 3rem;
+            padding-top: 2rem;
+            border-top: 1px solid #f1f3f5;
+        }
+        #reservation-form h3 {
+            color: #2c3e50;
+            margin-bottom: 1.5rem;
+        }
+        #reservation-form .form-row {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 1rem;
+        }
+        #reservation-form .form-group {
+            flex: 1;
+        }
+        #reservation-form label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #34495e;
+        }
+        #reservation-form input[type="datetime-local"] {
+            width: 100%;
+            padding: 10px 12px;
+            font-size: 0.95rem;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        #reservation-form button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+        #reservation-form button:hover {
+            background-color: #2980b9;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="sidebar">
+        <h2><i class="fa-solid fa-house-user"></i> Panel Residente</h2>
+        <a href="{% url 'crear_reserva' %}" class="active"><i class="fa-solid fa-calendar-plus"></i> Reservar Amenidad</a>
+        <a href="{% url 'mis_reservas' %}"><i class="fa-solid fa-calendar-check"></i> Mis Reservas</a>
+    </div>
+
+    <div class="main-content">
+        <header>
+            <h1>Disponibilidad para {{ amenidad.nombre }}</h1>
+            <a href="{% url 'crear_reserva' %}" class="btn btn-secondary">
+                <i class="fa-solid fa-arrow-left"></i> Volver a Amenidades
+            </a>
+        </header>
+
+        <div class="availability-container">
+            <div class="availability-header">
+                <h2><i class="fa-solid fa-calendar-days"></i> Calendario de Disponibilidad</h2>
+                <p>Selecciona una fecha para ver los horarios disponibles y luego completa el formulario.</p>
+            </div>
+
+            <div class="calendar-nav">
+                <button id="prev-month"><i class="fa-solid fa-chevron-left"></i></button>
+                <h2 id="current-month-year"></h2>
+                <button id="next-month"><i class="fa-solid fa-chevron-right"></i></button>
+            </div>
+            <div id="calendar-container"></div>
+
+            <div id="time-slots-display">
+                <h3>Horarios Disponibles para <span id="selected-date-display"></span></h3>
+                <div class="time-slots-grid" id="slots-grid">
+                    <p>Selecciona un día en el calendario para ver los horarios.</p>
+                </div>
+            </div>
+
+            <form method="post" id="reservation-form">
+                {% csrf_token %}
+                <h3>Confirmar Reserva</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="id_fecha_inicio">Fecha y Hora de Inicio:</label>
+                        <input type="datetime-local" name="fecha_inicio" id="id_fecha_inicio" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="id_fecha_fin">Fecha y Hora de Fin:</label>
+                        <input type="datetime-local" name="fecha_fin" id="id_fecha_fin" required>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary">Reservar</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock content %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const calendarContainer = document.getElementById('calendar-container');
+    const currentMonthYearDisplay = document.getElementById('current-month-year');
+    const prevMonthBtn = document.getElementById('prev-month');
+    const nextMonthBtn = document.getElementById('next-month');
+    const timeSlotsDisplay = document.getElementById('time-slots-display');
+    const slotsGrid = document.getElementById('slots-grid');
+    const selectedDateDisplay = document.getElementById('selected-date-display');
+
+    const form = document.getElementById('reservation-form');
+    const fechaInicioInput = document.getElementById('id_fecha_inicio');
+    const fechaFinInput = document.getElementById('id_fecha_fin');
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Normalize today to start of day
+    let currentMonth = new Date().getMonth();
+    let currentYear = new Date().getFullYear();
+    let selectedCalendarCell = null; // To keep track of the currently selected day in the calendar
+
+    // Convert Django reservations to a more usable format
+    const bookedDates = [
+        {% for reserva in reservas %}
+        {
+            start: new Date('{{ reserva.fecha_inicio|date:"c" }}'),
+            end: new Date('{{ reserva.fecha_fin|date:"c" }}')
+        },
+        {% endfor %}
+    ];
+
+    // Helper function to format date to local ISO string (YYYY-MM-DDTHH:mm)
+    function toLocalISOString(date) {
+        const year = date.getFullYear();
+        const month = (date.getMonth() + 1).toString().padStart(2, '0');
+        const day = date.getDate().toString().padStart(2, '0');
+        const hours = date.getHours().toString().padStart(2, '0');
+        const minutes = date.getMinutes().toString().padStart(2, '0');
+
+        return `${year}-${month}-${day}T${hours}:${minutes}`;
+    }
+
+    function renderCalendar() {
+        calendarContainer.innerHTML = ''; // Clear previous calendar
+        const table = document.createElement('table');
+        table.classList.add('calendar');
+
+        currentMonthYearDisplay.textContent = new Date(currentYear, currentMonth).toLocaleString('es-ES', { month: 'long', year: 'numeric' });
+
+        const header = table.createTHead();
+        const weekRow = header.insertRow();
+        const daysOfWeek = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+        daysOfWeek.forEach(day => {
+            const cell = weekRow.insertCell();
+            cell.textContent = day;
+        });
+
+        const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();
+        const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+        let date = 1;
+        for (let i = 0; i < 6; i++) {
+            const row = table.insertRow();
+            for (let j = 0; j < 7; j++) {
+                const cell = row.insertCell();
+                if (i === 0 && j < firstDayOfMonth) {
+                    cell.classList.add('disabled');
+                } else if (date > daysInMonth) {
+                    cell.classList.add('disabled');
+                } else {
+                    const currentDate = new Date(currentYear, currentMonth, date);
+                    currentDate.setHours(0, 0, 0, 0); // Normalize to start of day
+
+                    const dayNumber = document.createElement('div');
+                    dayNumber.classList.add('day-number');
+                    dayNumber.textContent = date;
+                    cell.appendChild(dayNumber);
+
+                    if (currentDate.toDateString() === today.toDateString()) {
+                        cell.classList.add('today');
+                    }
+
+                    if (currentDate < today) {
+                        cell.classList.add('disabled');
+                    }
+                    else {
+                        cell.dataset.date = currentDate.toISOString().split('T')[0];
+                        cell.addEventListener('click', () => {
+                            if (cell.classList.contains('disabled')) return;
+                            if (selectedCalendarCell) {
+                                selectedCalendarCell.classList.remove('selected');
+                            }
+                            cell.classList.add('selected');
+                            selectedCalendarCell = cell;
+                            displayTimeSlots(currentDate);
+                        });
+                    }
+
+                    // Check if the day has any booked slots
+                    const hasBookedSlot = bookedDates.some(reserva => {
+                        const start = new Date(reserva.start);
+                        const end = new Date(reserva.end);
+                        return (currentDate.toDateString() === start.toDateString() || currentDate.toDateString() === end.toDateString()) ||
+                               (currentDate > start && currentDate < end);
+                    });
+
+                    if (hasBookedSlot) {
+                        dayNumber.classList.add('booked');
+                    }
+                    date++;
+                }
+            }
+        }
+        calendarContainer.appendChild(table);
+    }
+
+    function displayTimeSlots(selectedDate) {
+        slotsGrid.innerHTML = '';
+        selectedDateDisplay.textContent = selectedDate.toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+        const startHour = 8; // Amenity opens at 8 AM
+        const endHour = 22;  // Amenity closes at 10 PM
+        const interval = 60; // 1-hour slots
+
+        let availableSlotsFound = false;
+
+        for (let hour = startHour; hour < endHour; hour++) {
+            const slotStart = new Date(selectedDate);
+            slotStart.setHours(hour, 0, 0, 0);
+            const slotEnd = new Date(selectedDate);
+            slotEnd.setHours(hour + (interval / 60), 0, 0, 0);
+
+            let isSlotBooked = false;
+            for (const reserva of bookedDates) {
+                const bookedStart = new Date(reserva.start);
+                const bookedEnd = new Date(reserva.end);
+
+                // Check for overlap
+                if (slotStart < bookedEnd && slotEnd > bookedStart) {
+                    isSlotBooked = true;
+                    break;
+                }
+            }
+
+            const timeSlotDiv = document.createElement('div');
+            timeSlotDiv.classList.add('time-slot');
+            
+            const icon = document.createElement('i');
+            icon.className = 'fa-solid fa-clock';
+            
+            const text = document.createElement('span');
+            text.textContent = `${String(hour).padStart(2, '0')}:00`;
+
+            timeSlotDiv.appendChild(icon);
+            timeSlotDiv.appendChild(text);
+
+            if (isSlotBooked) {
+                timeSlotDiv.classList.add('booked');
+            } else if (slotStart < new Date()) { // Slot is in the past
+                timeSlotDiv.classList.add('booked');
+            } else {
+                timeSlotDiv.classList.add('available');
+                timeSlotDiv.dataset.startTime = slotStart.toISOString();
+                timeSlotDiv.dataset.endTime = slotEnd.toISOString();
+                timeSlotDiv.addEventListener('click', (event) => {
+                    document.querySelectorAll('.time-slot.selected').forEach(el => el.classList.remove('selected'));
+                    event.currentTarget.classList.add('selected');
+
+                    // Populate form fields using the new helper function
+                    fechaInicioInput.value = toLocalISOString(slotStart);
+                    fechaFinInput.value = toLocalISOString(slotEnd);
+                });
+                availableSlotsFound = true;
+            }
+            slotsGrid.appendChild(timeSlotDiv);
+        }
+
+        if (!availableSlotsFound) {
+            slotsGrid.innerHTML = '<p>No hay horarios disponibles para este día.</p>';
+        }
+    }
+
+    prevMonthBtn.addEventListener('click', () => {
+        currentMonth--;
+        if (currentMonth < 0) {
+            currentMonth = 11;
+            currentYear--;
+        }
+        renderCalendar();
+        slotsGrid.innerHTML = '<p>Selecciona un día en el calendario para ver los horarios.</p>';
+        selectedCalendarCell = null;
+    });
+
+    nextMonthBtn.addEventListener('click', () => {
+        currentMonth++;
+        if (currentMonth > 11) {
+            currentMonth = 0;
+            currentYear++;
+        }
+        renderCalendar();
+        slotsGrid.innerHTML = '<p>Selecciona un día en el calendario para ver los horarios.';
+        selectedCalendarCell = null;
+    });
+
+    renderCalendar();
+});
+</script>
+{% endblock extra_js %}

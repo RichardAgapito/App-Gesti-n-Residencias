@@ -2,10 +2,12 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import user_passes_test, login_required
 from django.http import JsonResponse
 from .models import Complejo, Propiedad, PropiedadPersona, Amenidad, Reserva
-from .forms import ComplejoForm, PropiedadForm, CrearPropiedadesMultiplesForm, EditarPropiedadForm, PropiedadPersonaForm, ReservaForm, AmenidadForm
+from .forms import ComplejoForm, PropiedadForm, CrearPropiedadesMultiplesForm, EditarPropiedadForm, PropiedadPersonaForm, ReservaForm, AmenidadForm, AdminReservaForm, BloquearHorarioForm
 from users.views import es_admin
 from django.contrib.auth import get_user_model
 from users.models import CustomUser
+from django.db import models
+from django.utils import timezone
 
 
 @user_passes_test(es_admin, login_url='/')
@@ -18,7 +20,10 @@ def gestionar_amenidades_view(request):
     else:
         form = AmenidadForm()
     
-    amenidades = Amenidad.objects.all()
+    amenidades = Amenidad.objects.prefetch_related(
+        models.Prefetch('reservas', queryset=Reserva.objects.filter(estado='bloqueada'), to_attr='bloqueos')
+    ).all()
+
     context = {
         'form': form,
         'amenidades': amenidades
@@ -53,6 +58,35 @@ def eliminar_amenidad_view(request, amenidad_id):
         'amenidad': amenidad
     }
     return render(request, 'complejos/eliminar_amenidad.html', context)
+
+
+@user_passes_test(es_admin, login_url='/')
+def bloquear_horario_view(request, amenidad_id):
+    amenidad = get_object_or_404(Amenidad, id=amenidad_id)
+    if request.method == 'POST':
+        form = BloquearHorarioForm(request.POST, amenidad=amenidad)
+        if form.is_valid():
+            reserva = form.save(commit=False)
+            reserva.amenidad = amenidad
+            reserva.estado = 'bloqueada'
+            reserva.save()
+            return redirect('gestionar_amenidades')
+    else:
+        form = BloquearHorarioForm(amenidad=amenidad)
+    
+    context = {
+        'form': form,
+        'amenidad': amenidad,
+    }
+    return render(request, 'complejos/bloquear_horario.html', context)
+
+
+@user_passes_test(es_admin, login_url='/')
+def unblock_horario_view(request, reserva_id):
+    reserva = get_object_or_404(Reserva, id=reserva_id)
+    if reserva.estado == 'bloqueada':
+        reserva.delete()
+    return redirect('gestionar_amenidades')
 
 
 @user_passes_test(es_admin, login_url='/')
@@ -310,28 +344,27 @@ def crear_reserva_view(request):
     try:
         propiedad_persona = PropiedadPersona.objects.get(persona=request.user, estado='activo')
         complejo = propiedad_persona.propiedad.complejo
-        amenidades = complejo.amenidades.all()
+        amenidades = complejo.amenidades.prefetch_related(
+            models.Prefetch(
+                'reservas',
+                queryset=Reserva.objects.filter(estado='bloqueada', fecha_fin__gt=timezone.now()),
+                to_attr='bloqueos_activos'
+            )
+        ).all()
     except PropiedadPersona.DoesNotExist:
         complejo = None
         amenidades = []
 
+    # The form is no longer needed for GET requests. 
+    # The POST logic will be handled by a different view when we implement the availability calendar.
     if request.method == 'POST':
-        amenidad_id = request.POST.get('amenidad_id')
-        amenidad = get_object_or_404(Amenidad, id=amenidad_id)
-        form = ReservaForm(request.POST, amenidad=amenidad)
-        if form.is_valid():
-            reserva = form.save(commit=False)
-            reserva.amenidad = amenidad
-            reserva.residente = request.user
-            reserva.save()
-            return redirect('mis_reservas')
-    else:
-        form = ReservaForm()
+        # This part is temporarily disabled.
+        # The new flow will handle reservations through a dedicated availability view.
+        pass
 
     context = {
         'complejo': complejo,
         'amenidades': amenidades,
-        'form': form,
     }
     return render(request, 'complejos/crear_reserva.html', context)
 
@@ -343,6 +376,32 @@ def mis_reservas_view(request):
         'reservas': reservas
     }
     return render(request, 'complejos/mis_reservas.html', context)
+
+
+@login_required
+@user_passes_test(es_residente)
+def ver_disponibilidad_view(request, amenidad_id):
+    amenidad = get_object_or_404(Amenidad, id=amenidad_id)
+
+    if request.method == 'POST':
+        form = ReservaForm(request.POST, amenidad=amenidad)
+        if form.is_valid():
+            reserva = form.save(commit=False)
+            reserva.amenidad = amenidad
+            reserva.residente = request.user
+            reserva.save()
+            return redirect('mis_reservas')
+    else:
+        form = ReservaForm(amenidad=amenidad)
+
+    reservas = Reserva.objects.filter(amenidad=amenidad, estado__in=['confirmada', 'bloqueada'], fecha_fin__gt=timezone.now())
+    
+    context = {
+        'amenidad': amenidad,
+        'reservas': reservas,
+        'form': form,
+    }
+    return render(request, 'complejos/ver_disponibilidad.html', context)
 
 @user_passes_test(es_admin, login_url='/')
 def admin_reservas_view(request):
@@ -371,6 +430,54 @@ def admin_reservas_view(request):
 
 @user_passes_test(es_admin, login_url='/')
 def cancelar_reserva_view(request, reserva_id):
+    reserva = get_object_or_404(Reserva, id=reserva_id)
+    reserva.estado = 'cancelada'
+    reserva.save()
+    return redirect('admin_reservas')
+
+@user_passes_test(es_admin, login_url='/')
+def admin_crear_reserva(request):
+    if request.method == 'POST':
+        form = AdminReservaForm(request.POST)
+        if form.is_valid():
+            reserva = form.save(commit=False)
+            reserva.residente = form.cleaned_data['residente'] # Assign the selected resident
+            reserva.save()
+            return redirect('admin_reservas')
+    else:
+        form = AdminReservaForm()
+    context = {
+        'form': form,
+    }
+    return render(request, 'complejos/admin_reserva_form.html', context)
+
+@user_passes_test(es_admin, login_url='/')
+def admin_editar_reserva(request, reserva_id):
+    reserva = get_object_or_404(Reserva, id=reserva_id)
+    if request.method == 'POST':
+        form = AdminReservaForm(request.POST, instance=reserva)
+        if form.is_valid():
+            reserva = form.save(commit=False)
+            reserva.residente = form.cleaned_data['residente'] # Assign the selected resident
+            reserva.save()
+            return redirect('admin_reservas')
+    else:
+        form = AdminReservaForm(instance=reserva, initial={'residente': reserva.residente})
+    context = {
+        'form': form,
+        'reserva': reserva,
+    }
+    return render(request, 'complejos/admin_reserva_form.html', context)
+
+@user_passes_test(es_admin, login_url='/')
+def approve_reserva(request, reserva_id):
+    reserva = get_object_or_404(Reserva, id=reserva_id)
+    reserva.estado = 'confirmada'
+    reserva.save()
+    return redirect('admin_reservas')
+
+@user_passes_test(es_admin, login_url='/')
+def reject_reserva(request, reserva_id):
     reserva = get_object_or_404(Reserva, id=reserva_id)
     reserva.estado = 'cancelada'
     reserva.save()

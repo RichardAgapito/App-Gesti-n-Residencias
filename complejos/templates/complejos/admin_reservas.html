@@ -1,47 +1,57 @@
-{% extends 'base.html' %}
+{% extends 'base_dashboard.html' %}
 {% load static %}
 
-{% block content %}
-<div class="container">
-    <h2>Administrar Reservas</h2>
+{% block bootstrap_css %}{% endblock %}
+{% block global_styles %}{% endblock %}
 
-    <form method="get" class="mb-4">
-        <div class="row">
-            <div class="col-md-4">
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/admin_reservas.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="reservas-container">
+    <div class="header-actions">
+        <h2>Administrar Reservas</h2>
+        <a href="{% url 'admin_crear_reserva' %}" class="btn-create">Crear Reserva</a>
+    </div>
+
+    <form method="get" class="filter-form">
+        <div class="form-row">
+            <div class="form-group">
                 <label for="complejo">Complejo</label>
-                <select name="complejo" id="complejo" class="form-control">
+                <select name="complejo" id="complejo">
                     <option value="">Todos</option>
                     {% for c in complejos %}
                         <option value="{{ c.id }}">{{ c.nombre }}</option>
                     {% endfor %}
                 </select>
             </div>
-            <div class="col-md-4">
+            <div class="form-group">
                 <label for="amenidad">Amenidad</label>
-                <select name="amenidad" id="amenidad" class="form-control">
+                <select name="amenidad" id="amenidad">
                     <option value="">Todas</option>
                     {% for a in amenidades %}
                         <option value="{{ a.id }}">{{ a.nombre }}</option>
                     {% endfor %}
                 </select>
             </div>
-            <div class="col-md-2">
+            <div class="form-group">
                 <label for="estado">Estado</label>
-                <select name="estado" id="estado" class="form-control">
+                <select name="estado" id="estado">
                     <option value="">Todos</option>
                     {% for val, name in estados %}
                         <option value="{{ val }}">{{ name }}</option>
                     {% endfor %}
                 </select>
             </div>
-            <div class="col-md-2">
-                <button type="submit" class="btn btn-primary mt-4">Filtrar</button>
+            <div class="form-group">
+                <button type="submit" class="btn-filter">Filtrar</button>
             </div>
         </div>
     </form>
 
     {% if reservas %}
-        <table class="table">
+        <table class="reservas-table">
             <thead>
                 <tr>
                     <th>Complejo</th>
@@ -62,9 +72,13 @@
                         <td>{{ reserva.fecha_inicio }}</td>
                         <td>{{ reserva.fecha_fin }}</td>
                         <td>{{ reserva.get_estado_display }}</td>
-                        <td>
+                        <td class="action-buttons">
+                            <a href="{% url 'admin_editar_reserva' reserva.id %}" class="btn-edit">Editar</a>
                             {% if reserva.estado == 'confirmada' %}
-                                <a href="{% url 'cancelar_reserva' reserva.id %}" class="btn btn-danger btn-sm">Cancelar</a>
+                                <a href="{% url 'cancelar_reserva' reserva.id %}" class="btn-cancel">Cancelar</a>
+                            {% elif reserva.estado == 'pendiente' %}
+                                <a href="{% url 'approve_reserva' reserva.id %}" class="btn-approve">Aprobar</a>
+                                <a href="{% url 'reject_reserva' reserva.id %}" class="btn-reject">Rechazar</a>
                             {% endif %}
                         </td>
                     </tr>
@@ -72,9 +86,9 @@
             </tbody>
         </table>
     {% else %}
-        <p>No hay reservaciones.</p>
+        <p class="no-reservas">No hay reservaciones.</p>
     {% endif %}
 
-    <a href="{% url 'dashboard' %}" class="btn btn-secondary">Volver al Dashboard</a>
+    <a href="{% url 'dashboard' %}" class="back-link">Volver al Dashboard</a>
 </div>
 {% endblock %}

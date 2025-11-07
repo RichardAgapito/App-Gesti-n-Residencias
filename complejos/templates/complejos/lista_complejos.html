@@ -1,48 +1,79 @@
 {% extends 'base.html' %}
+{% load static %}
+
+{% block bootstrap_css %}{% endblock %}
+{% block global_styles %}{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/complejos.css' %}">
+{% endblock %}
 
 {% block content %}
-    <h1>Gestión de Complejos 🏠</h1>
-    
-    <a href="{% url 'crear_complejo' %}" class="btn btn-primary">Registrar Nuevo Complejo</a>
+<div class="complejos-container">
+    <div class="list-header">
+        <h1><i class="fa-solid fa-city"></i> Gestión de Complejos</h1>
+        <a href="{% url 'crear_complejo' %}" class="btn btn-primary">
+            <i class="fa-solid fa-plus"></i> Registrar Nuevo Complejo
+        </a>
+    </div>
     <hr>
-    <h3>Complejos Registrados</h3>
 
-    <form method="get" action="{% url 'lista_complejos' %}" class="form-inline mt-3 mb-3">
-        <input class="form-control mr-sm-2" type="search" name="q" placeholder="Buscar por nombre..." value="{{ request.GET.q }}">
-        
-        <select name="tipo" class="form-control mr-sm-2">
-            <option value="">Todos los tipos</option>
-            {% for value, name in tipo_choices %}
-                <option value="{{ value }}" {% if current_tipo == value %}selected{% endif %}>{{ name }}</option>
-            {% endfor %}
-        </select>
-
-        <select name="estado" class="form-control mr-sm-2">
-            <option value="">Todos los estados</option>
-            {% for value, name in estado_choices %}
-                <option value="{{ value }}" {% if current_estado == value %}selected{% endif %}>{{ name }}</option>
-            {% endfor %}
-        </select>
-
-        <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Buscar y Filtrar</button>
-    </form>
-
-    {% if complejos %}
-        <div class="complejos-grid">
-            {% for complejo in complejos %}
-                <div class="complejo-card">
-                    <h4><a href="{% url 'detalle_complejo' complejo.id %}">{{ complejo.nombre }}</a></h4>
-                    <p><strong>Dirección:</strong> {{ complejo.calle }}, {{ complejo.ciudad }}</p>
-                    <p><strong>Tipo:</strong> {{ complejo.get_tipo_display }}</p>
-                    <p><strong>Unidades:</strong> {{ complejo.numero_total_unidades }}</p>
-                    <p><strong>Estado:</strong> {{ complejo.get_estado_display }}</p>
+    <div class="list-layout-container">
+        <aside class="filter-sidebar">
+            <h3><i class="fa-solid fa-filter"></i> Filtros</h3>
+            <form method="get" action="{% url 'lista_complejos' %}" class="filters-form-vertical">
+                <div class="form-group">
+                    <label for="q">Buscar por nombre</label>
+                    <input type="search" id="q" name="q" value="{{ request.GET.q }}">
                 </div>
-            {% endfor %}
-        </div>
-    {% else %}
-        <p>Aún no hay complejos registrados en el sistema.</p>
-    {% endif %}
-    
-    <br>
-    <a href="{% url 'dashboard' %}">← Volver al Dashboard</a>
+                <div class="form-group">
+                    <label for="tipo">Tipo de Complejo</label>
+                    <select id="tipo" name="tipo">
+                        <option value="">Todos los tipos</option>
+                        {% for value, name in tipo_choices %}
+                            <option value="{{ value }}" {% if current_tipo == value %}selected{% endif %}>{{ name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="estado">Estado</label>
+                    <select id="estado" name="estado">
+                        <option value="">Todos los estados</option>
+                        {% for value, name in estado_choices %}
+                            <option value="{{ value }}" {% if current_estado == value %}selected{% endif %}>{{ name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit">Aplicar Filtros</button>
+            </form>
+        </aside>
+
+        <main class="results-content">
+            {% if complejos %}
+                <div class="complejo-grid">
+                    {% for complejo in complejos %}
+                        <div class="complejo-card">
+                            <h4>{{ complejo.nombre }}</h4>
+                            <p><strong>Dirección:</strong> {{ complejo.calle }}, {{ complejo.ciudad }}</p>
+                            <p><strong>Tipo:</strong> {{ complejo.get_tipo_display }}</p>
+                            <p><strong>Unidades:</strong> {{ complejo.numero_total_unidades }}</p>
+                            <p><strong>Estado:</strong> <span class="status-{% if complejo.estado == 'activo' %}active{% else %}inactive{% endif %}">{{ complejo.get_estado_display }}</span></p>
+                            <div class="action-links">
+                                <a href="{% url 'detalle_complejo' complejo.id %}" class="btn btn-info">
+                                    <i class="fa-solid fa-eye"></i> Ver Detalles
+                                </a>
+                                <a href="{% url 'editar_complejo' complejo.id %}" class="btn btn-warning">
+                                    <i class="fa-solid fa-pencil"></i> Editar
+                                </a>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="no-results-message">No se encontraron complejos que coincidan con los filtros.</p>
+            {% endif %}
+        </main>
+    </div>
+    <a href="{% url 'dashboard' %}" class="back-link">← Volver al Dashboard</a>
+</div>
 {% endblock %}

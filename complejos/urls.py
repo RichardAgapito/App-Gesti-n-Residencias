@@ -17,9 +17,16 @@ urlpatterns = [
     # URLs para el sistema de reservas
     path('reservas/', views.crear_reserva_view, name='crear_reserva'),
     path('mis-reservas/', views.mis_reservas_view, name='mis_reservas'),
+    path('reservas/amenidad/<int:amenidad_id>/disponibilidad/', views.ver_disponibilidad_view, name='ver_disponibilidad'),
     path('admin/reservas/', views.admin_reservas_view, name='admin_reservas'),
+    path('admin/reservas/crear/', views.admin_crear_reserva, name='admin_crear_reserva'),
+    path('admin/reservas/<int:reserva_id>/editar/', views.admin_editar_reserva, name='admin_editar_reserva'),
     path('admin/reservas/<int:reserva_id>/cancelar/', views.cancelar_reserva_view, name='cancelar_reserva'),
+    path('admin/reservas/<int:reserva_id>/approve/', views.approve_reserva, name='approve_reserva'),
+    path('admin/reservas/<int:reserva_id>/reject/', views.reject_reserva, name='reject_reserva'),
     path('admin_dashboard/amenidades/', views.gestionar_amenidades_view, name='gestionar_amenidades'),
     path('admin_dashboard/amenidades/<int:amenidad_id>/editar/', views.editar_amenidad_view, name='editar_amenidad'),
     path('admin_dashboard/amenidades/<int:amenidad_id>/eliminar/', views.eliminar_amenidad_view, name='eliminar_amenidad'),
+    path('admin_dashboard/amenidades/<int:amenidad_id>/bloquear/', views.bloquear_horario_view, name='bloquear_horario'),
+    path('admin_dashboard/amenidades/unblock/<int:reserva_id>/', views.unblock_horario_view, name='unblock_horario'),
 ]

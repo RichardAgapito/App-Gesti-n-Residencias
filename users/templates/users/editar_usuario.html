@@ -1,22 +1,38 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block css_files %}
-    {{ block.super }}
-    <link rel="stylesheet" href="{% static 'css/editar_usuario.css' %}">
+{% block bootstrap_css %}{% endblock %}
+{% block global_styles %}{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/users.css' %}">
 {% endblock %}
 
 {% block content %}
-<div class="edit-user-container">
-    <h2>Editar Usuario: {{ user.persona.nombres }} {{ user.persona.apellidos }}</h2>
-    
-    <form method="post">
+<div class="user-form-container">
+    <h1><i class="fa-solid fa-user-pen"></i> Editar Usuario</h1>
+    <form method="post" class="user-form">
         {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit">Guardar Cambios</button>
+        {% if form.non_field_errors %}
+            <div class="errorlist">
+                {% for error in form.non_field_errors %}
+                    {{ error }}
+                {% endfor %}
+            </div>
+        {% endif %}
+        {% for field in form %}
+            <div class="form-group">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% for error in field.errors %}
+                    <div class="errorlist">
+                        {{ error }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endfor %}
+        <button type="submit" class="btn-submit">Guardar Cambios</button>
     </form>
-    
-    <br>
     <a href="{% url 'detalle_usuario' user.id %}" class="back-link">← Volver al Detalle del Usuario</a>
 </div>
 {% endblock %}
