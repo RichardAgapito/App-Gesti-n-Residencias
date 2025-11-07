@@ -21,6 +21,17 @@ class ComplejoForm(forms.ModelForm):
         model = Complejo
         fields = '__all__'
 
+    def clean_telefono_contacto(self):
+        telefono = self.cleaned_data.get('telefono_contacto')
+        if telefono:
+            # Primera validación: ¿Contiene solo números?
+            if not telefono.isdigit():
+                raise ValidationError("Este campo solo debe contener números.")
+            # Segunda validación: ¿Tiene la longitud correcta?
+            if len(telefono) != 9:
+                raise ValidationError("El número de teléfono debe tener exactamente 9 dígitos.")
+        return telefono
+
 class PropiedadForm(forms.ModelForm):
     class Meta:
         model = Propiedad
