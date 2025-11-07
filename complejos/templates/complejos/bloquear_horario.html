@@ -1,21 +1,280 @@
 {% extends 'base_dashboard.html' %}
 {% load static %}
 
-{% block bootstrap_css %}{% endblock %}
-{% block global_styles %}{% endblock %}
-
 {% block extra_css %}
-    <link rel="stylesheet" href="{% static 'css/admin_reserva_form.css' %}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <style>
+        .availability-container { max-width: 100%; margin: 1rem auto; padding: 1.5rem; background-color: #fff; border-radius: 8px; box-shadow: 0 6px 20px rgba(0,0,0,0.08); }
+        .availability-header h2 { color: #2c3e50; margin-bottom: 0.5rem; }
+        .availability-header p { font-size: 1.1rem; color: #7f8c8d; margin-bottom: 1.5rem; }
+        .calendar { width: 100%; border-collapse: collapse; margin-bottom: 1.5rem; }
+        .calendar th { text-align: center; padding: 0.8rem; background-color: #f8f9fa; color: #34495e; font-weight: 600; }
+        .calendar td { text-align: center; padding: 0.5rem; border: 1px solid #f1f3f5; height: 80px; vertical-align: top; position: relative; cursor: pointer; transition: background-color 0.2s; }
+        .calendar td:hover:not(.disabled) { background-color: #eef5ff; }
+        .calendar td.today .day-number { background-color: #e9ecef; border-radius: 50%; }
+        .calendar td.disabled { color: #ced4da; cursor: not-allowed; background-color: #f8f9fa; }
+        .calendar td.selected .day-number { background-color: #3498db; color: white; border-radius: 50%; }
+        .calendar .day-number { font-size: 1rem; font-weight: 500; width: 32px; height: 32px; line-height: 32px; display: inline-block; }
+        .calendar td.fully-booked .day-number { text-decoration: line-through; color: #e74c3c; }
+        .calendar-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+        .calendar-nav button { background: #fff; border: 1px solid #dee2e6; padding: 0.5rem 1rem; cursor: pointer; border-radius: 5px; }
+        .calendar-nav h2 { margin: 0; font-size: 1.5rem; color: #2c3e50; }
+        #time-slots-display h3 { color: #2c3e50; margin-bottom: 1.5rem; }
+        .time-slots-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+        .time-slot { padding: 12px; border: 1px solid #dee2e6; border-radius: 6px; text-align: center; cursor: pointer; transition: all 0.2s ease-in-out; font-weight: 500; }
+        .time-slot.available:hover { background-color: #eef5ff; border-color: #a5d8ff; }
+        .time-slot.selected { background-color: #e74c3c; color: white; border-color: #c0392b; }
+        .time-slot.in-range { background-color: #fadbd8; border-color: #f1948a; }
+        .time-slot.booked { background-color: #f8f9fa; color: #adb5bd; cursor: not-allowed; text-decoration: line-through; }
+        #form-container { margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid #f1f3f5; }
+        #form-container .form-summary { background-color: #f8f9fa; padding: 1rem; border-radius: 5px; margin-bottom: 1rem; }
+    </style>
 {% endblock %}
 
 {% block content %}
-<div class="form-container">
-    <h2>Bloquear Horario para {{ amenidad.nombre }}</h2>
-    <form method="post">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit" class="btn-submit">Bloquear</button>
-    </form>
-    <a href="{% url 'gestionar_amenidades' %}" class="back-link">Cancelar</a>
+<div class="availability-container">
+    <div class="availability-header">
+        <h2><i class="fas fa-ban"></i> Bloquear Horario para {{ amenidad.nombre }}</h2>
+        <p>Selecciona un día y luego haz clic en una hora de inicio y una de fin para crear un bloqueo.</p>
+    </div>
+
+    <div class="calendar-nav">
+        <button id="prev-month">&laquo; Anterior</button>
+        <h2 id="current-month-year"></h2>
+        <button id="next-month">Siguiente &raquo;</button>
+    </div>
+    <div id="calendar-container"></div>
+
+    <div id="time-slots-display" style="display:none;">
+        <h3>Horarios para <span id="selected-date-display"></span></h3>
+        <div class="time-slots-grid" id="slots-grid"></div>
+    </div>
+
+    <div id="form-container" style="display:none;">
+        <div class="form-summary">
+            <strong>Inicio del Bloqueo:</strong> <span id="summary-start-time">-</span><br>
+            <strong>Fin del Bloqueo:</strong> <span id="summary-end-time">-</span>
+        </div>
+        <form method="post">
+            {% csrf_token %}
+            {% if form.errors %}
+                <div class="alert alert-danger">
+                    <strong>Error:</strong>
+                    <ul>
+                    {% for field, error_list in form.errors.items %}
+                        {% for error in error_list %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+            {{ form.as_p }}
+            <button type="submit" class="btn btn-danger">Confirmar Bloqueo</button>
+            <button type="button" id="clear-selection" class="btn btn-secondary">Limpiar Selección</button>
+        </form>
+    </div>
+     <a href="{% url 'gestionar_amenidades' %}" class="btn btn-link mt-3">Cancelar</a>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // --- ELEMENTOS DEL DOM ---
+    const calendarContainer = document.getElementById('calendar-container');
+    const currentMonthYearDisplay = document.getElementById('current-month-year');
+    const prevMonthBtn = document.getElementById('prev-month');
+    const nextMonthBtn = document.getElementById('next-month');
+    const timeSlotsDisplay = document.getElementById('time-slots-display');
+    const slotsGrid = document.getElementById('slots-grid');
+    const selectedDateDisplay = document.getElementById('selected-date-display');
+    const formContainer = document.getElementById('form-container');
+    const fechaInicioInput = document.querySelector('[name=fecha_inicio]');
+    const fechaFinInput = document.querySelector('[name=fecha_fin]');
+    const summaryStartTime = document.getElementById('summary-start-time');
+    const summaryEndTime = document.getElementById('summary-end-time');
+    const clearSelectionBtn = document.getElementById('clear-selection');
+
+    // Ocultar el formulario de Django
+    fechaInicioInput.parentElement.style.display = 'none';
+    fechaFinInput.parentElement.style.display = 'none';
+
+    // --- ESTADO ---
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    let currentMonth = today.getMonth();
+    let currentYear = today.getFullYear();
+    let selectionStart = null;
+
+    const bookedDates = [
+        {% for reserva in reservas %}
+        {
+            start: new Date('{{ reserva.fecha_inicio|date:"Y-m-d\TH:i:s" }}'),
+            end: new Date('{{ reserva.fecha_fin|date:"Y-m-d\TH:i:s" }}')
+        },
+        {% endfor %}
+    ];
+
+    const startHour = {{ amenidad.hora_inicio.hour }};
+    const endHour = {{ amenidad.hora_fin.hour }};
+    const interval = 60;
+
+    // --- HELPERS ---
+    function toLocalISOString(date) {
+        const pad = (num) => num.toString().padStart(2, '0');
+        return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+    }
+
+    // --- LÓGICA DE RENDERIZADO ---
+    function renderCalendar() {
+        // (Implementación similar a la vista de residente, se omite por brevedad pero debe estar aquí)
+        // ... Esta función dibuja el calendario de días ...
+        calendarContainer.innerHTML = '';
+        const table = document.createElement('table');
+        table.classList.add('calendar');
+        currentMonthYearDisplay.textContent = new Date(currentYear, currentMonth).toLocaleString('es-ES', { month: 'long', year: 'numeric' });
+        const header = table.createTHead();
+        const weekRow = header.insertRow();
+        ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].forEach(day => {
+            const cell = weekRow.insertCell();
+            cell.textContent = day;
+        });
+        const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();
+        const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+        let date = 1;
+        for (let i = 0; i < 6; i++) {
+            const row = table.insertRow();
+            for (let j = 0; j < 7; j++) {
+                const cell = row.insertCell();
+                if (i === 0 && j < firstDayOfMonth || date > daysInMonth) {
+                    cell.classList.add('disabled');
+                } else {
+                    const currentDate = new Date(currentYear, currentMonth, date);
+                    currentDate.setHours(0, 0, 0, 0);
+                    const dayNumber = document.createElement('div');
+                    dayNumber.classList.add('day-number');
+                    dayNumber.textContent = date;
+                    cell.appendChild(dayNumber);
+                    if (currentDate < today) cell.classList.add('disabled');
+                    else {
+                        cell.addEventListener('click', () => {
+                            document.querySelectorAll('.calendar td.selected').forEach(c => c.classList.remove('selected'));
+                            cell.classList.add('selected');
+                            displayTimeSlots(currentDate);
+                        });
+                    }
+                    date++;
+                }
+            }
+        }
+        calendarContainer.appendChild(table);
+    }
+
+    function displayTimeSlots(selectedDate) {
+        slotsGrid.innerHTML = '';
+        timeSlotsDisplay.style.display = 'block';
+        selectedDateDisplay.textContent = selectedDate.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
+        
+        for (let hour = startHour; hour < endHour; hour++) {
+            const slotStart = new Date(selectedDate);
+            slotStart.setHours(hour, 0, 0, 0);
+            const slotEnd = new Date(slotStart.getTime() + interval * 60000);
+
+            const timeSlotDiv = document.createElement('div');
+            timeSlotDiv.classList.add('time-slot');
+            timeSlotDiv.textContent = `${String(hour).padStart(2, '0')}:00`;
+            timeSlotDiv.dataset.slotStart = slotStart.toISOString();
+
+            let isBooked = bookedDates.some(res => slotStart < res.end && slotEnd > res.start);
+
+            if (isBooked) {
+                timeSlotDiv.classList.add('booked');
+            } else {
+                timeSlotDiv.classList.add('available');
+                timeSlotDiv.addEventListener('click', handleSlotClick);
+            }
+            slotsGrid.appendChild(timeSlotDiv);
+        }
+        updateSlotSelection();
+    }
+
+    function handleSlotClick(event) {
+        const clickedSlot = event.currentTarget;
+        const clickedSlotStart = new Date(clickedSlot.dataset.slotStart);
+
+        if (!selectionStart) {
+            // Iniciar selección
+            selectionStart = clickedSlotStart;
+        } else {
+            // Finalizar selección
+            const selectionEnd = new Date(clickedSlotStart.getTime() + interval * 60000);
+            if (selectionEnd > selectionStart) {
+                fechaInicioInput.value = toLocalISOString(selectionStart).slice(0, 16);
+                fechaFinInput.value = toLocalISOString(selectionEnd).slice(0, 16);
+                formContainer.style.display = 'block';
+            } else { // Si eligen un final antes del inicio, se reinicia
+                selectionStart = clickedSlotStart;
+                fechaInicioInput.value = '';
+                fechaFinInput.value = '';
+                formContainer.style.display = 'none';
+            }
+        }
+        updateSlotSelection();
+    }
+
+    function updateSlotSelection() {
+        const allSlots = document.querySelectorAll('.time-slot.available');
+        let selectionEnd = fechaFinInput.value ? new Date(fechaFinInput.value) : null;
+
+        allSlots.forEach(slot => {
+            const slotStart = new Date(slot.dataset.slotStart);
+            slot.classList.remove('selected', 'in-range');
+
+            if (selectionStart && slotStart.getTime() === selectionStart.getTime()) {
+                slot.classList.add('selected');
+                summaryStartTime.textContent = selectionStart.toLocaleString('es-ES', { dateStyle: 'medium', timeStyle: 'short' });
+            }
+            if (selectionEnd) {
+                const slotEnd = new Date(slotStart.getTime() + interval * 60000);
+                if (slotStart >= selectionStart && slotEnd <= selectionEnd) {
+                    slot.classList.add('in-range');
+                }
+                if (slotEnd.getTime() === selectionEnd.getTime()) {
+                    slot.classList.add('selected');
+                    summaryEndTime.textContent = selectionEnd.toLocaleString('es-ES', { dateStyle: 'medium', timeStyle: 'short' });
+                }
+            }
+        });
+    }
+    
+    function clearSelection() {
+        selectionStart = null;
+        fechaInicioInput.value = '';
+        fechaFinInput.value = '';
+        formContainer.style.display = 'none';
+        summaryStartTime.textContent = '-';
+        summaryEndTime.textContent = '-';
+        updateSlotSelection();
+    }
+
+    // --- EVENT LISTENERS ---
+    prevMonthBtn.addEventListener('click', () => {
+        currentMonth--;
+        if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+        renderCalendar();
+    });
+
+    nextMonthBtn.addEventListener('click', () => {
+        currentMonth++;
+        if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+        renderCalendar();
+    });
+    
+    clearSelectionBtn.addEventListener('click', clearSelection);
+
+    // --- INICIALIZACIÓN ---
+    renderCalendar();
+});
+</script>
 {% endblock %}

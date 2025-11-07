@@ -170,6 +170,7 @@ class ReservaForm(forms.ModelForm):
             raise ValidationError("La fecha de fin debe ser posterior a la fecha de inicio.")
 
         if self.amenidad and fecha_inicio and fecha_fin:
+            # Check for conflicts with existing reservations
             reservas_en_conflicto = Reserva.objects.filter(
                 amenidad=self.amenidad,
                 estado__in=['confirmada', 'bloqueada'],
@@ -179,6 +180,13 @@ class ReservaForm(forms.ModelForm):
 
             if reservas_en_conflicto:
                 raise ValidationError("Este horario ya no está disponible. Por favor, elige otro.")
+
+            # Check if the reservation is within the amenity's operating hours
+            if fecha_inicio.time() < self.amenidad.hora_inicio:
+                raise ValidationError(f"La hora de inicio no puede ser antes de la apertura de la amenidad ({self.amenidad.hora_inicio.strftime('%H:%M')}).")
+            
+            if fecha_fin.time() > self.amenidad.hora_fin:
+                raise ValidationError(f"La hora de fin no puede ser después del cierre de la amenidad ({self.amenidad.hora_fin.strftime('%H:%M')}).")
 
         return cleaned_data
 
@@ -209,6 +217,7 @@ class AdminReservaForm(forms.ModelForm):
             raise ValidationError("La fecha de fin debe ser posterior a la fecha de inicio.")
 
         if amenidad and fecha_inicio and fecha_fin:
+            # Check for conflicts with existing reservations
             reservas_en_conflicto = Reserva.objects.filter(
                 amenidad=amenidad,
                 estado__in=['confirmada', 'bloqueada'],
@@ -218,6 +227,13 @@ class AdminReservaForm(forms.ModelForm):
 
             if reservas_en_conflicto.exists():
                 raise ValidationError("Este horario ya no está disponible. Por favor, elige otro.")
+
+            # Check if the reservation is within the amenity's operating hours
+            if fecha_inicio.time() < amenidad.hora_inicio:
+                raise ValidationError(f"La hora de inicio no puede ser antes de la apertura de la amenidad ({amenidad.hora_inicio.strftime('%H:%M')}).")
+            
+            if fecha_fin.time() > amenidad.hora_fin:
+                raise ValidationError(f"La hora de fin no puede ser después del cierre de la amenidad ({amenidad.hora_fin.strftime('%H:%M')}).")
 
         return cleaned_data
 
@@ -246,6 +262,7 @@ class BloquearHorarioForm(forms.ModelForm):
             raise ValidationError("La fecha de fin debe ser posterior a la fecha de inicio.")
 
         if self.amenidad and fecha_inicio and fecha_fin:
+            # Check for conflicts with existing reservations
             reservas_en_conflicto = Reserva.objects.filter(
                 amenidad=self.amenidad,
                 estado__in=['confirmada', 'bloqueada'],
@@ -255,5 +272,12 @@ class BloquearHorarioForm(forms.ModelForm):
 
             if reservas_en_conflicto:
                 raise ValidationError("Este horario ya no está disponible. Por favor, elige otro.")
+
+            # Check if the reservation is within the amenity's operating hours
+            if fecha_inicio.time() < self.amenidad.hora_inicio:
+                raise ValidationError(f"La hora de inicio no puede ser antes de la apertura de la amenidad ({self.amenidad.hora_inicio.strftime('%H:%M')}).")
+            
+            if fecha_fin.time() > self.amenidad.hora_fin:
+                raise ValidationError(f"La hora de fin no puede ser después del cierre de la amenidad ({self.amenidad.hora_fin.strftime('%H:%M')}).")
 
         return cleaned_data
