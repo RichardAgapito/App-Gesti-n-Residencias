@@ -1,0 +1,17 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+
+{% block content %}
+<div class="edit-user-container">
+    <h2>Editar Pre-Autorización</h2>
+    
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Guardar Cambios</button>
+    </form>
+    
+    <br>
+    <a href="{% url 'detalle_preautorizacion' preautorizacion.id %}" class="back-link">← Volver al Detalle de la Pre-Autorización</a>
+</div>
+{% endblock %}

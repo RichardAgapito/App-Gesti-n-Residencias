@@ -1,0 +1,48 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/visitas_dashboard.css' %}">
+{% endblock extra_css %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="sidebar">
+        <h2><i class="fa-solid fa-id-card"></i> Panel de Portería</h2>
+        <a href="{% url 'lista_visitantes' %}"><i class="fa-solid fa-users"></i> Gestionar Visitantes</a>
+        <a href="{% url 'lista_visitas' %}"><i class="fa-solid fa-car"></i> Gestionar Visitas</a>
+        <a href="{% url 'lista_preautorizaciones' %}"><i class="fa-solid fa-calendar-check"></i> Gestionar Pre-Autorizaciones</a>
+    </div>
+
+    <div class="main-content">
+        <header>
+            <h1>Bienvenido, {{ request.user.persona.nombres|default:request.user.email }}</h1>
+            <form method="post" action="{% url 'logout' %}">
+                {% csrf_token %}
+                <button type="submit"><i class="fa-solid fa-right-from-bracket"></i> Cerrar Sesión</button>
+            </form>
+        </header>
+
+        <section class="quick-actions">
+            <h2><i class="fa-solid fa-bolt"></i> Acciones Rápidas</h2>
+            <div class="quick-actions-grid">
+                <a href="{% url 'crear_visitante' %}" class="action-card">
+                    <div class="action-icon"><i class="fa-solid fa-user-plus"></i></div>
+                    <h3>Registrar Visitante</h3>
+                    <p>Añadir un nuevo visitante al sistema.</p>
+                </a>
+                <a href="{% url 'crear_visita' %}" class="action-card">
+                    <div class="action-icon"><i class="fa-solid fa-car-side"></i></div>
+                    <h3>Registrar Visita</h3>
+                    <p>Registrar una nueva visita a una propiedad.</p>
+                </a>
+                <a href="{% url 'crear_preautorizacion' %}" class="action-card">
+                    <div class="action-icon"><i class="fa-solid fa-calendar-plus"></i></div>
+                    <h3>Crear Pre-Autorización</h3>
+                    <p>Crear una nueva pre-autorización para una visita.</p>
+                </a>
+            </div>
+        </section>
+    </div>
+</div>
+{% endblock content %}

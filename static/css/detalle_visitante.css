@@ -1,0 +1,74 @@
+/* --- Estilos Base --- */
+body {
+    background-color: #f4f7f6 !important;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: #333;
+}
+
+/* --- Contenedor Principal (MODIFICADO) --- */
+.user-detail-container {
+    width: 100%;
+}
+
+.user-detail-container h2 {
+    color: #2c3e50;
+    margin-top: 0;
+    margin-bottom: 1.5rem;
+    border-bottom: 2px solid #f0f0f0;
+    padding-bottom: 1rem;
+}
+
+/* --- Bloque de Información --- */
+.user-detail-info p {
+    display: flex;
+    font-size: 1.1rem;
+    color: #333;
+    margin: 1rem 0;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #f7f7f7;
+}
+
+.user-detail-info p strong {
+    color: #34495e;
+    min-width: 200px;
+    font-weight: 600;
+}
+
+.user-detail-container hr {
+    border: 0;
+    height: 1px;
+    background: #dde3e9;
+    margin: 2rem 0;
+}
+
+/* --- Botones de Acción --- */
+.action-links {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.action-links .edit-link {
+    display: inline-block;
+    background-color: #3498db;
+    color: #ffffff;
+    padding: 12px 20px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: background-color 0.2s;
+    border: none;
+}
+.action-links .edit-link:hover {
+    background-color: #2980b9;
+}
+
+.action-links .back-link {
+    color: #555;
+    font-size: 0.95rem;
+    text-decoration: none;
+}
+.action-links .back-link:hover {
+    color: #3498db;
+    text-decoration: underline;
+}

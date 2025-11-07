@@ -1,0 +1,24 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+
+{% block content %}
+<div class="user-detail-container">
+    <h2>Detalles de la Pre-Autorización</h2>
+    <div class="user-detail-info">
+        <p><strong>Visitante:</strong> {{ preautorizacion.nombre_visitante }}</p>
+        <p><strong>Documento:</strong> {{ preautorizacion.documento_visitante }}</p>
+        <p><strong>Propiedad:</strong> {{ preautorizacion.propiedad }}</p>
+        <p><strong>Residente:</strong> {{ preautorizacion.residente }}</p>
+        <p><strong>Fecha y Hora Esperada:</strong> {{ preautorizacion.fecha_hora_esperada }}</p>
+        <p><strong>Vigencia:</strong> Desde {{ preautorizacion.vigencia_desde }} hasta {{ preautorizacion.vigencia_hasta }}</p>
+        <p><strong>Estado:</strong> {{ preautorizacion.get_estado_display }}</p>
+    </div>
+
+    <hr>
+
+    <div class="action-links">
+        <a href="{% url 'editar_preautorizacion' preautorizacion.id %}" class="edit-link">Editar Pre-Autorización</a>
+        <a href="{% url 'lista_preautorizaciones' %}" class="back-link">← Volver a la lista de Pre-Autorizaciones</a>
+    </div>
+</div>
+{% endblock %}

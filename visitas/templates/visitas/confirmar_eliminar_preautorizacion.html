@@ -1,0 +1,17 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+
+{% block content %}
+<div class="user-detail-container">
+    <h2>Confirmar Cancelación de Pre-Autorización</h2>
+    <p>¿Estás seguro de que quieres <strong>cancelar</strong> la pre-autorización para "{{ preautorizacion.nombre_visitante }}"?</p>
+
+    <form method="post">
+        {% csrf_token %}
+        <div class="action-links">
+            <button type="submit" class="btn btn-danger">Sí, cancelar</button>
+            <a href="{% url 'lista_preautorizaciones' %}" class="btn btn-secondary">No, volver</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

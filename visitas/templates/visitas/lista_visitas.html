@@ -1,0 +1,44 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+
+{% block css_files %}
+    <link rel="stylesheet" href="{% static 'css/lista_usuarios.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="user-list-container">
+    <div class="list-header">
+        <h1>Gestión de Visitas</h1>
+        <a href="{% url 'crear_visita' %}" class="btn btn-primary">
+            <i class="fa-solid fa-plus"></i> Registrar Nueva Visita
+        </a>
+    </div>
+    <hr>
+
+    <div class="list-layout-container">
+        <main class="results-content">
+            <h3>Visitas Registradas</h3>
+
+            {% if visitas %}
+                <div class="user-grid">
+                    {% for visita in visitas %}
+                        <div class="user-card">
+                            <h4>Visita de {{ visita.visitante }}</h4>
+                            <p><strong>Propiedad:</strong> {{ visita.propiedad }}</p>
+                            <p><strong>Fecha de Ingreso:</strong> {{ visita.fecha_hora_ingreso }}</p>
+                            <p><strong>Estado:</strong> <span class="status-{% if visita.estado == 'dentro' %}active{% else %}inactive{% endif %}">{{ visita.get_estado_display }}</span></p>
+                            <div class="action-links">
+                                <a href="#" class="btn btn-info btn-sm"><i class="fa-solid fa-eye"></i> Detalles</a>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="no-results-message">No se encontraron visitas.</p>
+            {% endif %}
+        </main>
+    </div>
+
+    <a href="{% url 'dashboard_visitas' %}" class="back-link">← Volver al Dashboard</a>
+</div>
+{% endblock %}

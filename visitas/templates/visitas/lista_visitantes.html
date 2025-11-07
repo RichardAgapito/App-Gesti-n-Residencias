@@ -1,0 +1,57 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/lista_visitantes.css' %}">
+{% endblock extra_css %}
+
+{% block content %}
+<div class="user-list-container">
+    <div class="list-header">
+        <h1>Gestión de Visitantes</h1>
+        <a href="{% url 'crear_visitante' %}" class="btn btn-primary">
+            <i class="fa-solid fa-user-plus"></i> Registrar Nuevo Visitante
+        </a>
+    </div>
+    <hr>
+
+    <div class="list-layout-container">
+        <aside class="filter-sidebar">
+            <h3><i class="fa-solid fa-filter"></i> Filtrar Visitantes</h3>
+            <form method="get" action="" class="filters-form-vertical">
+                <div class="form-group">
+                    <label for="id_q">Buscar:</label>
+                    <input id="id_q" type="search" name="q" placeholder="Nombre, documento..." value="{{ request.GET.q }}">
+                </div>
+                <button type="submit">Buscar y Filtrar</button>
+            </form>
+        </aside>
+
+        <main class="results-content">
+            <h3>Visitantes Registrados</h3>
+
+            {% if visitantes %}
+                <div class="user-grid">
+                    {% for visitante in visitantes %}
+                        <div class="user-card">
+                            <h4>{{ visitante.nombres }} {{ visitante.apellidos }}</h4>
+                            <p><strong>Documento:</strong> {{ visitante.get_tipo_documento_display }} - {{ visitante.numero_documento }}</p>
+                            <p><strong>Teléfono:</strong> {{ visitante.telefono }}</p>
+                            <p><strong>Estado:</strong> <span class="status-{% if visitante.estado == 'activo' %}active{% else %}inactive{% endif %}">{{ visitante.get_estado_display }}</span></p>
+                            <div class="action-links">
+                                <a href="#" class="btn btn-info btn-sm"><i class="fa-solid fa-eye"></i> Detalles</a>
+                                <a href="#" class="btn btn-warning btn-sm"><i class="fa-solid fa-pencil"></i> Editar</a>
+                                <a href="#" class="btn btn-danger btn-sm"><i class="fa-solid fa-toggle-off"></i> Bloquear</a>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="no-results-message">No se encontraron visitantes.</p>
+            {% endif %}
+        </main>
+    </div>
+
+    <a href="{% url 'dashboard_visitas' %}" class="back-link">← Volver al Dashboard</a>
+</div>
+{% endblock %}

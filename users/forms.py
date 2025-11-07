@@ -132,6 +132,10 @@ class CustomUserCreationForm(forms.ModelForm):
         rol = cleaned_data.get('rol')
         complejo_asignado = cleaned_data.get('complejo_asignado')
         fecha_nacimiento = cleaned_data.get('fecha_nacimiento')
+        numero_documento = cleaned_data.get('numero_documento')
+
+        if Persona.objects.filter(numero_documento=numero_documento).exists():
+            self.add_error('numero_documento', 'Ya existe una persona con este número de documento.')
 
         if rol == CustomUser.Rol.GUARDIA:
             if not complejo_asignado:

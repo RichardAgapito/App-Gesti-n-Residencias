@@ -1,0 +1,21 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/editar_visitante.css' %}">
+{% endblock extra_css %}
+
+{% block content %}
+<div class="edit-user-container">
+    <h2>Editar Visitante: {{ visitante.nombres }} {{ visitante.apellidos }}</h2>
+    
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Guardar Cambios</button>
+    </form>
+    
+    <br>
+    <a href="{% url 'detalle_visitante' visitante.id %}" class="back-link">← Volver al Detalle del Visitante</a>
+</div>
+{% endblock %}

@@ -1,0 +1,44 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+
+{% block css_files %}
+    <link rel="stylesheet" href="{% static 'css/lista_usuarios.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="user-list-container">
+    <div class="list-header">
+        <h1>Gestión de Pre-Autorizaciones</h1>
+        <a href="{% url 'crear_preautorizacion' %}" class="btn btn-primary">
+            <i class="fa-solid fa-plus"></i> Registrar Nueva Pre-Autorización
+        </a>
+    </div>
+    <hr>
+
+    <div class="list-layout-container">
+        <main class="results-content">
+            <h3>Pre-Autorizaciones Registradas</h3>
+
+            {% if preautorizaciones %}
+                <div class="user-grid">
+                    {% for preautorizacion in preautorizaciones %}
+                        <div class="user-card">
+                            <h4>Pre-Autorización para {{ preautorizacion.nombre_visitante }}</h4>
+                            <p><strong>Propiedad:</strong> {{ preautorizacion.propiedad }}</p>
+                            <p><strong>Residente:</strong> {{ preautorizacion.residente }}</p>
+                            <p><strong>Estado:</strong> <span class="status-{% if preautorizacion.estado == 'pendiente' %}active{% else %}inactive{% endif %}">{{ preautorizacion.get_estado_display }}</span></p>
+                            <div class="action-links">
+                                <a href="#" class="btn btn-info btn-sm"><i class="fa-solid fa-eye"></i> Detalles</a>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="no-results-message">No se encontraron pre-autorizaciones.</p>
+            {% endif %}
+        </main>
+    </div>
+
+    <a href="{% url 'dashboard_visitas' %}" class="back-link">← Volver al Dashboard</a>
+</div>
+{% endblock %}

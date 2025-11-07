@@ -1,0 +1,17 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+
+{% block content %}
+<div class="user-detail-container">
+    <h2>Confirmar Salida de Visita</h2>
+    <p>¿Estás seguro de que quieres marcar la salida de la visita de "{{ visita.visitante }}"?</p>
+
+    <form method="post">
+        {% csrf_token %}
+        <div class="action-links">
+            <button type="submit" class="btn btn-success">Sí, marcar salida</button>
+            <a href="{% url 'lista_visitas' %}" class="btn btn-secondary">Cancelar</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

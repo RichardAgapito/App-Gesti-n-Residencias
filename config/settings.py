@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'users.apps.UsersConfig',
     'complejos.apps.ComplejosConfig',
+    'visitas.apps.VisitasConfig',
 ]
 
 MIDDLEWARE = [

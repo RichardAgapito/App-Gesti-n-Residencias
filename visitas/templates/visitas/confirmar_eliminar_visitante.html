@@ -1,0 +1,18 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+
+{% block content %}
+<div class="user-detail-container">
+    <h2>Confirmar Bloqueo de Visitante</h2>
+    <p>¿Estás seguro de que quieres <strong>bloquear</strong> al visitante "{{ visitante.nombres }} {{ visitante.apellidos }}"?</p>
+    <p>El visitante no podrá ser registrado en futuras visitas.</p>
+
+    <form method="post">
+        {% csrf_token %}
+        <div class="action-links">
+            <button type="submit" class="btn btn-danger">Sí, bloquear</button>
+            <a href="{% url 'lista_visitantes' %}" class="btn btn-secondary">Cancelar</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

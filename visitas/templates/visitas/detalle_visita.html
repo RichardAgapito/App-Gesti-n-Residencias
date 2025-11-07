@@ -1,0 +1,26 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+
+{% block content %}
+<div class="user-detail-container">
+    <h2>Detalles de la Visita</h2>
+    <div class="user-detail-info">
+        <p><strong>Visitante:</strong> {{ visita.visitante }}</p>
+        <p><strong>Propiedad:</strong> {{ visita.propiedad }}</p>
+        <p><strong>Residente que autoriza:</strong> {{ visita.residente_autoriza }}</p>
+        <p><strong>Fecha y Hora de Ingreso:</strong> {{ visita.fecha_hora_ingreso }}</p>
+        <p><strong>Fecha y Hora de Salida:</strong> {{ visita.fecha_hora_salida|default:"No ha salido" }}</p>
+        <p><strong>Motivo:</strong> {{ visita.get_motivo_visita_display }}</p>
+        <p><strong>Placa del Vehículo:</strong> {{ visita.placa_vehiculo|default:"N/A" }}</p>
+        <p><strong>Acompañantes:</strong> {{ visita.cantidad_acompanantes }}</p>
+        <p><strong>Estado:</strong> {{ visita.get_estado_display }}</p>
+    </div>
+
+    <hr>
+
+    <div class="action-links">
+        <a href="{% url 'editar_visita' visita.id %}" class="edit-link">Editar Visita</a>
+        <a href="{% url 'lista_visitas' %}" class="back-link">← Volver a la lista de Visitas</a>
+    </div>
+</div>
+{% endblock %}

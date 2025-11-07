@@ -18,8 +18,10 @@ def dashboard(request):
             'visitas_hoy': visitas_hoy,
         }
         return render(request, 'users/dashboard.html', context)
-    
-    return render(request, 'users/dashboard.html')
+    elif request.user.rol == 'GUARDIA':
+        return redirect('dashboard_visitas')
+    else:
+        return render(request, 'users/dashboard.html')
 
 def es_admin(user):
     return user.is_authenticated and user.rol == CustomUser.Rol.ADMIN

@@ -1,0 +1,14 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+
+{% block content %}
+<div class="form-container">
+    <h1>Registrar Nueva Visita</h1>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn btn-primary">Guardar Visita</button>
+    </form>
+    <a href="{% url 'lista_visitas' %}" class="back-link">← Volver a la Lista</a>
+</div>
+{% endblock %}

@@ -57,6 +57,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     persona = models.OneToOneField(Persona, on_delete=models.CASCADE, null=True, blank=True)
     email = models.EmailField(unique=True)
     rol = models.CharField(max_length=15, choices=Rol.choices, default=Rol.RESIDENTE)
+    complejo_asignado = models.ForeignKey(Complejo, on_delete=models.SET_NULL, null=True, blank=True, related_name='personal_asignado')
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     date_joined = models.DateTimeField(default=timezone.now)

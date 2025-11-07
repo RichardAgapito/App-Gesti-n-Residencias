@@ -1,0 +1,30 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/detalle_visitante.css' %}">
+{% endblock extra_css %}
+
+{% block content %}
+<div class="user-detail-container">
+    <h2>Detalles de: {{ visitante.nombres }} {{ visitante.apellidos }}</h2>
+    <div class="user-detail-info">
+        <p><strong>Documento:</strong> {{ visitante.get_tipo_documento_display }} - {{ visitante.numero_documento }}</p>
+        <p><strong>Teléfono:</strong> {{ visitante.telefono }}</p>
+        <p><strong>Estado:</strong> {{ visitante.get_estado_display }}</p>
+        <p><strong>Visitante Frecuente:</strong> {% if visitante.es_frecuente %}Sí{% else %}No{% endif %}</p>
+        <p><strong>Fecha de Registro:</strong> {{ visitante.fecha_registro_sistema }}</p>
+        {% if visitante.foto_capturada %}
+            <p><strong>Foto:</strong></p>
+            <img src="{{ visitante.foto_capturada.url }}" alt="Foto del visitante" width="200">
+        {% endif %}
+    </div>
+
+    <hr>
+
+    <div class="action-links">
+        <a href="{% url 'editar_visitante' visitante.id %}" class="edit-link">Editar Visitante</a>
+        <a href="{% url 'lista_visitantes' %}" class="back-link">← Volver a la lista de Visitantes</a>
+    </div>
+</div>
+{% endblock %}
