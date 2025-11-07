@@ -1,0 +1,291 @@
+/* --- Estilos Base --- */
+body {
+    background-color: #f4f7f6 !important;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: #333;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
+/* --- Contenedor Principal --- */
+.user-list-container {
+    width: 100%;
+    height: 100vh;
+    max-width: none;
+    margin: 0;
+    padding: 2rem 3rem;
+    background-color: #ffffff;
+    border-radius: 0;
+    box-shadow: none;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+}
+
+/* --- Encabezado de la Página (Título y Botón) --- */
+.list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    flex-shrink: 0;
+}
+
+.list-header h1 {
+    color: #2c3e50;
+    margin: 0;
+}
+
+.btn.btn-primary {
+    display: inline-block;
+    background-color: #3498db;
+    color: #ffffff;
+    padding: 12px 20px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 0.95rem;
+    transition: background-color 0.2s;
+    border: none;
+    cursor: pointer;
+}
+.btn.btn-primary:hover {
+    background-color: #2980b9;
+}
+.btn.btn-primary .fa-solid {
+    margin-right: 8px;
+}
+
+.user-list-container hr {
+    border: 0;
+    height: 1px;
+    background: #dde3e9;
+    margin: 1.5rem 0;
+    flex-shrink: 0;
+}
+
+/* --- Layout de 2 Columnas --- */
+.list-layout-container {
+    display: flex;
+    gap: 2rem;
+    flex-grow: 1;
+    overflow: hidden;
+}
+
+/* --- 1. Barra de Filtros (Izquierda) --- */
+.filter-sidebar {
+    width: 280px;
+    flex-shrink: 0;
+    background-color: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+    overflow-y: auto;
+    height: 100%;
+    box-sizing: border-box;
+}
+
+.filter-sidebar h3 {
+    margin-top: 0;
+    color: #34495e;
+    border-bottom: 1px solid #dde3e9;
+    padding-bottom: 0.75rem;
+}
+
+.filter-sidebar h3 .fa-solid {
+    margin-right: 8px;
+    color: #3498db;
+}
+
+.filters-form-vertical .form-group {
+    margin-bottom: 1.25rem;
+}
+
+.filters-form-vertical label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: #555;
+}
+
+.filters-form-vertical input[type="search"],
+.filters-form-vertical select {
+    width: 100%;
+    padding: 12px 15px !important;
+    font-size: 1rem !important;
+    border: 1px solid #ccc !important;
+    border-radius: 5px !important;
+    box-sizing: border-box;
+}
+
+.filters-form-vertical button[type="submit"] {
+    width: 100%;
+    background-color: #2ecc71;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 500;
+    transition: background-color 0.2s;
+    margin-top: 0.5rem;
+}
+.filters-form-vertical button[type="submit"]:hover {
+    background-color: #27ae60;
+}
+
+
+/* --- 2. Contenido de Resultados (Derecha) --- */
+.results-content {
+    flex-grow: 1;
+    min-width: 0;
+    overflow-y: auto;
+    height: 100%;
+    padding-right: 1rem;
+}
+
+.results-content h3 {
+    color: #34495e;
+    border-bottom: 2px solid #f0f0f0;
+    padding-bottom: 10px;
+    margin-top: 0;
+    margin-bottom: 1.5rem;
+}
+
+/* --- Grid de Tarjetas de Visita --- */
+.visita-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+    padding-bottom: 2rem;
+}
+
+.visita-card {
+    background-color: #ffffff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s, box-shadow 0.2s;
+    display: flex;
+    flex-direction: column;
+}
+
+.visita-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+    border-color: #3498db;
+}
+
+.visita-card h4 {
+    color: #2c3e50;
+    font-size: 1.25rem;
+    margin-top: 0;
+    margin-bottom: 1rem;
+}
+
+.visita-card p {
+    margin: 0.5rem 0;
+    font-size: 0.95rem;
+    color: #555;
+    display: flex;
+}
+.visita-card p strong {
+    color: #333;
+    min-width: 90px;
+    display: inline-block;
+    margin-right: 5px;
+}
+
+/* Estilos para los estados */
+.status-dentro, .status-salio, .status-no_autorizado {
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+}
+.status-dentro {
+    background-color: #eafbf3;
+    color: #27ae60;
+}
+.status-salio {
+    background-color: #fdf3f2;
+    color: #e74c3c;
+}
+.status-no_autorizado {
+    background-color: #fef7e0;
+    color: #f39c12;
+}
+
+/* --- (ACTUALIZADO) Acciones de la Tarjeta (Botones) --- */
+.user-card .action-links {
+    border-top: 1px solid #f0f0f0;
+    padding-top: 1rem;
+    margin-top: auto;
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+}
+
+/* Estilo genérico para los botones de Gemini */
+.action-links .btn {
+    text-decoration: none;
+    color: #ffffff;
+    padding: 6px 12px;
+    border-radius: 5px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    transition: all 0.2s;
+    border: none;
+    cursor: pointer;
+}
+.action-links .btn .fa-solid {
+    margin-right: 5px;
+}
+
+/* Colores de los botones */
+.action-links .btn-info {
+    background-color: #3498db;
+}
+.action-links .btn-info:hover {
+    background-color: #2980b9;
+}
+
+.action-links .btn-warning {
+    background-color: #f39c12;
+    color: #ffffff;
+}
+.action-links .btn-warning:hover {
+    background-color: #e67e22;
+}
+
+.action-links .btn-danger {
+    background-color: #e74c3c;
+}
+.action-links .btn-danger:hover {
+    background-color: #c0392b;
+}
+
+/* Mensaje "No hay usuarios" */
+.no-results-message {
+    font-size: 1.1rem;
+    color: #777;
+    text-align: center;
+    padding: 2rem;
+}
+
+/* Enlace "Volver al Dashboard" */
+.user-list-container > a.back-link {
+    display: inline-block;
+    margin-top: 1.5rem;
+    color: #555;
+    font-size: 0.95rem;
+    text-decoration: none;
+    flex-shrink: 0;
+}
+.user-list-container > a.back-link:hover {
+    color: #3498db;
+    text-decoration: underline;
+}

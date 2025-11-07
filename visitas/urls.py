@@ -13,6 +13,7 @@ urlpatterns = [
     path('visitas/<int:visita_id>/', views.detalle_visita_view, name='detalle_visita'),
     path('visitas/<int:visita_id>/editar/', views.editar_visita_view, name='editar_visita'),
     path('visitas/<int:visita_id>/eliminar/', views.eliminar_visita_view, name='eliminar_visita'),
+    path('visitas/propiedad/<int:propiedad_id>/residentes/', views.get_residentes_por_propiedad, name='get_residentes_por_propiedad'),
     path('preautorizaciones/', views.lista_preautorizaciones_view, name='lista_preautorizaciones'),
     path('preautorizaciones/crear/', views.crear_preautorizacion_view, name='crear_preautorizacion'),
     path('preautorizaciones/<int:preautorizacion_id>/', views.detalle_preautorizacion_view, name='detalle_preautorizacion'),

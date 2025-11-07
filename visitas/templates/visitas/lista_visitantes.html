@@ -23,6 +23,14 @@
                     <label for="id_q">Buscar:</label>
                     <input id="id_q" type="search" name="q" placeholder="Nombre, documento..." value="{{ request.GET.q }}">
                 </div>
+                <div class="form-group">
+                    <label for="id_estado">Estado:</label>
+                    <select id="id_estado" name="estado">
+                        <option value=""{% if not request.GET.estado %} selected{% endif %}>Todos</option>
+                        <option value="activo"{% if request.GET.estado == 'activo' %} selected{% endif %}>Activo</option>
+                        <option value="bloqueado"{% if request.GET.estado == 'bloqueado' %} selected{% endif %}>Bloqueado</option>
+                    </select>
+                </div>
                 <button type="submit">Buscar y Filtrar</button>
             </form>
         </aside>

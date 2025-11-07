@@ -23,6 +23,25 @@
             </form>
         </header>
 
+        <section class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon" style="color: #3498db;">
+                    <i class="fa-solid fa-user-group"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>Visitantes Dentro del Complejo: <span>{{ visitantes_dentro }}</span></h3>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="color: #f39c12;">
+                    <i class="fa-solid fa-calendar-check"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>Autorizaciones Pendientes: <span>{{ autorizaciones_pendientes }}</span></h3>
+                </div>
+            </div>
+        </section>
+
         <section class="quick-actions">
             <h2><i class="fa-solid fa-bolt"></i> Acciones Rápidas</h2>
             <div class="quick-actions-grid">

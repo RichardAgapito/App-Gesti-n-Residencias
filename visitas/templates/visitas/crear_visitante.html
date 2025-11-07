@@ -2,13 +2,19 @@
 {% load static %}
 
 {% block content %}
-<div class="form-container">
-    <h1>Registrar Nuevo Visitante</h1>
-    <form method="post" enctype="multipart/form-data">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit" class="btn btn-primary">Guardar Visitante</button>
-    </form>
-    <a href="{% url 'lista_visitantes' %}" class="back-link">← Volver a la Lista</a>
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <h1 class="text-center">Registrar Nuevo Visitante</h1>
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <button type="submit" class="btn btn-primary">Guardar Visitante</button>
+            </form>
+            <div class="text-center mt-3">
+                <a href="{% url 'lista_visitantes' %}" class="back-link">← Volver a la Lista</a>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}

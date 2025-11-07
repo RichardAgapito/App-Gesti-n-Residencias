@@ -1,9 +1,10 @@
 {% extends 'base_dashboard.html' %}
 {% load static %}
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/lista_visitas.css' %}">
+{% endblock extra_css %}
 
-{% block css_files %}
-    <link rel="stylesheet" href="{% static 'css/lista_usuarios.css' %}">
-{% endblock %}
+
 
 {% block content %}
 <div class="user-list-container">
@@ -16,19 +17,54 @@
     <hr>
 
     <div class="list-layout-container">
+        <aside class="filter-sidebar">
+            <h3><i class="fa-solid fa-filter"></i> Filtrar Visitas</h3>
+            <form method="get" action="" class="filters-form-vertical">
+                <div class="form-group">
+                    <label for="id_q">Buscar:</label>
+                    <input id="id_q" type="search" name="q" placeholder="Visitante, propiedad..." value="{{ request.GET.q }}">
+                </div>
+                <div class="form-group">
+                    <label for="id_estado">Estado:</label>
+                    <select id="id_estado" name="estado">
+                        <option value=""{% if not request.GET.estado %} selected{% endif %}>Todos</option>
+                        <option value="dentro"{% if request.GET.estado == 'dentro' %} selected{% endif %}>Dentro</option>
+                        <option value="salio"{% if request.GET.estado == 'salio' %} selected{% endif %}>Salió</option>
+                        <option value="no_autorizado"{% if request.GET.estado == 'no_autorizado' %} selected{% endif %}>No Autorizado</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="id_motivo_visita">Motivo de Visita:</label>
+                    <select id="id_motivo_visita" name="motivo_visita">
+                        <option value=""{% if not request.GET.motivo_visita %} selected{% endif %}>Todos</option>
+                        <option value="social"{% if request.GET.motivo_visita == 'social' %} selected{% endif %}>Social</option>
+                        <option value="proveedor"{% if request.GET.motivo_visita == 'proveedor' %} selected{% endif %}>Proveedor</option>
+                        <option value="delivery"{% if request.GET.motivo_visita == 'delivery' %} selected{% endif %}>Delivery</option>
+                        <option value="mudanza"{% if request.GET.motivo_visita == 'mudanza' %} selected{% endif %}>Mudanza</option>
+                        <option value="tecnico"{% if request.GET.motivo_visita == 'tecnico' %} selected{% endif %}>Técnico</option>
+                    </select>
+                </div>
+                <button type="submit">Buscar y Filtrar</button>
+            </form>
+        </aside>
+
         <main class="results-content">
             <h3>Visitas Registradas</h3>
 
             {% if visitas %}
-                <div class="user-grid">
+                <div class="visita-grid">
                     {% for visita in visitas %}
-                        <div class="user-card">
-                            <h4>Visita de {{ visita.visitante }}</h4>
-                            <p><strong>Propiedad:</strong> {{ visita.propiedad }}</p>
-                            <p><strong>Fecha de Ingreso:</strong> {{ visita.fecha_hora_ingreso }}</p>
-                            <p><strong>Estado:</strong> <span class="status-{% if visita.estado == 'dentro' %}active{% else %}inactive{% endif %}">{{ visita.get_estado_display }}</span></p>
+                        <div class="visita-card">
+                            <h4>Visita de {{ visita.visitante.nombres }} {{ visita.visitante.apellidos }}</h4>
+                            <p><strong>Propiedad:</strong> {{ visita.propiedad.nombre }}</p>
+                            <p><strong>Motivo:</strong> {{ visita.get_motivo_visita_display }}</p>
+                            <p><strong>Ingreso:</strong> {{ visita.fecha_hora_ingreso|date:"d/m/Y H:i" }}</p>
+                            <p><strong>Salida:</strong> {% if visita.fecha_hora_salida %}{{ visita.fecha_hora_salida|date:"d/m/Y H:i" }}{% else %}Pendiente{% endif %}</p>
+                            <p><strong>Estado:</strong> <span class="status-{{ visita.estado }}">{{ visita.get_estado_display }}</span></p>
                             <div class="action-links">
-                                <a href="#" class="btn btn-info btn-sm"><i class="fa-solid fa-eye"></i> Detalles</a>
+                                <a href="{% url 'detalle_visita' visita.id %}" class="btn btn-info btn-sm"><i class="fa-solid fa-eye"></i> Detalles</a>
+                                <a href="{% url 'editar_visita' visita.id %}" class="btn btn-warning btn-sm"><i class="fa-solid fa-pencil"></i> Editar</a>
+                                <a href="{% url 'eliminar_visita' visita.id %}" class="btn btn-danger btn-sm"><i class="fa-solid fa-arrow-right-from-bracket"></i> Registrar Salida</a>
                             </div>
                         </div>
                     {% endfor %}

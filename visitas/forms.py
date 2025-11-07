@@ -1,15 +1,57 @@
 from django import forms
 from .models import Visitante, Visita, PreAutorizacion
+from complejos.models import Propiedad
 
 class VisitanteForm(forms.ModelForm):
     class Meta:
         model = Visitante
         fields = '__all__'
 
+    def clean(self):
+        cleaned_data = super().clean()
+        tipo_documento = cleaned_data.get('tipo_documento')
+        numero_documento = cleaned_data.get('numero_documento')
+        nombres = cleaned_data.get('nombres')
+        apellidos = cleaned_data.get('apellidos')
+        telefono = cleaned_data.get('telefono')
+
+        if nombres and not all(c.isalpha() or c.isspace() for c in nombres):
+            self.add_error('nombres', "El nombre solo debe contener letras y espacios.")
+
+        if apellidos and not all(c.isalpha() or c.isspace() for c in apellidos):
+            self.add_error('apellidos', "Los apellidos solo deben contener letras y espacios.")
+
+        if telefono:
+            if not telefono.isdigit():
+                self.add_error('telefono', "El número de teléfono debe contener solo dígitos.")
+            elif len(telefono) != 9:
+                self.add_error('telefono', "El número de teléfono debe tener exactamente 9 dígitos.")
+            elif not telefono.startswith('9'):
+                self.add_error('telefono', "El número de teléfono debe comenzar con 9.")
+
+        if tipo_documento and numero_documento:
+            if tipo_documento in ['DNI', 'Pasaporte']:
+                if not (numero_documento.isdigit() and len(numero_documento) == 8):
+                    self.add_error('numero_documento', "Para DNI/Pasaporte, el número de documento debe ser de 8 dígitos numéricos.")
+            elif tipo_documento == 'Carnet Extranjeria':
+                if not (numero_documento.isdigit() and len(numero_documento) == 9):
+                    self.add_error('numero_documento', "Para Carnet de Extranjería, el número de documento debe ser de 9 dígitos numéricos.")
+        return cleaned_data
+
+from users.models import CustomUser
+
 class VisitaForm(forms.ModelForm):
     class Meta:
         model = Visita
         fields = '__all__'
+
+    def __init__(self, *args, **kwargs):
+        complejo_asignado = kwargs.pop('complejo_asignado', None)
+        super(VisitaForm, self).__init__(*args, **kwargs)
+        self.fields['residente_autoriza'].queryset = CustomUser.objects.none()
+        self.fields['residente_autoriza'].required = False
+        if complejo_asignado:
+            self.fields['propiedad'].queryset = Propiedad.objects.filter(complejo=complejo_asignado)
 
 class PreAutorizacionForm(forms.ModelForm):
     class Meta:
