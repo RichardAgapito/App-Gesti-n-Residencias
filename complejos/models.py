@@ -1,6 +1,7 @@
 from django.db import models
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.core.validators import RegexValidator
 import datetime
 
 class Amenidad(models.Model):
@@ -31,7 +32,10 @@ class Complejo(models.Model):
     numero_total_unidades = models.PositiveIntegerField()
     amenidades = models.ManyToManyField(Amenidad)
     administrador_responsable = models.CharField(max_length=100)
-    telefono_contacto = models.CharField(max_length=20)
+    telefono_contacto = models.CharField(
+        max_length=9,
+        validators=[RegexValidator(regex=r'^\d{9}$', message='El número de teléfono debe tener exactamente 9 dígitos.')]
+    )
     fecha_registro = models.DateTimeField(auto_now_add=True)
     estado = models.CharField(max_length=10, choices=ESTADO_CHOICES, default='activo')
 
