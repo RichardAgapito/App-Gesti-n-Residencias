@@ -1,6 +1,6 @@
 from django import forms
 from .models import Visitante, Visita, PreAutorizacion
-from complejos.models import Propiedad
+from complejos.models import Propiedad, PropiedadPersona
 from users.models import CustomUser
 from django.utils import timezone
 
@@ -58,33 +58,45 @@ class VisitaForm(forms.ModelForm):
             'autorizado_previamente'
         ]
         widgets = {
-            'fecha_hora_ingreso': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control', 'readonly': 'readonly'}),
+            'fecha_hora_ingreso': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
         }
 
     def __init__(self, *args, **kwargs):
         complejo_asignado = kwargs.pop('complejo_asignado', None)
         self.user = kwargs.pop('user', None)
         super(VisitaForm, self).__init__(*args, **kwargs)
-        
-        self.fields['residente_autoriza'].queryset = CustomUser.objects.none()
-        self.fields['residente_autoriza'].required = False
 
         if complejo_asignado:
             self.fields['propiedad'].queryset = Propiedad.objects.filter(complejo=complejo_asignado)
-        
-        if self.is_bound and 'propiedad' in self.data:
+
+        # Initially, set the queryset to none.
+        self.fields['residente_autoriza'].queryset = CustomUser.objects.none()
+
+        # If the form is bound to data (i.e., it's a POST request)
+        if 'propiedad' in self.data:
             try:
                 propiedad_id = int(self.data.get('propiedad'))
-                self.fields['residente_autoriza'].queryset = CustomUser.objects.filter(
-                    propiedades_asociadas__propiedad_id=propiedad_id,
-                    propiedades_asociadas__estado='activo'
-                )
+                # Get all active users (personas) associated with that property
+                residentes_ids = PropiedadPersona.objects.filter(
+                    propiedad_id=propiedad_id,
+                    estado='activo',
+                    persona__is_active=True
+                ).values_list('persona_id', flat=True)
+                # Set the queryset for validation
+                self.fields['residente_autoriza'].queryset = CustomUser.objects.filter(id__in=residentes_ids)
             except (ValueError, TypeError):
-                pass
+                pass  # Handle cases where propiedad_id is not a valid number
+        # If the form is being initialized with an existing instance (e.g., for editing)
+        elif self.instance.pk and self.instance.propiedad:
+            residentes_ids = PropiedadPersona.objects.filter(
+                propiedad=self.instance.propiedad,
+                estado='activo',
+                persona__is_active=True
+            ).values_list('persona_id', flat=True)
+            self.fields['residente_autoriza'].queryset = CustomUser.objects.filter(id__in=residentes_ids)
 
-        if not self.instance.pk:
-            self.fields['fecha_hora_ingreso'].initial = timezone.now().strftime('%Y-%m-%dT%H:%M')
-
+        self.fields['residente_autoriza'].required = False
+        
     def save(self, commit=True):
         instance = super().save(commit=False)
         if self.user:
@@ -93,12 +105,40 @@ class VisitaForm(forms.ModelForm):
             instance.save()
         return instance
 
+    # (NUEVO) AÑADE ESTE MÉTODO COMPLETO PARA LA VALIDACIÓN
     def clean_visitante(self):
         visitante = self.cleaned_data.get('visitante')
         if not visitante:
             raise forms.ValidationError("Debe seleccionar un visitante registrado.")
         return visitante
 
+    # (NUEVO) AÑADE ESTE MÉTODO COMPLETO
+    def clean(self):
+        # 1. Obtenemos los datos limpios del formulario
+        cleaned_data = super().clean()
+        visitante = cleaned_data.get('visitante')
+
+        # 2. Esta validación solo corre al CREAR una visita (cuando self.instance.pk es None)
+        #    y solo si el campo 'visitante' fue llenado.
+        if self.instance.pk is None and visitante:
+            
+            # 3. Buscamos si el visitante ya tiene una visita "En Curso"
+            #    (Usamos el estado 'en_curso' de tu modelo Visita)
+            visita_en_curso_existente = Visita.objects.filter(
+                visitante=visitante,
+                estado='en_curso'
+            ).exists() 
+
+            # 4. Si existe, lanzamos un error de validación
+            if visita_en_curso_existente:
+                raise forms.ValidationError(
+                    f"Error: El visitante '{visitante}' ya tiene una visita 'En Curso'. "
+                    "Debe registrar su salida antes de crear una nueva visita."
+                )
+        
+        # 5. Siempre debemos devolver los datos limpios
+        return cleaned_data
+    
 class EditarVisitaForm(forms.ModelForm):
     class Meta:
         model = Visita

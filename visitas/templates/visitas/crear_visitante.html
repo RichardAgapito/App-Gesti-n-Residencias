@@ -6,38 +6,76 @@
 {% endblock extra_css %}
 
 {% block content %}
-<div class="user-form-container">
-    <h1 class="text-center">Registrar Nuevo Visitante</h1>
-    <form method="post" enctype="multipart/form-data" class="user-form">
+<div class="form-container">
+    <h2><i class="fa-solid fa-user-plus"></i> Registrar Nuevo Visitante</h2>
+    
+    <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
         
         {% if form.non_field_errors %}
-            <div class="errorlist">
-                {% for error in form.non_field_errors %}
-                    <li>{{ error }}</li>
-                {% endfor %}
-            </div>
+            <div class="form-errors">{{ form.non_field_errors }}</div>
         {% endif %}
 
-        {% for field in form %}
-            <div class="form-group">
-                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-                {{ field }}
-                {% if field.help_text %}
-                    <small style="display: block; margin-top: 5px; color: #6c757d;">{{ field.help_text }}</small>
-                {% endif %}
-                {% for error in field.errors %}
-                    <div class="errorlist">
-                        <li>{{ error }}</li>
-                    </div>
-                {% endfor %}
-            </div>
-        {% endfor %}
+        <p>
+            <label for="{{ form.tipo_documento.id_for_label }}">
+                {{ form.tipo_documento.label }}<span class="required-field">*</span>
+            </label>
+            {{ form.tipo_documento }}
+            {{ form.tipo_documento.errors }}
+        </p>
 
+        <p>
+            <label for="{{ form.numero_documento.id_for_label }}">
+                {{ form.numero_documento.label }}<span class="required-field">*</span>
+            </label>
+            {{ form.numero_documento }}
+            {{ form.numero_documento.errors }}
+        </p>
+
+        <p>
+            <label for="{{ form.nombres.id_for_label }}">
+                {{ form.nombres.label }}<span class="required-field">*</span>
+            </label>
+            {{ form.nombres }}
+            {{ form.nombres.errors }}
+        </p>
+
+        <p>
+            <label for="{{ form.apellidos.id_for_label }}">
+                {{ form.apellidos.label }}<span class="required-field">*</span>
+            </label>
+            {{ form.apellidos }}
+            {{ form.apellidos.errors }}
+        </p>
+
+        <p>
+            <label for="{{ form.telefono.id_for_label }}">
+                {{ form.telefono.label }}<span class="required-field">*</span>
+            </label>
+            {{ form.telefono }}
+            {{ form.telefono.errors }}
+        </p>
+
+        <p>
+            <label for="{{ form.foto_capturada.id_for_label }}">
+                {{ form.foto_capturada.label }}<span class="required-field">*</span>
+            </label>
+            {{ form.foto_capturada }}
+            {{ form.foto_capturada.errors }}
+        </p>
+
+        <div class="form-check">
+            {{ form.es_frecuente }}
+            <label for="{{ form.es_frecuente.id_for_label }}">
+                {{ form.es_frecuente.label }}
+            </label>
+            {{ form.es_frecuente.errors }}
+        </div>
+
+        {{ form.estado.as_hidden }}
+        
         <button type="submit" class="btn-submit">Guardar Visitante</button>
     </form>
-    <div class="text-center mt-3">
-        <a href="{% url 'lista_visitantes' %}" class="back-link">← Volver a la Lista</a>
-    </div>
+    <a href="{% url 'lista_visitantes' %}" class="back-link">← Volver a la Lista</a>
 </div>
 {% endblock %}
