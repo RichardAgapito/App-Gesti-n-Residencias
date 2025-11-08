@@ -13,10 +13,13 @@ urlpatterns = [
     path('visitas/crear/', views.crear_visita_view, name='crear_visita'),
     path('visitas/<int:visita_id>/', views.detalle_visita_view, name='detalle_visita'),
     
-    # (MODIFICADO) Renombramos esta URL para que sea más clara
+    # Mantenido de tu rama (guevara_r)
     path('visitas/<int:visita_id>/registrar-salida/', views.registrar_salida_visita_view, name='registrar_salida_visita'),
-    # (ELIMINADA) La URL de 'editar_visita' se ha ido
     
+    # Añadido desde la rama principal (residencias_richard)
+    path('visitas/<int:visita_id>/editar/', views.editar_visita_view, name='editar_visita'),
+    
+    # Mantenido de tu rama (guevara_r)
     path('visitas/propiedad/<int:propiedad_id>/residentes/', views.get_residentes_por_propiedad, name='get_residentes_por_propiedad'),
     
     path('preautorizaciones/', views.lista_preautorizaciones_view, name='lista_preautorizaciones'),

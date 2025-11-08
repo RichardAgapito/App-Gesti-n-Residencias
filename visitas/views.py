@@ -3,14 +3,16 @@ from django.http import JsonResponse
 from complejos.models import Propiedad, PropiedadPersona
 from django.db import models
 from .models import Visitante, Visita, PreAutorizacion
-# (MODIFICADO) Quitamos EditarVisitaForm
-from .forms import VisitanteForm, VisitaForm, PreAutorizacionForm
+# --- Bloque de importaciones combinado ---
+from .forms import VisitanteForm, VisitaForm, PreAutorizacionForm, EditarVisitaForm
 from django.db.models import Q 
 from django.contrib.auth.decorators import login_required, user_passes_test
 from users.models import CustomUser
 from django.core.paginator import Paginator
 from django.db.models import Case, When, Value
+from django.utils import timezone
 
+# --- Función de tu rama ---
 def es_guardia(user):
     return user.is_authenticated and user.rol == CustomUser.Rol.GUARDIA
 
@@ -33,7 +35,7 @@ def dashboard(request):
     }
     return render(request, 'visitas/dashboard.html', context)
 
-# --- Vistas de Visitante ---
+# --- Vistas de Visitante (conservando tus decoradores) ---
 @login_required
 @user_passes_test(es_guardia)
 def lista_visitantes_view(request):
@@ -43,7 +45,6 @@ def lista_visitantes_view(request):
 
     if query:
         visitantes = visitantes.filter(
-            # (MEJORA) Añadido filtro por apellidos
             Q(nombres__icontains=query) |
             Q(apellidos__icontains=query) |
             Q(numero_documento__icontains=query)
@@ -99,7 +100,7 @@ def eliminar_visitante_view(request, visitante_id):
     return render(request, 'visitas/confirmar_eliminar_visitante.html', {'visitante': visitante})
 
 
-# --- Vistas de Visita ---
+# --- Vistas de Visita (conservando tus decoradores y lógica) ---
 @login_required
 @user_passes_test(es_guardia)
 def lista_visitas_view(request):
@@ -117,7 +118,6 @@ def lista_visitas_view(request):
 
     if query:
         visitas_list = visitas_list.filter(
-            # (MEJORA) Añadido filtro por apellidos del visitante
             Q(visitante__nombres__icontains=query) |
             Q(visitante__apellidos__icontains=query) |
             Q(visitante__numero_documento__icontains=query) |
@@ -128,7 +128,7 @@ def lista_visitas_view(request):
     if propiedad_filter and propiedad_filter != '':
         visitas_list = visitas_list.filter(propiedad__id=propiedad_filter)
 
-    paginator = Paginator(visitas_list, 10) 
+    paginator = Paginator(visitas_list, 10) # Show 10 visitas per page.
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
@@ -163,38 +163,46 @@ def crear_visita_view(request):
 @user_passes_test(es_guardia)
 def detalle_visita_view(request, visita_id):
     visita = get_object_or_404(Visita, id=visita_id)
-    context = { 'visita': visita }
+    context = { 'visitante': visita }
     return render(request, 'visitas/detalle_visita.html', context)
 
-# (ELIMINADA) La vista 'editar_visita_view' se ha ido.
-
-# (MODIFICADA) Esta es la nueva 'registrar_salida_visita_view'
+# --- Bloque resuelto según tus instrucciones ---
+# Mantenemos tu nueva vista
 @login_required
 @user_passes_test(es_guardia)
 def registrar_salida_visita_view(request, visita_id):
     visita = get_object_or_404(Visita, id=visita_id)
     if request.method == 'POST':
         visita.estado = 'salio'
-        # (NUEVO) Registramos la hora de salida
         visita.fecha_hora_salida = timezone.now() 
         visita.save()
         return redirect('lista_visitas')
-    # Usamos la plantilla de confirmación existente
     return render(request, 'visitas/confirmar_eliminar_visita.html', {'visita': visita})
 
+# Y también la vista de editar que se necesita por el urls.py combinado
+def editar_visita_view(request, visita_id):
+    visita = get_object_or_404(Visita, id=visita_id)
+    if request.method == 'POST':
+        form = EditarVisitaForm(request.POST, instance=visita)
+        if form.is_valid():
+            visita = form.save(commit=False)
+            visita.estado = 'finalizado'
+            visita.save()
+            return redirect('lista_visitas')
+    else:
+        form = EditarVisitaForm(instance=visita)
+    return render(request, 'visitas/editar_visita.html', {'form': form, 'visita': visita})
 
-# --- Vistas de PreAutorizacion (solo Guardia) ---
+
+# --- Vistas de PreAutorizacion (conservando tus decoradores) ---
 @login_required
 @user_passes_test(es_guardia)
 def lista_preautorizaciones_view(request):
-    
-    # (NUEVO) Filtrar por el complejo del guardia
     user = request.user
     guardia_complejo = None
     if user.is_authenticated and hasattr(user, 'rol') and user.rol == 'GUARDIA':
         guardia_complejo = user.complejo_asignado
 
-    # Query base (sin cambios, sigue ordenando por prioridad)
     preautorizaciones_qs = PreAutorizacion.objects.select_related(
         'propiedad__complejo', 'residente__persona'
     ).annotate(
@@ -205,23 +213,19 @@ def lista_preautorizaciones_view(request):
         )
     ).order_by('status_order', 'fecha_hora_esperada')
 
-    # (NUEVO) Obtener listas para los dropdowns de filtros
     propiedades_list = Propiedad.objects.all()
     residentes_list = CustomUser.objects.filter(rol='RESIDENTE', is_active=True).select_related('persona')
 
-    # (NUEVO) Aplicar filtro de complejo si el guardia está asignado
     if guardia_complejo:
         preautorizaciones_qs = preautorizaciones_qs.filter(propiedad__complejo=guardia_complejo)
         propiedades_list = propiedades_list.filter(complejo=guardia_complejo)
         residentes_list = residentes_list.filter(propiedades_asociadas__propiedad__complejo=guardia_complejo).distinct()
 
-    # Obtener valores de los filtros
     query = request.GET.get('q')
     estado_filter = request.GET.get('estado')
-    propiedad_filter_id = request.GET.get('propiedad') # (NUEVO)
-    residente_filter_id = request.GET.get('residente') # (NUEVO)
+    propiedad_filter_id = request.GET.get('propiedad')
+    residente_filter_id = request.GET.get('residente')
 
-    # Aplicar filtros
     if query:
         preautorizaciones_qs = preautorizaciones_qs.filter(
             Q(nombre_visitante__icontains=query) |
@@ -232,20 +236,20 @@ def lista_preautorizaciones_view(request):
     if estado_filter:
         preautorizaciones_qs = preautorizaciones_qs.filter(estado=estado_filter)
     
-    if propiedad_filter_id: # (NUEVO)
+    if propiedad_filter_id:
         preautorizaciones_qs = preautorizaciones_qs.filter(propiedad_id=propiedad_filter_id)
     
-    if residente_filter_id: # (NUEVO)
+    if residente_filter_id:
         preautorizaciones_qs = preautorizaciones_qs.filter(residente_id=residente_filter_id)
 
     context = {
         'preautorizaciones': preautorizaciones_qs,
         'estado_choices': PreAutorizacion.ESTADO_CHOICES,
-        'propiedades': propiedades_list, # (NUEVO)
-        'residentes': residentes_list, # (NUEVO)
+        'propiedades': propiedades_list,
+        'residentes': residentes_list,
         'current_estado': estado_filter,
-        'current_propiedad': int(propiedad_filter_id) if propiedad_filter_id else None, # (NUEVO)
-        'current_residente': int(residente_filter_id) if residente_filter_id else None, # (NUEVO)
+        'current_propiedad': int(propiedad_filter_id) if propiedad_filter_id else None,
+        'current_residente': int(residente_filter_id) if residente_filter_id else None,
         'query': query,
     }
     return render(request, 'visitas/lista_preautorizaciones.html', context)
