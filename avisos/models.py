@@ -4,45 +4,38 @@ from complejos.models import Complejo
 
 class Aviso(models.Model):
     """
-    Modelo para representar un aviso en el sistema.
+    Modelo para representar un aviso o notificación en el sistema.
     """
     class TipoAviso(models.TextChoices):
         GENERAL = 'GENERAL', 'General'
         MANTENIMIENTO = 'MANTENIMIENTO', 'Mantenimiento'
         URGENTE = 'URGENTE', 'Urgente'
-        SUGERENCIA = 'SUGERENCIA', 'Sugerencia'
-
-    class DirigidoA(models.TextChoices):
-        TODOS = 'TODOS', 'Todos'
-        RESIDENTES = 'RESIDENTES', 'Residentes'
-        ADMINISTRADORES = 'ADMINISTRADORES', 'Administradores'
 
     titulo = models.CharField(max_length=200)
     contenido = models.TextField()
     fecha_creacion = models.DateTimeField(auto_now_add=True)
+    
     autor = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='avisos_creados'
+        related_name='avisos_creados_nuevos'  # Use a new related_name to avoid conflicts
     )
+    
     complejo = models.ForeignKey(
         Complejo,
         on_delete=models.CASCADE,
-        related_name='avisos'
+        related_name='avisos_nuevos'  # Use a new related_name
     )
+    
     tipo_aviso = models.CharField(
         max_length=20,
         choices=TipoAviso.choices,
         default=TipoAviso.GENERAL
     )
-    dirigido_a = models.CharField(
-        max_length=20,
-        choices=DirigidoA.choices,
-        default=DirigidoA.TODOS
-    )
+    
     leido_por = models.ManyToManyField(
         settings.AUTH_USER_MODEL,
-        related_name='avisos_leidos',
+        related_name='avisos_leidos_nuevos',  # Use a new related_name
         blank=True
     )
 

@@ -5,7 +5,7 @@
     <link rel="stylesheet" href="{% static 'css/resident_dashboard.css' %}">
     <style>
         .availability-container {
-            max-width: 100%%;
+            max-width: 100%;
             margin: 2rem auto;
             padding: 2rem;
             background-color: #fff;
@@ -224,11 +224,8 @@
 
 {% block content %}
 <div class="dashboard-container">
-    <div class="sidebar">
-        <h2><i class="fa-solid fa-house-user"></i> Panel Residente</h2>
-        <a href="{% url 'crear_reserva' %}" class="active"><i class="fa-solid fa-calendar-plus"></i> Reservar Amenidad</a>
-        <a href="{% url 'mis_reservas' %} "><i class="fa-solid fa-calendar-check"></i> Mis Reservas</a>
-    </div>
+    
+    {% include 'includes/resident_sidebar.html' %}
 
     <div class="main-content">
         <header>
@@ -466,7 +463,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 timeSlotDiv.classList.add('booked');
             } else if (slotStart < new Date()) { // Slot is in the past
                 timeSlotDiv.classList.add('booked');
-            } else {
+            }
+            else {
                 timeSlotDiv.classList.add('available');
                 timeSlotDiv.dataset.startTime = slotStart.toISOString();
                 timeSlotDiv.dataset.endTime = slotEnd.toISOString();

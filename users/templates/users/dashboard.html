@@ -15,16 +15,8 @@
 {% block content %}
 {% if request.user.rol == 'ADMIN' %}
 <div class="dashboard-container">
-    <!-- 1. Barra Lateral (Sidebar) -->
-    <div class="sidebar">
-        <h2><i class="fa-solid fa-shield-halved"></i> Admin Panel</h2>
-        <a href="{% url 'lista_usuarios' %}"><i class="fa-solid fa-users"></i> Gestionar Usuarios</a>
-        <a href="{% url 'lista_complejos' %}"><i class="fa-solid fa-building-user"></i> Gestionar Complejos</a>
-        <a href="{% url 'admin_reservas' %}"><i class="fa-solid fa-calendar-days"></i> Gestionar Reservas</a>
-        <a href="{% url 'gestionar_amenidades' %}"><i class="fa-solid fa-star"></i> Gestionar Amenidades</a>
-        <a href="{% url 'avisos:lista_avisos' %}"><i class="fa-solid fa-bullhorn"></i> Gestionar Avisos</a>
-        <a href="/admin/" class="dev-panel-link"><i class="fa-solid fa-code"></i> Panel Avanzado (Dev)</a>
-    </div>
+    
+    {% include 'includes/admin_sidebar.html' %}
 
     <!-- 2. Contenido Principal -->
     <div class="main-content">
@@ -120,15 +112,7 @@
 <!-- (INICIO) NUEVA ESTRUCTURA PARA RESIDENTE -->
 <div class="dashboard-container">
     
-    <!-- 1. Barra Lateral (Sidebar) del Residente -->
-    <div class="sidebar">
-        <h2><i class="fa-solid fa-house-user"></i> Panel Residente</h2>
-        <a href="{% url 'crear_reserva' %}" class="active"><i class="fa-solid fa-calendar-plus"></i> Reservar Amenidad</a>
-        <a href="{% url 'mis_reservas' %}"><i class="fa-solid fa-calendar-check"></i> Mis Reservas</a>
-        <a href="{% url 'avisos:lista_avisos' %}"><i class="fa-solid fa-bullhorn"></i> Ver Avisos</a>
-        <!-- <a href="#"><i class="fa-solid fa-triangle-exclamation"></i> Reportar Incidencia</a> -->
-        <!-- <a href="#"><i class="fa-solid fa-user-pen"></i> Mi Perfil</a> -->
-    </div>
+    {% include 'includes/resident_sidebar.html' %}
 
     <!-- 2. Contenido Principal del Residente -->
     <div class="main-content">
@@ -141,8 +125,33 @@
             </form>
         </header>
 
+        <!-- (NUEVO) SECCIÓN DE AVISOS RECIENTES -->
+        <section class="quick-actions mt-4">
+            <h2><i class="fa-solid fa-bell"></i> Avisos Recientes</h2>
+            {% if avisos_recientes %}
+                <div class="notice-list">
+                    {% for aviso in avisos_recientes %}
+                        <a href="{% url 'avisos:detalle_aviso' aviso.pk %}" class="notice-item {% if user not in aviso.leido_por.all %}unread{% endif %}">
+                            <div class="notice-header">
+                                <h5>{{ aviso.titulo }}</h5>
+                                <span class="notice-time">{{ aviso.fecha_creacion|timesince }} ago</span>
+                            </div>
+                            <p class="notice-content">{{ aviso.contenido|truncatewords:15 }}</p>
+                            {% if user not in aviso.leido_por.all %}
+                                <span class="notice-new-badge">Nuevo</span>
+                            {% endif %}
+                        </a>
+                    {% endfor %}
+                </div>
+                <a href="{% url 'avisos:lista_avisos' %}" class="view-all-link">Ver todos los avisos</a>
+            {% else %}
+                <p class="text-center text-muted mt-3">No tienes avisos nuevos en este momento.</p>
+            {% endif %}
+        </section>
+        <!-- (FIN) SECCIÓN DE AVISOS RECIENTES -->
+
         <!-- (NUEVO) SECCIÓN DE ACCIONES RÁPIDAS -->
-        <section class="quick-actions">
+        <section class="quick-actions mt-4">
             <h2><i class="fa-solid fa-bolt"></i> Acciones Rápidas</h2>
             <p>Selecciona una de las operaciones más comunes:</p>
             <div class="quick-actions-grid">

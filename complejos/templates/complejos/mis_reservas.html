@@ -72,14 +72,7 @@
 <!-- (INICIO) ESTRUCTURA DEL DASHBOARD DE RESIDENTE -->
 <div class="dashboard-container">
     
-    <!-- 1. Barra Lateral (Sidebar) del Residente -->
-    <div class="sidebar">
-        <h2><i class="fa-solid fa-house-user"></i> Panel Residente</h2>
-        <a href="{% url 'crear_reserva' %}"><i class="fa-solid fa-calendar-plus"></i> Reservar Amenidad</a>
-        <a href="{% url 'mis_reservas' %}" class="active"><i class="fa-solid fa-calendar-check"></i> Mis Reservas</a>
-        <!-- <a href="#"><i class="fa-solid fa-triangle-exclamation"></i> Reportar Incidencia</a> -->
-        <!-- <a href="#"><i class="fa-solid fa-user-pen"></i> Mi Perfil</a> -->
-    </div>
+    {% include 'includes/resident_sidebar.html' %}
 
     <!-- 2. Contenido Principal del Residente -->
     <div class="main-content">
@@ -87,9 +80,14 @@
         <!-- Encabezado con Logout (¡Ahora dentro de main-content!) -->
         <header>
             <h1><i class="fa-solid fa-calendar-check"></i> Mis Reservas</h1>
-            <a href="{% url 'crear_reserva' %}" class="btn btn-primary">
-                <i class="fa-solid fa-plus"></i> Nueva Reserva
-            </a>
+            <div>
+                <a href="{% url 'dashboard' %}" class="btn btn-secondary">
+                    <i class="fa-solid fa-arrow-left"></i> Volver al Dashboard
+                </a>
+                <a href="{% url 'crear_reserva' %}" class="btn btn-primary">
+                    <i class="fa-solid fa-plus"></i> Nueva Reserva
+                </a>
+            </div>
         </header>
 
         <!-- (INICIO) TU CONTENIDO DE "MIS RESERVAS" -->

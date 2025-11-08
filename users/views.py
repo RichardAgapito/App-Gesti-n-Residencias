@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.views.decorators.http import require_POST
 from django.db.models import Q
+from django.contrib import messages
 from .forms import CustomUserCreationForm, EditarUsuarioForm
 from .models import CustomUser
 from avisos.models import Aviso
@@ -26,19 +27,18 @@ def dashboard(request):
     else:
         # Residente: obtener avisos relevantes para el usuario
         user = request.user
-        avisos = Aviso.objects.none()
-        complejo_residente = getattr(user, 'complejo_asignado', None)
-        if complejo_residente:
-            avisos = Aviso.objects.filter(
-                Q(complejo=complejo_residente) &
-                (
-                    Q(dirigido_a__in=[Aviso.DirigidoA.TODOS, Aviso.DirigidoA.RESIDENTES]) |
-                    Q(autor=user)
-                )
-            ).order_by('-fecha_creacion')[:5]
+        avisos_recientes = Aviso.objects.none()
+        
+        # Lógica corregida: Obtener complejo a través de la propiedad
+        propiedad_activa = user.propiedades_asociadas.filter(estado='activo').first()
+        if propiedad_activa:
+            complejo_residente = propiedad_activa.propiedad.complejo
+            avisos_recientes = Aviso.objects.filter(
+                complejo=complejo_residente
+            ).exclude(leido_por=user).order_by('-fecha_creacion')[:5]
 
         context = {
-            'avisos_recientes': avisos,
+            'avisos_recientes': avisos_recientes,
         }
         return render(request, 'users/dashboard.html', context)
 

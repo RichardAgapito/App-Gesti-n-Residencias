@@ -1,212 +1,118 @@
-// {% extends 'base_dashboard.html' %}
+{% extends 'base.html' %}
+{% load static %}
 
-{% block title %}Avisos - {{ block.super }}{% endblock %}
+{% block title %}
+    {% if user.is_staff %}Avisos Enviados{% else %}Bandeja de Entrada{% endif %}
+{% endblock %}
+
+{% block bootstrap_css %}{% endblock %}
+{% block global_styles %}{% endblock %}
+
+{% block extra_css %}
+    {% if user.is_staff %}
+        <link rel="stylesheet" href="{% static 'css/admin_dashboard.css' %}">
+    {% else %}
+        <link rel="stylesheet" href="{% static 'css/resident_dashboard.css' %}">
+    {% endif %}
+{% endblock %}
 
 {% block content %}
-<div class="container-fluid mt-4">
-    <!-- Header con botones -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-                <div>
-                    <h1 class="mb-0">
-                        <i class="fas fa-bullhorn text-primary"></i> Avisos
-                    </h1>
-                    <p class="text-muted mb-0">
-                        {% if user.is_staff %}
-                            Panel de administración de avisos
-                        {% else %}
-                            Mantente informado sobre tu complejo
-                        {% endif %}
-                    </p>
-                </div>
-                <div class="d-flex gap-2">
-                    <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">
-                        <i class="fas fa-arrow-left"></i> Volver al Dashboard
+<div class="dashboard-container">
+
+    {% if user.is_staff %}
+        {% include 'includes/admin_sidebar.html' %}
+    {% else %}
+        {% include 'includes/resident_sidebar.html' %}
+    {% endif %}
+
+    <div class="main-content">
+        <header>
+            <h1>
+                <i class="fas fa-bullhorn"></i> 
+                {% if user.is_staff %}
+                    Avisos Enviados
+                {% else %}
+                    Bandeja de Entrada
+                {% endif %}
+            </h1>
+            <div>
+                <a href="{% url 'dashboard' %}" class="btn btn-secondary">
+                    <i class="fa-solid fa-arrow-left"></i> Volver al Dashboard
+                </a>
+                {% if user.is_staff %}
+                    <a href="{% url 'avisos:crear_aviso' %}" class="btn-primary">
+                        <i class="fas fa-plus-circle"></i> Crear Aviso
                     </a>
-                    {% if user.is_authenticated %}
-                        <a href="{% url 'avisos:crear_aviso' %}" class="btn btn-primary">
-                            <i class="fas fa-plus-circle"></i>
-                            {% if user.is_staff %}
-                                Crear Aviso
-                            {% else %}
-                                Crear Aviso / Sugerencia
-                            {% endif %}
-                        </a>
-                    {% endif %}
-                </div>
+                {% endif %}
             </div>
-        </div>
-    </div>
+        </header>
 
-    <!-- Pestañas de navegación mejoradas -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <ul class="nav nav-pills nav-fill bg-light rounded p-2 shadow-sm">
-                <li class="nav-item">
-                    <a class="nav-link {% if vista_actual != 'enviados' %}active{% endif %}" 
-                       href="{% url 'avisos:lista_avisos' %}?vista=recibidos">
-                        <i class="fas fa-inbox"></i> Recibidos 
-                        {% if vista_actual != 'enviados' and avisos_no_leidos > 0 %}
-                            <span class="badge bg-danger rounded-pill ms-1">{{ avisos_no_leidos }}</span>
-                        {% endif %}
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link {% if vista_actual == 'enviados' %}active{% endif %}" 
-                       href="{% url 'avisos:lista_avisos' %}?vista=enviados">
-                        <i class="fas fa-paper-plane"></i> Enviados
-                    </a>
-                </li>
-            </ul>
-        </div>
-    </div>
-
-    <!-- Lista de avisos -->
-    <div class="row">
-        <div class="col-12">
-            {% if avisos %}
-                <div class="list-group shadow-sm">
-                    {% for aviso in avisos %}
-                        <a href="{% url 'avisos:detalle_aviso' aviso.pk %}" 
-                           class="list-group-item list-group-item-action {% if user not in aviso.leido_por.all and vista_actual != 'enviados' %}border-start border-primary border-4{% endif %} hover-shadow">
-                            <div class="d-flex w-100 justify-content-between align-items-start">
-                                <div class="flex-grow-1">
-                                    <div class="d-flex align-items-center mb-2">
-                                        <!-- Icono según tipo de aviso -->
-                                        {% if aviso.tipo_aviso == 'URGENTE' %}
-                                            <i class="fas fa-exclamation-circle text-danger fs-4 me-2"></i>
-                                        {% elif aviso.tipo_aviso == 'MANTENIMIENTO' %}
-                                            <i class="fas fa-tools text-warning fs-4 me-2"></i>
-                                        {% elif aviso.tipo_aviso == 'SUGERENCIA' %}
-                                            <i class="fas fa-lightbulb text-info fs-4 me-2"></i>
-                                        {% else %}
-                                            <i class="fas fa-info-circle text-primary fs-4 me-2"></i>
-                                        {% endif %}
-                                        
-                                        <h5 class="mb-0 {% if user not in aviso.leido_por.all and vista_actual != 'enviados' %}fw-bold{% endif %}">
-                                            {{ aviso.titulo }}
-                                        </h5>
-                                    </div>
-                                    
-                                    <p class="mb-2 text-muted">
-                                        {{ aviso.contenido|truncatewords:20 }}
-                                    </p>
-                                    
-                                    <div class="d-flex flex-wrap gap-2 align-items-center">
-                                        <!-- Badge de tipo -->
-                                        {% if aviso.tipo_aviso == 'URGENTE' %}
-                                            <span class="badge bg-danger">
-                                                <i class="fas fa-exclamation-triangle"></i> {{ aviso.get_tipo_aviso_display }}
-                                            </span>
-                                        {% elif aviso.tipo_aviso == 'MANTENIMIENTO' %}
-                                            <span class="badge bg-warning text-dark">
-                                                <i class="fas fa-wrench"></i> {{ aviso.get_tipo_aviso_display }}
-                                            </span>
-                                        {% elif aviso.tipo_aviso == 'SUGERENCIA' %}
-                                            <span class="badge bg-info">
-                                                <i class="fas fa-comment"></i> {{ aviso.get_tipo_aviso_display }}
-                                            </span>
-                                        {% else %}
-                                            <span class="badge bg-secondary">
-                                                <i class="fas fa-tag"></i> {{ aviso.get_tipo_aviso_display }}
-                                            </span>
-                                        {% endif %}
-
-                                        <!-- Badge de dirigido a -->
-                                        <span class="badge bg-light text-dark border">
-                                            <i class="fas fa-users"></i> {{ aviso.get_dirigido_a_display }}
-                                        </span>
-
-                                        <!-- Autor -->
-                                        <small class="text-muted">
-                                            <i class="fas fa-user"></i> 
-                                            {% if aviso.autor == user %}
-                                                Tú
-                                            {% else %}
-                                                {{ aviso.autor.email }}
-                                            {% endif %}
-                                        </small>
-
-                                        <!-- Badge de nuevo -->
-                                        {% if user not in aviso.leido_por.all and vista_actual != 'enviados' %}
-                                            <span class="badge bg-primary">
-                                                <i class="fas fa-star"></i> Nuevo
-                                            </span>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                                
-                                <div class="text-end ms-3">
-                                    <small class="text-muted d-block">
-                                        <i class="far fa-calendar-alt"></i>
-                                        {{ aviso.fecha_creacion|date:"d/m/Y" }}
-                                    </small>
-                                    <small class="text-muted d-block">
-                                        <i class="far fa-clock"></i>
-                                        {{ aviso.fecha_creacion|date:"H:i" }}
-                                    </small>
-                                </div>
-                            </div>
-                        </a>
-                    {% endfor %}
-                </div>
-            {% else %}
-                <div class="card shadow-sm">
-                    <div class="card-body text-center py-5">
-                        <i class="fas fa-inbox fs-1 text-muted mb-3"></i>
-                        <h4 class="text-muted">No hay avisos para mostrar</h4>
-                        <p class="text-muted">
-                            {% if vista_actual == 'enviados' %}
-                                Aún no has enviado ningún aviso.
-                            {% else %}
-                                No tienes avisos recibidos en este momento.
-                            {% endif %}
-                        </p>
-                        {% if vista_actual != 'enviados' %}
-                            <a href="{% url 'avisos:crear_aviso' %}" class="btn btn-primary mt-3">
-                                <i class="fas fa-plus-circle"></i> Crear primer aviso
-                            </a>
-                        {% endif %}
+        <section>
+            {% if user.is_staff %}
+                {# --- VISTA PARA ADMIN --- #}
+                {% if avisos %}
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Título</th>
+                                <th>Complejo</th>
+                                <th>Tipo</th>
+                                <th>Fecha de Envío</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for aviso in avisos %}
+                                <tr>
+                                    <td>{{ aviso.titulo }}</td>
+                                    <td>{{ aviso.complejo.nombre }}</td>
+                                    <td>{{ aviso.get_tipo_aviso_display }}</td>
+                                    <td>{{ aviso.fecha_creacion|date:"d/m/Y H:i" }}</td>
+                                    <td>
+                                        <a href="{% url 'avisos:detalle_aviso' aviso.pk %}">Ver Detalle</a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <div class="text-center p-5">
+                        <h4 class="text-muted">No has enviado ningún aviso.</h4>
+                        <a href="{% url 'avisos:crear_aviso' %}" class="btn-primary mt-3">Crear mi primer aviso</a>
                     </div>
-                </div>
+                {% endif %}
+
+            {% else %}
+                {# --- VISTA PARA RESIDENTE --- #}
+                <p class="text-muted" style="margin-top: -1rem; margin-bottom: 1.5rem;">
+                    Aquí están todos los avisos de tu complejo.
+                    {% if avisos_no_leidos > 0 %}
+                        Tienes <span class="badge bg-danger rounded-pill ms-1">{{ avisos_no_leidos }}</span> aviso(s) sin leer.
+                    {% endif %}
+                </p>
+                {% if avisos %}
+                    <div class="notice-list">
+                        {% for aviso in avisos %}
+                            <a href="{% url 'avisos:detalle_aviso' aviso.pk %}" class="notice-item {% if user not in aviso.leido_por.all %}unread{% endif %}">
+                                <div class="notice-header">
+                                    <h5>{{ aviso.titulo }}</h5>
+                                    <span class="notice-time">{{ aviso.fecha_creacion|date:"d M Y, H:i" }}</span>
+                                </div>
+                                <p class="notice-content">{{ aviso.contenido|truncatewords:25 }}</p>
+                                {% if user not in aviso.leido_por.all %}
+                                    <span class="notice-new-badge">Nuevo</span>
+                                {% endif %}
+                            </a>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center p-5">
+                        <h4 class="text-muted">No hay avisos para mostrar.</h4>
+                        <p>No tienes avisos recibidos en este momento.</p>
+                    </div>
+                {% endif %}
             {% endif %}
-        </div>
+        </section>
     </div>
 </div>
-
-<style>
-    .hover-shadow {
-        transition: all 0.3s ease;
-    }
-    
-    .hover-shadow:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
-    }
-    
-    .list-group-item {
-        border-left: 3px solid transparent;
-    }
-    
-    .nav-pills .nav-link {
-        color: #6c757d;
-        font-weight: 500;
-        transition: all 0.3s ease;
-    }
-    
-    .nav-pills .nav-link:hover {
-        background-color: #e9ecef;
-    }
-    
-    .nav-pills .nav-link.active {
-        background-color: #0d6efd;
-        color: white;
-    }
-    
-    .badge {
-        font-weight: 500;
-        padding: 0.35em 0.65em;
-    }
-</style>
 {% endblock %}
