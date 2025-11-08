@@ -1,71 +1,126 @@
 {% extends 'base_dashboard.html' %}
 {% load static %}
 
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/editar_visitante.css' %}">
+{% endblock extra_css %}
+
 {% block content %}
-<div class="container">
-    <div class="row justify-content-center">
-        <div class="col-md-6">
-            <h1 class="text-center">Registrar Nueva Visita</h1>
-            <form method="post">
-                {% csrf_token %}
-                <div class="form-group">
-                    <label for="id_usuario_registra">Usuario Registra</label>
-                    <p id="id_usuario_registra" class="form-control" style="background-color: #e9ecef;">{{ request.user }}</p>
-                </div>
-                {{ form.as_p }}
-                <button type="submit" class="btn btn-primary">Guardar Visita</button>
-            </form>
-            <div class="text-center mt-3">
-                <a href="{% url 'lista_visitas' %}" class="back-link">← Volver a la Lista</a>
-            </div>
-        </div>
+<div class="edit-user-container"> <h1 class="text-center">Registrar Nueva Visita</h1>
+    
+    <form method="post">
+        {% csrf_token %}
+        
+        {% if form.non_field_errors %}
+            <div style="color: red; margin-bottom: 1rem;">{{ form.non_field_errors }}</div>
+        {% endif %}
+
+        <p> {{ form.propiedad.label_tag }}
+            {{ form.propiedad }}
+            <small>Propiedad a la que se dirige la visita.</small>
+            {{ form.propiedad.errors }}
+        </p>
+
+        <p>
+            {{ form.residente_autoriza.label_tag }}
+            {{ form.residente_autoriza }}
+            <small>Selecciona una propiedad para cargar los residentes. (Opcional)</small>
+            {{ form.residente_autoriza.errors }}
+        </p>
+        
+        <hr>
+
+        <p>
+            {{ form.visitante.label_tag }}
+            {{ form.visitante }}
+            <small>El visitante que ingresa.</small>
+            {{ form.visitante.errors }}
+        </p>
+
+        <p>
+            {{ form.fecha_hora_ingreso.label_tag }}
+            {{ form.fecha_hora_ingreso }}
+            {{ form.fecha_hora_ingreso.errors }}
+        </p>
+
+        <p>
+            {{ form.motivo_visita.label_tag }}
+            {{ form.motivo_visita }}
+            {{ form.motivo_visita.errors }}
+        </p>
+
+        <p>
+            {{ form.placa_vehiculo.label_tag }}
+            {{ form.placa_vehiculo }}
+            {{ form.placa_vehiculo.errors }}
+        </p>
+
+        <p>
+            {{ form.cantidad_acompanantes.label_tag }}
+            {{ form.cantidad_acompanantes }}
+            {{ form.cantidad_acompanantes.errors }}
+        </p>
+
+        <p>
+            {{ form.observaciones.label_tag }}
+            {{ form.observaciones }}
+            {{ form.observaciones.errors }}
+        </p>
+        
+        <button type="submit">Guardar Visita</button>
+    </form>
+    
+    <div class="text-center mt-3">
+        <a href="{% url 'lista_visitas' %}" class="back-link">← Volver a la Lista</a>
     </div>
 </div>
 {% endblock %}
 
-{% block scripts %}
-<script>
+{% block extra_js %} <script>
     document.addEventListener('DOMContentLoaded', function() {
         const propiedadSelect = document.getElementById('id_propiedad');
         const residenteSelect = document.getElementById('id_residente_autoriza');
 
-        if (propiedadSelect && residenteSelect) {
-            propiedadSelect.addEventListener('change', function() {
-                const propiedadId = this.value;
-                
-                // Limpiar el select de residentes
-                residenteSelect.innerHTML = '<option value="">---------</option>';
-                
-                if (propiedadId) {
-                    // CORREGIDA LA URL: removido el prefijo /visitas/
-                    fetch(`/visitas/propiedad/${propiedadId}/residentes/`)
-                        .then(response => {
-                            if (!response.ok) {
-                                throw new Error('Error en la respuesta del servidor');
-                            }
-                            return response.json();
-                        })
-                        .then(data => {
-                            if (data.length === 0) {
-                                const option = new Option('(No hay residentes activos)', '');
-                                option.disabled = true;
+        function cargarResidentes() {
+            const propiedadId = propiedadSelect.value;
+            residenteSelect.innerHTML = '<option value="">Cargando...</option>';
+
+            if (propiedadId) {
+                // Esta URL ya existía en tu 'visitas/urls.py'
+                fetch(`/visitas/propiedad/${propiedadId}/residentes/`) 
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('La respuesta de la red no fue exitosa');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        residenteSelect.innerHTML = '<option value="">---------</option>';
+                        if (data.length > 0) {
+                            data.forEach(residente => {
+                                const option = new Option(residente.nombre, residente.id);
                                 residenteSelect.add(option);
-                            } else {
-                                data.forEach(residente => {
-                                    const option = new Option(residente.nombre, residente.id);
-                                    residenteSelect.add(option);
-                                });
-                            }
-                        })
-                        .catch(error => {
-                            console.error('Error al cargar residentes:', error);
-                            const option = new Option('(Error al cargar residentes)', '');
-                            option.disabled = true;
-                            residenteSelect.add(option);
-                        });
-                }
-            });
+                            });
+                        } else {
+                            residenteSelect.innerHTML = '<option value="">No hay residentes activos</option>';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error al cargar residentes:', error);
+                        residenteSelect.innerHTML = '<option value="">Error al cargar</G</option>';
+                    });
+            } else {
+                residenteSelect.innerHTML = '<option value="">Selecciona una propiedad</option>';
+            }
+        }
+
+        propiedadSelect.addEventListener('change', cargarResidentes);
+
+        if (propiedadSelect.value) {
+            cargarResidentes();
+        } else {
+             residenteSelect.innerHTML = '<option value="">Selecciona una propiedad</option>';
         }
     });
 </script>
-{% endblock scripts %}
+{% endblock extra_js %}

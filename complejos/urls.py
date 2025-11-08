@@ -33,4 +33,12 @@ urlpatterns = [
     path('admin_dashboard/amenidades/<int:amenidad_id>/eliminar/', views.eliminar_amenidad_view, name='eliminar_amenidad'),
     path('admin_dashboard/amenidades/<int:amenidad_id>/bloquear/', views.bloquear_horario_view, name='bloquear_horario'),
     path('admin_dashboard/amenidades/unblock/<int:reserva_id>/', views.unblock_horario_view, name='unblock_horario'),
+    # (NUEVO) URLs para Pre-Autorizaciones del Residente
+    path('mis-autorizaciones/', views.mis_preautorizaciones_view, name='mis_preautorizaciones'),
+    path('mis-autorizaciones/crear/', views.crear_preautorizacion_view, name='residente_crear_preautorizacion'),
+    path('mis-autorizaciones/<int:pa_id>/editar/', views.editar_preautorizacion_view, name='residente_editar_preautorizacion'),
+    path('mis-autorizaciones/<int:pa_id>/cancelar/', views.cancelar_preautorizacion_view, name='residente_cancelar_preautorizacion'),
+    
+    path('mis-reservas/', views.mis_reservas_view, name='mis_reservas'),
+    path('reservas/amenidad/<int:amenidad_id>/disponibilidad/', views.ver_disponibilidad_view, name='ver_disponibilidad'),
 ]

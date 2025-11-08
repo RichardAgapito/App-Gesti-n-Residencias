@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block bootstrap_css %}{% endblock %}
+{% block global_styles %}{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/resident_dashboard.css' %}">
+    <style>
+        .reservas-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1.5rem;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+        }
+        .reservas-table th, .reservas-table td {
+            border-bottom: 1px solid #e0e0e0;
+            padding: 1rem 1.5rem;
+            text-align: left;
+        }
+        .reservas-table thead { background-color: #f4f7f6; }
+        .reservas-table th { font-weight: 600; color: #34495e; }
+        .reservas-table tbody tr:last-child td { border-bottom: none; }
+        .reservas-table tbody tr:hover { background-color: #f8faff; }
+        
+        .status-pendiente { color: #f39c12; font-weight: 600; }
+        .status-usado { color: #27ae60; font-weight: 600; }
+        .status-vencido, .status-cancelado { color: #e74c3c; font-weight: 600; }
+
+        .btn-primary {
+            background-color: #f39c12; color: white;
+            padding: 10px 18px; border-radius: 4px;
+        }
+        .btn-primary:hover { background-color: #e67e22; }
+        
+        .action-links a { text-decoration: none; margin-right: 10px; }
+        .action-links .btn-edit { color: #f39c12; }
+        .action-links .btn-cancel { color: #e74c3c; }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    
+    <div class="sidebar">
+        <h2><i class="fa-solid fa-house-user"></i> Panel Residente</h2>
+        <a href="{% if has_active_contract %}{% url 'crear_reserva' %}{% else %}#{% endif %}" class="{% if not has_active_contract %}disabled-link{% endif %}">
+            <i class="fa-solid fa-calendar-plus"></i> Reservar Amenidad
+        </a>
+        <a href="{% if has_active_contract %}{% url 'mis_reservas' %}{% else %}#{% endif %}" class="{% if not has_active_contract %}disabled-link{% endif %}">
+            <i class="fa-solid fa-calendar-check"></i> Mis Reservas
+        </a>
+        <a href="{% if has_active_contract %}{% url 'mis_preautorizaciones' %}{% else %}#{% endif %}" class="active {% if not has_active_contract %}disabled-link{% endif %}">
+            <i class="fa-solid fa-id-card-clip"></i> Pre-Autorizaciones
+        </a>
+    </div>
+
+    <div class="main-content">
+        <header>
+            <h1><i class="fa-solid fa-id-card-clip"></i> Mis Pre-Autorizaciones</h1>
+            {% if has_active_contract %}
+            <a href="{% url 'residente_crear_preautorizacion' %}" class="btn btn-primary">
+                <i class="fa-solid fa-plus"></i> Nueva Autorización
+            </a>
+            {% endif %}
+        </header>
+
+        {% if not has_active_contract %}
+        <div class="content-locked-message">
+            <h3><i class="fa-solid fa-triangle-exclamation"></i> Funcionalidad Limitada</h3>
+            <p>No puedes gestionar pre-autorizaciones porque no tienes un contrato activo.</p>
+        </div>
+        {% endif %}
+
+        {% if autorizaciones %}
+            <table class="reservas-table">
+                <thead>
+                    <tr>
+                        <th>Visitante</th>
+                        <th>Documento</th>
+                        <th>Fecha Esperada</th>
+                        <th>Vigencia</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for pa in autorizaciones %}
+                        <tr>
+                            <td>{{ pa.nombre_visitante }}</td>
+                            <td>{{ pa.documento_visitante }}</td>
+                            <td>{{ pa.fecha_hora_esperada|date:"d M Y, H:i" }}</td>
+                            <td>{{ pa.vigencia_desde|date:"d/m/y H:i" }} - {{ pa.vigencia_hasta|date:"d/m/y H:i" }}</td>
+                            <td><span class="status-{{ pa.estado }}">{{ pa.get_estado_display }}</span></td>
+                            <td class="action-links">
+                                {% if pa.estado == 'pendiente' %}
+                                    <a href="{% url 'residente_editar_preautorizacion' pa.id %}" class="btn-edit" title="Editar"><i class="fa-solid fa-pencil"></i></a>
+                                    <a href="{% url 'residente_cancelar_preautorizacion' pa.id %}" class="btn-cancel" title="Cancelar"><i class="fa-solid fa-ban"></i></a>
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>     
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>No tienes ninguna pre-autorización registrada.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

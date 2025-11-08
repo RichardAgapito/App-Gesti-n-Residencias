@@ -105,3 +105,23 @@ body {
     color: #343a40;
     text-decoration: underline;
 }
+
+.dias-semana-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 10px;
+    margin-top: 0.5rem;
+    padding: 1rem;
+    background-color: #f8f9fa;
+    border: 1px solid #e0e0e0;
+    border-radius: 5px;
+}
+
+.dia-choice {
+    display: flex;
+    align-items: center;
+}
+
+.dia-choice input[type="checkbox"] {
+    margin-right: 0.5rem;
+}

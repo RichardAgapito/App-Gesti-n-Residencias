@@ -4,6 +4,8 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from datetime import date, timedelta
 from django.utils import timezone
+from visitas.models import PreAutorizacion
+from django.core.validators import RegexValidator
 
 # Custom ModelChoiceField to display user's full name
 class UserChoiceField(forms.ModelChoiceField):
@@ -375,3 +377,136 @@ class BloquearHorarioForm(forms.ModelForm):
                 raise ValidationError(f"La hora de fin no puede ser después del cierre de la amenidad ({self.amenidad.hora_fin.strftime('%H:%M')}).")
 
         return cleaned_data
+
+class ResidentePreAutorizacionForm(forms.ModelForm):
+    
+    # ... (campo nombre_visitante sin cambios) ...
+    nombre_visitante = forms.CharField(
+        label="Nombre del Visitante",
+        validators=[
+            RegexValidator(
+                r'^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$',
+                message="El nombre solo debe contener letras y espacios."
+            )
+        ]
+    )
+
+    # ... (campo numero_documento sin cambios) ...
+    numero_documento = forms.CharField(
+        label="Documento del Visitante",
+        validators=[
+            RegexValidator(
+                r'^\d{8}$',
+                message="El número de documento debe contener 8 dígitos."
+            )
+        ],
+        widget=forms.TextInput(attrs={
+            'maxlength': '8'
+        })
+    )
+
+    # (NUEVO) Campo para "Es recurrente"
+    es_recurrente = forms.BooleanField(
+        label="¿Es una visita recurrente?",
+        required=False # Es opcional
+    )
+    
+    # (NUEVO) Opciones para los días de la semana
+    DIAS_CHOICES = (
+        ('lunes', 'Lunes'),
+        ('martes', 'Martes'),
+        ('miercoles', 'Miércoles'),
+        ('jueves', 'Jueves'),
+        ('viernes', 'Viernes'),
+        ('sabado', 'Sábado'),
+        ('domingo', 'Domingo'),
+    )
+    
+    # (NUEVO) Campo de selección múltiple para los días
+    dias_semana = forms.MultipleChoiceField(
+        label="Días de la semana recurrentes",
+        choices=DIAS_CHOICES,
+        widget=forms.CheckboxSelectMultiple,
+        required=False # Lo validaremos en el método clean()
+    )
+
+    class Meta:
+        model = PreAutorizacion
+        fields = [
+            'nombre_visitante', 
+            'numero_documento',
+            'fecha_hora_esperada', 
+            'vigencia_desde', 
+            'vigencia_hasta',
+            'es_recurrente', # (NUEVO) Añadido
+            'dias_semana',   # (NUEVO) Añadido
+        ]
+        # (MODIFICADO) Quitamos los campos nuevos de 'exclude'
+        exclude = [
+            'residente', 
+            'propiedad', 
+            'estado', 
+            'usado', 
+            'fecha_uso',
+        ]
+        widgets = {
+            'fecha_hora_esperada': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
+            'vigencia_desde': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
+            'vigencia_hasta': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['numero_documento'].label = "Documento del Visitante"
+        if self.instance and self.instance.pk:
+            self.fields['numero_documento'].initial = self.instance.documento_visitante
+            # (NUEVO) Poblar los campos nuevos si estamos editando
+            self.fields['es_recurrente'].initial = self.instance.es_recurrente
+            if self.instance.dias_semana:
+                # Convertimos el string "lunes,martes" de nuevo a una lista ['lunes', 'martes']
+                self.fields['dias_semana'].initial = self.instance.dias_semana.split(',')
+
+    def clean(self):
+        cleaned_data = super().clean()
+        fecha_inicio = cleaned_data.get('vigencia_desde')
+        fecha_fin = cleaned_data.get('vigencia_hasta')
+        fecha_esperada = cleaned_data.get('fecha_hora_esperada')
+
+        if fecha_inicio and fecha_inicio < timezone.now():
+            raise ValidationError("La vigencia de la autorización no puede empezar en el pasado.")
+        
+        if fecha_inicio and fecha_fin and fecha_fin <= fecha_inicio:
+            raise ValidationError("La fecha de fin de vigencia debe ser posterior a la fecha de inicio.")
+
+        if fecha_esperada and fecha_inicio and fecha_fin:
+            if not (fecha_inicio <= fecha_esperada <= fecha_fin):
+                raise ValidationError("La fecha esperada de la visita debe estar dentro del rango de vigencia.")
+        es_recurrente = cleaned_data.get('es_recurrente')
+        dias_semana = cleaned_data.get('dias_semana')
+        
+        if es_recurrente and not dias_semana:
+            self.add_error('dias_semana', 'Si la visita es recurrente, debes seleccionar al menos un día.')
+        
+        cleaned_data['documento_visitante'] = cleaned_data.get('numero_documento')
+        return cleaned_data
+    
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        
+        instance.documento_visitante = self.cleaned_data.get('numero_documento')
+        instance.nombre_visitante = self.cleaned_data.get('nombre_visitante')
+        
+        # (NUEVO) Asignar los nuevos campos
+        instance.es_recurrente = self.cleaned_data.get('es_recurrente')
+        
+        dias_semana_list = self.cleaned_data.get('dias_semana')
+        if dias_semana_list:
+            # Convertimos la lista ['lunes', 'viernes'] al string "lunes,viernes"
+            # que requiere el modelo
+            instance.dias_semana = ",".join(dias_semana_list)
+        else:
+            instance.dias_semana = "" # Asegurarse de que esté vacío
+        
+        if commit:
+            instance.save()
+        return instance
