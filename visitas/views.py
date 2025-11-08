@@ -17,17 +17,23 @@ def es_guardia(user):
     return user.is_authenticated and user.rol == CustomUser.Rol.GUARDIA
 
 def get_residentes_por_propiedad(request, propiedad_id):
-    residentes = PropiedadPersona.objects.filter(propiedad_id=propiedad_id, estado='activo')
+    # (MODIFICADO) Añadimos 'persona__is_active=True'
+    residentes = PropiedadPersona.objects.filter(
+        propiedad_id=propiedad_id, 
+        estado='activo',
+        persona__is_active=True  # <-- AÑADE ESTE FILTRO
+    ).select_related('persona__persona')
+    
     residentes_data = [
         {'id': pp.persona.id, 'nombre': f"{pp.persona.persona.nombres} {pp.persona.persona.apellidos}"} 
-        for pp in residentes if pp.persona and pp.persona.persona
+        for pp in residentes if pp.persona.persona
     ]
     return JsonResponse(residentes_data, safe=False)
 
 @login_required
 @user_passes_test(es_guardia)
 def dashboard(request):
-    visitantes_dentro = Visita.objects.filter(estado='dentro').count()
+    visitantes_dentro = Visita.objects.filter(estado='en_curso').count()
     autorizaciones_pendientes = PreAutorizacion.objects.filter(estado='pendiente').count()
     context = {
         'visitantes_dentro': visitantes_dentro,
@@ -156,7 +162,7 @@ def crear_visita_view(request):
         form = VisitaForm(request.POST, complejo_asignado=complejo_asignado, user=user)
         if form.is_valid():
             visita = form.save(commit=False)
-            visita.estado = 'dentro'
+            visita.estado = 'en_curso'
             visita.save()
             return redirect('lista_visitas')
     else:
