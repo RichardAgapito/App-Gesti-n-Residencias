@@ -25,22 +25,43 @@
         const propiedadSelect = document.getElementById('id_propiedad');
         const residenteSelect = document.getElementById('id_residente_autoriza');
 
-        propiedadSelect.addEventListener('change', function() {
-            const propiedadId = this.value;
-            if (propiedadId) {
-                fetch(`/visitas/propiedad/${propiedadId}/residentes/`)
-                    .then(response => response.json())
-                    .then(data => {
-                        residenteSelect.innerHTML = '<option value="">---------</option>';
-                        data.forEach(residente => {
-                            const option = new Option(residente.nombre, residente.id);
+        if (propiedadSelect && residenteSelect) {
+            propiedadSelect.addEventListener('change', function() {
+                const propiedadId = this.value;
+                
+                // Limpiar el select de residentes
+                residenteSelect.innerHTML = '<option value="">---------</option>';
+                
+                if (propiedadId) {
+                    // CORREGIDA LA URL: removido el prefijo /visitas/
+                    fetch(`/visitas/propiedad/${propiedadId}/residentes/`)
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error('Error en la respuesta del servidor');
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            if (data.length === 0) {
+                                const option = new Option('(No hay residentes activos)', '');
+                                option.disabled = true;
+                                residenteSelect.add(option);
+                            } else {
+                                data.forEach(residente => {
+                                    const option = new Option(residente.nombre, residente.id);
+                                    residenteSelect.add(option);
+                                });
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error al cargar residentes:', error);
+                            const option = new Option('(Error al cargar residentes)', '');
+                            option.disabled = true;
                             residenteSelect.add(option);
                         });
-                    });
-            } else {
-                residenteSelect.innerHTML = '<option value="">---------</option>';
-            }
-        });
+                }
+            });
+        }
     });
 </script>
 {% endblock scripts %}

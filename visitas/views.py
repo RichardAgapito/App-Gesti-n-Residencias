@@ -1,11 +1,24 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
 from complejos.models import PropiedadPersona
+from django.db import models
 
 def get_residentes_por_propiedad(request, propiedad_id):
-    residentes = PropiedadPersona.objects.filter(propiedad_id=propiedad_id, estado='activo').select_related('persona')
-    residentes_data = [{'id': pp.persona.id, 'nombre': pp.persona.get_username()} for pp in residentes]
+    residentes = PropiedadPersona.objects.filter(
+        propiedad_id=propiedad_id, 
+        estado='activo'
+    ).select_related('persona', 'persona__persona')
+    
+    residentes_data = [
+        {
+            'id': pp.persona.id, 
+            'nombre': f"{pp.persona.persona.nombres} {pp.persona.persona.apellidos}"
+        } 
+        for pp in residentes if pp.persona and pp.persona.persona
+    ]
+    
     return JsonResponse(residentes_data, safe=False)
+
 from .models import Visitante, Visita, PreAutorizacion
 from .forms import VisitanteForm, VisitaForm, PreAutorizacionForm
 
