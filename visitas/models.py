@@ -14,10 +14,10 @@ class Visitante(models.Model):
     ]
 
     tipo_documento = models.CharField(max_length=20, choices=TIPO_DOCUMENTO_CHOICES)
-    numero_documento = models.CharField(max_length=20, unique=True)
+    numero_documento = models.CharField(max_length=8, unique=True)
     nombres = models.CharField(max_length=100)
     apellidos = models.CharField(max_length=100)
-    telefono = models.CharField(max_length=15, blank=True)
+    telefono = models.CharField(max_length=9, blank=True)
     foto_capturada = models.ImageField(upload_to='visitantes/', blank=True, null=True)
     es_frecuente = models.BooleanField(default=False)
     fecha_registro_sistema = models.DateTimeField(auto_now_add=True)
