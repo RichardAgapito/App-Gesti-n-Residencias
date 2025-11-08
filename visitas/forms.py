@@ -40,6 +40,12 @@ class VisitanteForm(forms.ModelForm):
                     self.add_error('numero_documento', "Para Carnet de Extranjería, el número de documento debe ser de 9 dígitos numéricos.")
         return cleaned_data
 
+    def clean_foto_capturada(self):
+        foto = self.cleaned_data.get('foto_capturada', False)
+        if not foto:
+            raise forms.ValidationError("La foto del visitante es obligatoria.")
+        return foto
+
 
 class VisitaForm(forms.ModelForm):
     class Meta:

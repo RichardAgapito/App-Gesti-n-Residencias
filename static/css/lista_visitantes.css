@@ -154,78 +154,52 @@ body {
     margin-bottom: 1.5rem;
 }
 
-/* --- Grid de Tarjetas de Usuario --- */
-.user-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 20px;
-    padding-bottom: 2rem;
+/* --- Tabla de Visitantes --- */
+.visitantes-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 2rem;
 }
 
-.user-card {
-    background-color: #ffffff;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
-    padding: 1.5rem;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-    transition: transform 0.2s, box-shadow 0.2s;
-    display: flex;
-    flex-direction: column;
+.visitantes-table th, .visitantes-table td {
+    border-bottom: 1px solid #e0e0e0;
+    padding: 1rem 1.5rem;
+    text-align: left;
+    vertical-align: middle;
 }
 
-.user-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
-    border-color: #3498db;
+.visitantes-table thead th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    color: #34495e;
 }
 
-.user-card h4 {
-    color: #2c3e50;
-    font-size: 1.25rem;
-    margin-top: 0;
-    margin-bottom: 1rem;
-}
-
-.user-card p {
-    margin: 0.5rem 0;
-    font-size: 0.95rem;
-    color: #555;
-    display: flex;
-}
-.user-card p strong {
-    color: #333;
-    min-width: 90px;
-    display: inline-block;
-    margin-right: 5px;
+.visitantes-table tbody tr:hover {
+    background-color: #f8faff;
 }
 
 /* Estilos para los estados */
-.status-active, .status-inactive {
+.status-activo, .status-bloqueado {
     font-weight: 600;
     padding: 3px 8px;
     border-radius: 4px;
     font-size: 0.85rem;
 }
-.status-active {
+.status-activo {
     background-color: #eafbf3;
     color: #27ae60;
 }
-.status-inactive {
+.status-bloqueado {
     background-color: #fdf3f2;
     color: #e74c3c;
 }
 
-/* --- (ACTUALIZADO) Acciones de la Tarjeta (Botones) --- */
-.user-card .action-links {
-    border-top: 1px solid #f0f0f0;
-    padding-top: 1rem;
-    margin-top: auto;
+/* --- Acciones de la Tabla (Botones) --- */
+.action-links {
     display: flex;
-    justify-content: flex-end;
-    gap: 0.5rem;
+    gap: 8px;
 }
 
-/* Estilo genérico para los botones de Gemini */
 .action-links .btn {
     text-decoration: none;
     color: #ffffff;
@@ -241,7 +215,6 @@ body {
     margin-right: 5px;
 }
 
-/* Colores de los botones */
 .action-links .btn-info {
     background-color: #3498db;
 }
@@ -264,7 +237,36 @@ body {
     background-color: #c0392b;
 }
 
-/* Mensaje "No hay usuarios" */
+/* --- Paginación --- */
+.pagination {
+    margin-top: 2rem;
+    text-align: center;
+}
+
+.pagination .step-links {
+    display: inline-block;
+}
+
+.pagination .step-links a, .pagination .step-links .current {
+    margin: 0 0.25rem;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #dee2e6;
+    border-radius: 5px;
+    text-decoration: none;
+    color: #3498db;
+}
+
+.pagination .step-links a:hover {
+    background-color: #f8f9fa;
+}
+
+.pagination .step-links .current {
+    background-color: #3498db;
+    color: #ffffff;
+    border-color: #3498db;
+}
+
+/* Mensaje "No hay visitantes" */
 .no-results-message {
     font-size: 1.1rem;
     color: #777;
