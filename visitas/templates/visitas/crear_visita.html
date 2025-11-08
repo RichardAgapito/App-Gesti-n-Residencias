@@ -8,6 +8,10 @@
             <h1 class="text-center">Registrar Nueva Visita</h1>
             <form method="post">
                 {% csrf_token %}
+                <div class="form-group">
+                    <label for="id_usuario_registra">Usuario Registra</label>
+                    <p id="id_usuario_registra" class="form-control" style="background-color: #e9ecef;">{{ request.user }}</p>
+                </div>
                 {{ form.as_p }}
                 <button type="submit" class="btn btn-primary">Guardar Visita</button>
             </form>

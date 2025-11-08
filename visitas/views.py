@@ -124,12 +124,14 @@ def crear_visita_view(request):
         complejo_asignado = user.complejo_asignado
 
     if request.method == 'POST':
-        form = VisitaForm(request.POST, complejo_asignado=complejo_asignado)
+        form = VisitaForm(request.POST, complejo_asignado=complejo_asignado, user=user)
         if form.is_valid():
-            form.save()
+            visita = form.save(commit=False)
+            visita.usuario_registra = user
+            visita.save()
             return redirect('lista_visitas')
     else:
-        form = VisitaForm(complejo_asignado=complejo_asignado)
+        form = VisitaForm(complejo_asignado=complejo_asignado, user=user)
     
     return render(request, 'visitas/crear_visita.html', {'form': form})
 

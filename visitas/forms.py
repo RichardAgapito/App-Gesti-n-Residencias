@@ -40,18 +40,50 @@ class VisitanteForm(forms.ModelForm):
 
 from users.models import CustomUser
 
+from django.utils import timezone
+
 class VisitaForm(forms.ModelForm):
     class Meta:
         model = Visita
-        fields = '__all__'
+        exclude = ['usuario_registra']
+        widgets = {
+            'fecha_hora_ingreso': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control', 'readonly': 'readonly'}),
+            'fecha_hora_salida': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
+        }
 
     def __init__(self, *args, **kwargs):
         complejo_asignado = kwargs.pop('complejo_asignado', None)
+        user = kwargs.pop('user', None)
         super(VisitaForm, self).__init__(*args, **kwargs)
+        
+        # Initially, the queryset is empty
         self.fields['residente_autoriza'].queryset = CustomUser.objects.none()
         self.fields['residente_autoriza'].required = False
+
         if complejo_asignado:
             self.fields['propiedad'].queryset = Propiedad.objects.filter(complejo=complejo_asignado)
+        
+        # If we are processing POST data, we need to populate the queryset
+        # for 'residente_autoriza' so that validation can pass.
+        if self.is_bound and 'propiedad' in self.data:
+            try:
+                propiedad_id = int(self.data.get('propiedad'))
+                self.fields['residente_autoriza'].queryset = CustomUser.objects.filter(
+                    propiedades_asociadas__propiedad_id=propiedad_id,
+                    propiedades_asociadas__estado='activo'
+                )
+            except (ValueError, TypeError):
+                pass  # Handle cases where propiedad_id is not a valid number
+
+        # Set initial value for fecha_hora_ingreso to current time
+        if not self.instance.pk: # Only for new instances
+            self.fields['fecha_hora_ingreso'].initial = timezone.now().strftime('%Y-%m-%dT%H:%M')
+
+    def clean_visitante(self):
+        visitante = self.cleaned_data.get('visitante')
+        if not visitante:
+            raise forms.ValidationError("Debe seleccionar un visitante registrado.")
+        return visitante
 
 class PreAutorizacionForm(forms.ModelForm):
     class Meta:
