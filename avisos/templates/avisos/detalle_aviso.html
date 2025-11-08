@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Detalle del Aviso{% endblock %}
+
+{% block bootstrap_css %}{% endblock %}
+{% block global_styles %}{% endblock %}
+
+{% block extra_css %}
+    {% if user.is_staff %}
+        <link rel="stylesheet" href="{% static 'css/admin_dashboard.css' %}">
+    {% else %}
+        <link rel="stylesheet" href="{% static 'css/resident_dashboard.css' %}">
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+
+    {% if user.is_staff %}
+        {% include 'includes/admin_sidebar.html' %}
+    {% else %}
+        {% include 'includes/resident_sidebar.html' %}
+    {% endif %}
+
+    <div class="main-content">
+        <header>
+            <h1><i class="fa-solid fa-circle-info"></i> Detalle del Aviso</h1>
+            <a href="{% url 'avisos:lista_avisos' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Volver a la lista
+            </a>
+        </header>
+
+        <section>
+            <div class="notice-detail-header">
+                <span class="notice-detail-meta">
+                    <i class="fas fa-user-edit"></i>
+                    <strong>Autor:</strong> {{ aviso.autor.persona.nombres|default:aviso.autor.email }}
+                </span>
+                <span class="notice-detail-meta">
+                    <i class="fas fa-building"></i>
+                    <strong>Complejo:</strong> {{ aviso.complejo.nombre }}
+                </span>
+                <span class="notice-detail-meta">
+                    <i class="fas fa-calendar-alt"></i>
+                    <strong>Fecha:</strong> {{ aviso.fecha_creacion|date:"d/m/Y H:i" }}
+                </span>
+            </div>
+            
+            <h2 class="notice-detail-title">{{ aviso.titulo }}</h2>
+            <p class="notice-detail-content">{{ aviso.contenido }}</p>
+            
+            <div class="notice-detail-tag">
+                {{ aviso.get_tipo_aviso_display }}
+            </div>
+        </section>
+    </div>
+</div>
+{% endblock %}
