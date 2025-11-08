@@ -5,9 +5,18 @@
 {% block content %}
 <div class="container mt-4">
     <div class="card">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <h2>{{ aviso.titulo }}</h2>
-            <span class="badge bg-secondary">{{ aviso.get_tipo_aviso_display }}</span>
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h2>{{ aviso.titulo }}</h2>
+                <div>
+                    {% if aviso.autor == user %}
+                        <span class="badge bg-info">Enviado por ti</span>
+                    {% else %}
+                        <span class="badge bg-success">Recibido</span>
+                    {% endif %}
+                    <span class="badge bg-secondary ms-2">{{ aviso.get_tipo_aviso_display }}</span>
+                </div>
+            </div>
         </div>
         <div class="card-body">
             <p class="card-text">{{ aviso.contenido|linebreaks }}</p>
