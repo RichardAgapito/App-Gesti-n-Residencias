@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/crear_complejo.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <h2><i class="fa-solid fa-file-circle-plus"></i> Crear Nuevo Contrato</h2>
+    <hr>
+    <form method="post">
+        {% csrf_token %}
+        
+        {% for field in form %}
+            <div class="form-group" id="div_id_{{ field.name }}">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% if field.help_text %}
+                    <small class="form-text text-muted">{{ field.help_text }}</small>
+                {% endif %}
+                {% for error in field.errors %}
+                    <div class="invalid-feedback" style="display: block;">{{ error }}</div>
+                {% endfor %}
+            </div>
+        {% endfor %}
+        
+        <button type="submit" class="btn-submit">Guardar Contrato</button>
+    </form>
+    <a href="{% url 'lista_contratos' %}" class="back-link">Cancelar y Volver a la Lista</a>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const tipoRelacionField = document.getElementById('id_tipo_relacion');
+    const persona2Container = document.getElementById('div_id_persona2');
+    const fechaFinContainer = document.getElementById('div_id_fecha_fin');
+
+    function toggleFields() {
+        const selectedValue = tipoRelacionField.value;
+
+        // Toggle Persona 2
+        if (selectedValue === 'co-propietario' || selectedValue === 'co-inquilino') {
+            persona2Container.style.display = 'block';
+        } else {
+            persona2Container.style.display = 'none';
+        }
+
+        // Toggle Fecha Fin
+        if (selectedValue === 'propietario' || selectedValue === 'co-propietario') {
+            fechaFinContainer.style.display = 'none';
+        } else {
+            fechaFinContainer.style.display = 'block';
+        }
+    }
+
+    // Initial check on page load
+    toggleFields();
+
+    // Add event listener for changes
+    tipoRelacionField.addEventListener('change', toggleFields);
+});
+</script>
+{% endblock %}

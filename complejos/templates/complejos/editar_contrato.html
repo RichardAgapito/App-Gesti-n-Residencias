@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/crear_complejo.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <h2><i class="fa-solid fa-file-signature"></i> Editar Contrato</h2>
+    <hr>
+    <p><strong>Propiedad:</strong> {{ form.instance.propiedad.numero_identificador }}</p>
+    <p><strong>Persona:</strong> {{ form.instance.persona.persona }}</p>
+    <p><strong>Relación:</strong> {{ form.instance.get_tipo_relacion_display }}</p>
+    <p><strong>Fecha de Inicio:</strong> {{ form.instance.fecha_inicio|date:"d/m/Y" }}</p>
+    <hr>
+    
+    <form method="post" action="">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+        
+        <div class="form-group">
+            <label for="{{ form.fecha_fin.id_for_label }}">Fecha de fin:</label>
+            {{ form.fecha_fin }}
+            {{ form.fecha_fin.errors }}
+        </div>
+
+        <div class="form-group">
+            <label for="{{ form.estado.id_for_label }}">Estado:</label>
+            {{ form.estado }}
+            {{ form.estado.errors }}
+        </div>
+
+        <button type="submit" class="btn-submit">Guardar Cambios</button>
+    </form>
+    <a href="{% url 'detalle_propiedad' form.instance.propiedad.id %}" class="back-link">Cancelar y Volver</a>
+</div>
+{% endblock %}
