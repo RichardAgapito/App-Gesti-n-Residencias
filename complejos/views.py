@@ -2,15 +2,17 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import user_passes_test, login_required
 from django.http import JsonResponse
 from .models import Complejo, Propiedad, PropiedadPersona, Amenidad, Reserva
-from .forms import ComplejoForm, PropiedadForm, CrearPropiedadesMultiplesForm, EditarPropiedadForm, PropiedadPersonaForm, ReservaForm, AmenidadForm, AdminReservaForm, BloquearHorarioForm, ResidentePreAutorizacionForm
+from .forms import (
+    ComplejoForm, PropiedadForm, CrearPropiedadesMultiplesForm, EditarPropiedadForm, 
+    PropiedadPersonaForm, GlobalContratoForm, ReservaForm, AmenidadForm, 
+    AdminReservaForm, BloquearHorarioForm, EditarContratoForm, ResidentePreAutorizacionForm
+)
 from users.views import es_admin
 from django.contrib.auth import get_user_model
 from users.models import CustomUser
-from django.db import models
+from django.db import models, transaction
 from django.utils import timezone
-from users.models import CustomUser
-from django.db import models
-from django.utils import timezone
+from collections import defaultdict
 from visitas.models import PreAutorizacion
 
 
@@ -257,16 +259,12 @@ def editar_complejo(request, complejo_id):
 def detalle_propiedad(request, propiedad_id):
     propiedad = get_object_or_404(Propiedad, id=propiedad_id)
     
-    # Filter only active PropiedadPersona objects
-    personas_asociadas_activas = propiedad.personas_asociadas.filter(estado='activo')
-    
-    # Check if there are any active contracts
-    has_active_contract = personas_asociadas_activas.exists()
+    # Fetch only active contracts
+    contratos_activos = propiedad.personas_asociadas.filter(estado='activo').order_by('-fecha_inicio')
 
     context = {
         'propiedad': propiedad,
-        'personas_asociadas_activas': personas_asociadas_activas,
-        'has_active_contract': has_active_contract, # Pass the flag to the template
+        'contratos_activos': contratos_activos,
     }
     return render(request, 'complejos/detalle_propiedad.html', context)
 
@@ -341,24 +339,54 @@ def get_residentes_json(request):
     return JsonResponse(list(residentes), safe=False)
 
 @user_passes_test(es_admin, login_url='/')
+@transaction.atomic
 def cancelar_contrato(request, propiedad_id, propiedad_persona_id):
-    propiedad_persona = get_object_or_404(PropiedadPersona, id=propiedad_persona_id)
+    contrato_a_cancelar = get_object_or_404(PropiedadPersona, id=propiedad_persona_id)
     
-    if propiedad_persona.tipo_relacion in ['co-propietario', 'co-inquilino']:
-        # Find all related co-owners/co-tenants for the same property and contract
-        co_contratos = PropiedadPersona.objects.filter(
-            propiedad_id=propiedad_id,
-            tipo_relacion=propiedad_persona.tipo_relacion,
-            fecha_inicio=propiedad_persona.fecha_inicio # Assuming fecha_inicio defines a unique contract
-        )
-        for contrato in co_contratos:
-            contrato.estado = 'inactivo'
-            contrato.save()
-    else:
-        propiedad_persona.estado = 'inactivo'
-        propiedad_persona.save()
+    # Find partner contract
+    partner_contract = PropiedadPersona.objects.filter(
+        propiedad_id=propiedad_id,
+        fecha_inicio=contrato_a_cancelar.fecha_inicio,
+        estado='activo'
+    ).exclude(id=propiedad_persona_id).first()
+
+    contrato_a_cancelar.estado = 'inactivo'
+    contrato_a_cancelar.save()
+
+    # If a partner exists and we are canceling the main one, promote the partner
+    if partner_contract and contrato_a_cancelar.es_principal:
+        if partner_contract.tipo_relacion == 'co-propietario':
+            partner_contract.tipo_relacion = 'propietario'
+        elif partner_contract.tipo_relacion == 'co-inquilino':
+            partner_contract.tipo_relacion = 'inquilino'
         
-    return redirect('detalle_propiedad', propiedad_id=propiedad_id)
+        partner_contract.es_principal = True
+        partner_contract.save()
+        
+    return redirect('lista_contratos')
+
+@user_passes_test(es_admin, login_url='/')
+def editar_contrato(request, contrato_id):
+    contrato = get_object_or_404(PropiedadPersona, id=contrato_id)
+    if request.method == 'POST':
+        form = EditarContratoForm(request.POST, instance=contrato)
+        if form.is_valid():
+            form.save()
+            return redirect('detalle_propiedad', propiedad_id=contrato.propiedad.id)
+    else:
+        form = EditarContratoForm(instance=contrato)
+    
+    context = {
+        'form': form,
+    }
+    return render(request, 'complejos/editar_contrato.html', context)
+
+@user_passes_test(es_admin, login_url='/')
+def reactivar_contrato(request, contrato_id):
+    contrato = get_object_or_404(PropiedadPersona, id=contrato_id)
+    contrato.estado = 'activo'
+    contrato.save()
+    return redirect('lista_contratos')
 
 def es_residente(user):
     return user.is_authenticated and user.rol == CustomUser.Rol.RESIDENTE
@@ -526,19 +554,29 @@ def lista_contratos(request):
     contratos_qs = PropiedadPersona.objects.select_related(
         'propiedad__complejo', 
         'persona__persona'
-    ).order_by('-fecha_inicio')
+    ).order_by('propiedad__numero_identificador', '-fecha_inicio')
 
+    # Filtering
     tipo_relacion = request.GET.get('tipo_relacion', '')
     estado = request.GET.get('estado', '')
+    propiedad_id = request.GET.get('propiedad_id', '')
 
     if tipo_relacion:
         contratos_qs = contratos_qs.filter(tipo_relacion=tipo_relacion)
     
     if estado:
         contratos_qs = contratos_qs.filter(estado=estado)
+    
+    if propiedad_id:
+        contratos_qs = contratos_qs.filter(propiedad__id=propiedad_id)
+
+    # Group contracts by property
+    contratos_por_propiedad = defaultdict(list)
+    for contrato in contratos_qs:
+        contratos_por_propiedad[contrato.propiedad].append(contrato)
 
     context = {
-        'contratos': contratos_qs,
+        'contratos_por_propiedad': dict(contratos_por_propiedad),
         'tipo_relacion_choices': PropiedadPersona.TIPO_RELACION_CHOICES,
         'estado_choices': PropiedadPersona.ESTADO_CHOICES,
         'current_tipo_relacion': tipo_relacion,
@@ -635,3 +673,53 @@ def cancelar_preautorizacion_view(request, pa_id):
         'autorizacion': autorizacion
     }
     return render(request, 'complejos/cancelar_preautorizacion.html', context)
+
+@user_passes_test(es_admin, login_url='/')
+def crear_contrato_global(request):
+    if request.method == 'POST':
+        form = GlobalContratoForm(request.POST)
+        if form.is_valid():
+            propiedad = form.cleaned_data['propiedad']
+            tipo_relacion_form = form.cleaned_data['tipo_relacion']
+            
+            if tipo_relacion_form == 'co-propietario':
+                first_person_role = 'propietario'
+                second_person_role = 'co-propietario'
+            elif tipo_relacion_form == 'co-inquilino':
+                first_person_role = 'inquilino'
+                second_person_role = 'co-inquilino'
+            else:
+                first_person_role = tipo_relacion_form
+                second_person_role = None
+
+            propiedad_persona = PropiedadPersona(
+                propiedad=propiedad,
+                persona=form.cleaned_data['persona'],
+                tipo_relacion=first_person_role,
+                fecha_inicio=form.cleaned_data['fecha_inicio'],
+                fecha_fin=form.cleaned_data['fecha_fin'],
+                es_principal=True,
+                estado=form.cleaned_data['estado']
+            )
+            propiedad_persona.save()
+
+            if second_person_role:
+                asignacion2 = PropiedadPersona(
+                    propiedad=propiedad,
+                    persona=form.cleaned_data['persona2'],
+                    tipo_relacion=second_person_role,
+                    fecha_inicio=form.cleaned_data['fecha_inicio'],
+                    fecha_fin=form.cleaned_data['fecha_fin'],
+                    es_principal=False,
+                    estado=form.cleaned_data['estado']
+                )
+                asignacion2.save()
+            
+            return redirect('lista_contratos')
+    else:
+        form = GlobalContratoForm()
+    
+    context = {
+        'form': form,
+    }
+    return render(request, 'complejos/crear_contrato_global.html', context)

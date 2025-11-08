@@ -5,11 +5,7 @@ body {
     background-color: #f4f7f6;
     color: #333;
     margin: 0;
-    padding: 2rem;
-    min-height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: flex-start; 
+    padding: 0; /* Es mejor manejar el padding dentro de los contenedores de cada página */
 }
 
 .container {

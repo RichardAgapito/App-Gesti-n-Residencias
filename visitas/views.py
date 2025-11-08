@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
 from complejos.models import PropiedadPersona
+from django.db import models
 from .models import Visitante, Visita, PreAutorizacion
 from .forms import VisitanteForm, VisitaForm, PreAutorizacionForm
 

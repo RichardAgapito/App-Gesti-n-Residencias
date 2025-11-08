@@ -35,8 +35,8 @@ class Visita(models.Model):
         ('tecnico', 'Técnico'),
     ]
     ESTADO_CHOICES = [
-        ('dentro', 'Dentro'),
-        ('salio', 'Salió'),
+        ('en_curso', 'En curso'),
+        ('finalizado', 'Finalizado'),
         ('no_autorizado', 'No Autorizado'),
     ]
 
@@ -51,7 +51,7 @@ class Visita(models.Model):
     autorizado_previamente = models.BooleanField(default=False)
     observaciones = models.TextField(blank=True)
     usuario_registra = models.ForeignKey(CustomUser, related_name='visitas_registradas', on_delete=models.CASCADE)
-    estado = models.CharField(max_length=15, choices=ESTADO_CHOICES, default='dentro')
+    estado = models.CharField(max_length=15, choices=ESTADO_CHOICES, default='en_curso')
 
     def __str__(self):
         return f"Visita de {self.visitante} a {self.propiedad}"

@@ -14,6 +14,9 @@ urlpatterns = [
     path('api/residentes/', views.get_residentes_json, name='get_residentes_json'),
     path('propiedades/<int:propiedad_id>/cancelar-contrato/<int:propiedad_persona_id>/', views.cancelar_contrato, name='cancelar_contrato'),
     path('contratos/', views.lista_contratos, name='lista_contratos'),
+    path('contratos/crear/', views.crear_contrato_global, name='crear_contrato_global'),
+    path('propiedades/contrato/<int:contrato_id>/editar/', views.editar_contrato, name='editar_contrato'),
+    path('contratos/<int:contrato_id>/reactivar/', views.reactivar_contrato, name='reactivar_contrato'),
 
     # URLs para el sistema de reservas
     path('reservas/', views.crear_reserva_view, name='crear_reserva'),

@@ -1,33 +1,59 @@
 {% extends 'base.html' %}
+{% load static %}
+
+{% block bootstrap_css %}{% endblock %}
+{% block global_styles %}{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/users.css' %}" />
+{% endblock %}
 
 {% block content %}
-    <h1>Crear un Nuevo Usuario</h1>
-    <form method="post">
+<div class="user-form-container">
+    <h1><i class="fa-solid fa-user-plus"></i> Crear Nuevo Usuario</h1>
+    <form method="post" class="user-form">
         {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit">Crear Usuario</button>
+        {% if form.non_field_errors %}
+            <div class="errorlist">
+                {% for error in form.non_field_errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        {% for field in form %}
+            <div class="form-group" id="container-{{ field.id_for_label }}">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% for error in field.errors %}
+                    <div class="errorlist">
+                        <li>{{ error }}</li>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endfor %}
+        <button type="submit" class="btn-submit">Crear Usuario</button>
     </form>
-    <br>
-    <a href="{% url 'dashboard' %}">Volver al Dashboard</a>
+    <a href="{% url 'dashboard' %}" class="back-link">← Volver al Dashboard</a>
+</div>
+{% endblock %}
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const rolField = document.getElementById('id_rol');
-            const complejoSelect = document.getElementById('id_complejo_asignado');
-            const complejoFieldContainer = complejoSelect.parentNode; // The <p> tag containing the select
+{% block extra_js %}
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const rolField = document.getElementById("id_rol");
+        const complejoFieldContainer = document.getElementById("container-id_complejo_asignado");
 
-            function toggleComplejoField() {
-                if (rolField.value === 'GUARDIA') {
-                    complejoFieldContainer.style.display = 'block';
-                    complejoSelect.removeAttribute('disabled'); // Enable the select
-                } else {
-                    complejoFieldContainer.style.display = 'none';
-                    complejoSelect.setAttribute('disabled', 'disabled'); // Disable the select
-                }
+        function toggleComplejoField() {
+            if (complejoFieldContainer) {
+                complejoFieldContainer.style.display = rolField.value === "GUARDIA" ? "block" : "none";
             }
+        }
 
+        if (rolField) {
             toggleComplejoField();
-            rolField.addEventListener('change', toggleComplejoField);
-        });
-    </script>
+            rolField.addEventListener("change", toggleComplejoField);
+        }
+    });
+</script>
 {% endblock %}

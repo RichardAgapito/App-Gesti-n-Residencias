@@ -7,6 +7,11 @@ from django.utils import timezone
 from visitas.models import PreAutorizacion
 from django.core.validators import RegexValidator
 
+# Custom ModelChoiceField to display user's full name
+class UserChoiceField(forms.ModelChoiceField):
+    def label_from_instance(self, obj):
+        return obj.persona.__str__() if obj.persona else obj.email
+
 class AmenidadForm(forms.ModelForm):
     class Meta:
         model = Amenidad
@@ -22,6 +27,17 @@ class ComplejoForm(forms.ModelForm):
     class Meta:
         model = Complejo
         fields = '__all__'
+
+    def clean_telefono_contacto(self):
+        telefono = self.cleaned_data.get('telefono_contacto')
+        if telefono:
+            # Primera validación: ¿Contiene solo números?
+            if not telefono.isdigit():
+                raise ValidationError("Este campo solo debe contener números.")
+            # Segunda validación: ¿Tiene la longitud correcta?
+            if len(telefono) != 9:
+                raise ValidationError("El número de teléfono debe tener exactamente 9 dígitos.")
+        return telefono
 
 class PropiedadForm(forms.ModelForm):
     class Meta:
@@ -149,6 +165,81 @@ class PropiedadPersonaForm(forms.ModelForm):
                     raise ValidationError(f'No se pueden agregar más de 2 {tipo_relacion}s activos a esta propiedad.')
 
         return cleaned_data
+
+class GlobalContratoForm(forms.ModelForm):
+    persona = UserChoiceField(
+        queryset=get_user_model().objects.filter(rol='RESIDENTE', is_active=True),
+        label="Persona"
+    )
+    persona2 = UserChoiceField(
+        queryset=get_user_model().objects.filter(rol='RESIDENTE', is_active=True),
+        required=False,
+        label="Segunda Persona"
+    )
+
+    class Meta:
+        model = PropiedadPersona
+        fields = ['propiedad', 'persona', 'tipo_relacion', 'fecha_inicio', 'fecha_fin', 'estado']
+        widgets = {
+            'fecha_inicio': forms.DateInput(attrs={'type': 'date'}),
+            'fecha_fin': forms.DateInput(attrs={'type': 'date'}),
+        }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        propiedad = cleaned_data.get('propiedad')
+        tipo_relacion = cleaned_data.get('tipo_relacion')
+        persona = cleaned_data.get('persona')
+        persona2 = cleaned_data.get('persona2')
+        fecha_inicio = cleaned_data.get('fecha_inicio')
+        fecha_fin = cleaned_data.get('fecha_fin')
+
+        if tipo_relacion in ['co-propietario', 'co-inquilino']:
+            if not persona2:
+                self.add_error('persona2', 'Este campo es requerido para co-propietarios y co-inquilinos.')
+            elif persona == persona2:
+                self.add_error('persona2', 'La segunda persona no puede ser la misma que la primera.')
+
+        if fecha_inicio and fecha_inicio < date.today():
+            raise ValidationError({"fecha_inicio": "La fecha de inicio no puede ser anterior a la fecha actual."})
+
+        # Handle fecha_fin logic
+        if tipo_relacion in ['propietario', 'co-propietario']:
+            cleaned_data['fecha_fin'] = None
+        elif tipo_relacion in ['inquilino', 'co-inquilino']:
+            if not fecha_fin:
+                self.add_error('fecha_fin', 'La fecha de fin es requerida para los inquilinos.')
+            elif fecha_inicio and fecha_fin < fecha_inicio + timedelta(days=30):
+                self.add_error('fecha_fin', 'La fecha de fin no puede ser menor a 30 días después de la fecha de inicio.')
+
+        if propiedad and persona:
+            # Block creating a new principal if one already exists and is active
+            if tipo_relacion in ['propietario', 'co-propietario']:
+                if PropiedadPersona.objects.filter(propiedad=propiedad, tipo_relacion='propietario', es_principal=True, estado='activo').exists():
+                    raise ValidationError(f"La propiedad '{propiedad}' ya tiene un Propietario principal activo.")
+            
+            if tipo_relacion in ['inquilino', 'co-inquilino']:
+                if PropiedadPersona.objects.filter(propiedad=propiedad, tipo_relacion='inquilino', es_principal=True, estado='activo').exists():
+                    raise ValidationError(f"La propiedad '{propiedad}' ya tiene un Inquilino principal activo.")
+
+            # Block assigning a person who is already in an active, conflicting role
+            if tipo_relacion in ['propietario', 'co-propietario']:
+                if PropiedadPersona.objects.filter(propiedad=propiedad, persona=persona, tipo_relacion='inquilino', estado='activo').exists():
+                    raise ValidationError('Esta persona ya es inquilino activo de esta propiedad.')
+            
+            if tipo_relacion == 'inquilino':
+                if PropiedadPersona.objects.filter(propiedad=propiedad, persona=persona, tipo_relacion__in=['propietario', 'co-propietario'], estado='activo').exists():
+                    raise ValidationError('Esta persona ya es propietaria activa de esta propiedad.')
+
+        return cleaned_data
+
+class EditarContratoForm(forms.ModelForm):
+    class Meta:
+        model = PropiedadPersona
+        fields = ['fecha_fin', 'estado']
+        widgets = {
+            'fecha_fin': forms.DateInput(attrs={'type': 'date'}),
+        }
 
 class ReservaForm(forms.ModelForm):
     class Meta:
