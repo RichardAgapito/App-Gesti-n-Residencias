@@ -296,7 +296,10 @@ class ResidentePreAutorizacionForm(forms.ModelForm):
                 r'^\d{8}$',
                 message="El número de documento debe contener 8 dígitos."
             )
-        ]
+        ],
+        widget=forms.TextInput(attrs={
+            'maxlength': '8'
+        })
     )
 
     class Meta:
@@ -332,6 +335,19 @@ class ResidentePreAutorizacionForm(forms.ModelForm):
         if self.instance and self.instance.pk:
             self.fields['numero_documento'].initial = self.instance.documento_visitante
 
+    def save(self, commit=True):
+        # Llama al 'save' original pero no lo guarda en la BD todavía
+        instance = super().save(commit=False)
+        
+        # Copia manualmente el valor de nuestro campo validado 'numero_documento'
+        # al campo real del modelo 'documento_visitante'
+        instance.documento_visitante = self.cleaned_data.get('numero_documento')
+        
+        # Si 'commit' es True, ahora sí guarda la instancia en la BD
+        if commit:
+            instance.save()
+        return instance
+    
     def clean(self):
         cleaned_data = super().clean()
         fecha_inicio = cleaned_data.get('vigencia_desde')

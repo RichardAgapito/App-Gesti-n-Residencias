@@ -550,10 +550,10 @@ def lista_contratos(request):
 @user_passes_test(es_residente)
 def mis_preautorizaciones_view(request):
     has_active_contract = PropiedadPersona.objects.filter(persona=request.user, estado='activo').exists()
-
+    
     lista_autorizaciones = PreAutorizacion.objects.filter(
         residente=request.user
-    ).order_by('-fecha_hora_esperada') # <--- ESTE ERA EL ERROR
+    ).order_by('-fecha_hora_esperada') # <--- Corregido (ordena por fecha esperada)
     
     context = {
         'has_active_contract': has_active_contract,
@@ -565,6 +565,7 @@ def mis_preautorizaciones_view(request):
 @user_passes_test(es_residente)
 def crear_preautorizacion_view(request):
     try:
+        # Verifica si tiene contrato y obtiene la propiedad
         propiedad_persona = PropiedadPersona.objects.get(persona=request.user, estado='activo')
         has_active_contract = True
     except PropiedadPersona.DoesNotExist:
@@ -592,11 +593,11 @@ def crear_preautorizacion_view(request):
 @user_passes_test(es_residente)
 def editar_preautorizacion_view(request, pa_id):
     if not PropiedadPersona.objects.filter(persona=request.user, estado='activo').exists():
-        return redirect('dashboard') # Si no tiene contrato, no puede editar
+        return redirect('dashboard') # Seguridad
 
     autorizacion = get_object_or_404(PreAutorizacion, id=pa_id, residente=request.user)
     
-    # No se puede editar si ya fue usada, vencida o cancelada
+    # No se puede editar si ya no está pendiente
     if autorizacion.estado != 'pendiente':
         return redirect('mis_preautorizaciones')
 
@@ -619,7 +620,7 @@ def editar_preautorizacion_view(request, pa_id):
 @user_passes_test(es_residente)
 def cancelar_preautorizacion_view(request, pa_id):
     if not PropiedadPersona.objects.filter(persona=request.user, estado='activo').exists():
-        return redirect('dashboard')
+        return redirect('dashboard') # Seguridad
 
     autorizacion = get_object_or_404(PreAutorizacion, id=pa_id, residente=request.user)
 

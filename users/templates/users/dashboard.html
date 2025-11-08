@@ -128,10 +128,7 @@
            class="{% if not has_active_contract %}disabled-link{% endif %}">
            <i class="fa-solid fa-calendar-check"></i> Mis Reservas
         </a>
-        <a href="{% if has_active_contract %}{% url 'mis_reservas' %}{% else %}#{% endif %}"
-           class="{% if not has_active_contract %}disabled-link{% endif %}">
-           <i class="fa-solid fa-calendar-check"></i> Mis Reservas
-        </a>
+        
         <a href="{% if has_active_contract %}{% url 'mis_preautorizaciones' %}{% else %}#{% endif %}"
            class="{% if not has_active_contract %}disabled-link{% endif %}">
            <i class="fa-solid fa-id-card-clip"></i> Pre-Autorizaciones

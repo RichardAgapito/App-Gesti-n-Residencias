@@ -62,7 +62,7 @@
         <header>
             <h1><i class="fa-solid fa-id-card-clip"></i> Mis Pre-Autorizaciones</h1>
             {% if has_active_contract %}
-            <a href="{% url 'crear_preautorizacion' %}" class="btn btn-primary">
+            <a href="{% url 'residente_crear_preautorizacion' %}" class="btn btn-primary">
                 <i class="fa-solid fa-plus"></i> Nueva Autorización
             </a>
             {% endif %}
@@ -97,12 +97,12 @@
                             <td><span class="status-{{ pa.estado }}">{{ pa.get_estado_display }}</span></td>
                             <td class="action-links">
                                 {% if pa.estado == 'pendiente' %}
-                                    <a href="{% url 'editar_preautorizacion' pa.id %}" class="btn-edit" title="Editar"><i class="fa-solid fa-pencil"></i></a>
-                                    <a href="{% url 'cancelar_preautorizacion' pa.id %}" class="btn-cancel" title="Cancelar"><i class="fa-solid fa-ban"></i></a>
+                                    <a href="{% url 'residente_editar_preautorizacion' pa.id %}" class="btn-edit" title="Editar"><i class="fa-solid fa-pencil"></i></a>
+                                    <a href="{% url 'residente_cancelar_preautorizacion' pa.id %}" class="btn-cancel" title="Cancelar"><i class="fa-solid fa-ban"></i></a>
                                 {% else %}
                                     -
                                 {% endif %}
-                            </td>
+                            </td>     
                         </tr>
                     {% endfor %}
                 </tbody>

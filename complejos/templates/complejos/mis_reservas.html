@@ -82,32 +82,62 @@
            class="active {% if not has_active_contract %}disabled-link{% endif %}">
            <i class="fa-solid fa-calendar-check"></i> Mis Reservas
         </a>
+        
+        <a href="{% if has_active_contract %}{% url 'mis_preautorizaciones' %}{% else %}#{% endif %}"
+           class="{% if not has_active_contract %}disabled-link{% endif %}">
+           <i class="fa-solid fa-id-card-clip"></i> Pre-Autorizaciones
+        </a>
     </div>
 
     <div class="main-content">
         
         <header>
             <h1><i class="fa-solid fa-calendar-check"></i> Mis Reservas</h1>
-            {% if has_active_contract %}
-            <a href="{% url 'crear_reserva' %}" class="btn btn-primary">
-                <i class="fa-solid fa-plus"></i> Nueva Reserva
-            </a>
-            {% endif %}
+            
+            <div>
+                <a href="{% url 'dashboard' %}" class="btn btn-secondary">
+                    <i class="fa-solid fa-arrow-left"></i> Volver al Dashboard
+                </a>
+                {% if has_active_contract %}
+                <a href="{% url 'crear_reserva' %}" class="btn btn-primary">
+                    <i class="fa-solid fa-plus"></i> Nueva Reserva
+                </a>
+                {% endif %}
+            </div>
         </header>
 
         {% if not has_active_contract %}
         <div class="content-locked-message">
-            <h3><i class="fa-solid fa-triangle-exclamation"></i> Funcionalidad Limitada</h3>
-            <p>No hemos detectado un contrato activo asociado a tu cuenta. 
-               Por favor, comunícate con la administración.</p>
-        </div>
+            </div>
         {% endif %}
 
         {% if reservas %}
             <table class="reservas-table">
-                </table>
+                 <thead>
+                    <tr>
+                        <th>Amenidad</th>
+                        <th>Fecha de Inicio</th>
+                        <th>Fecha de Fin</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for reserva in reservas %}
+                        <tr>
+                            <td>{{ reserva.amenidad.nombre }}</td>
+                            <td>{{ reserva.fecha_inicio|date:"d M Y, H:i" }}</td>
+                            <td>{{ reserva.fecha_fin|date:"d M Y, H:i" }}</td>
+                            <td>
+                                <span class="status-{{ reserva.estado }}">{{ reserva.get_estado_display }}</span>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         {% else %}
+            {% if has_active_contract %}
             <p>No tienes ninguna reserva.</p>
+            {% endif %}
         {% endif %}
     </div>
 </div>
