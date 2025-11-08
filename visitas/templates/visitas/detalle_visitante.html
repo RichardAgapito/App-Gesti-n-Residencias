@@ -2,21 +2,92 @@
 {% load static %}
 
 {% block extra_css %}
-    <link rel="stylesheet" href="{% static 'css/detalle_visitante.css' %}">
+<style>
+    .user-detail-container {
+        max-width: 800px;
+        margin: 2rem auto;
+        padding: 2rem;
+        background-color: #f9f9f9;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        font-family: sans-serif;
+    }
+    .user-detail-container h2 {
+        text-align: center;
+        color: #333;
+        margin-bottom: 2rem;
+    }
+    .detail-layout {
+        display: flex;
+        gap: 2rem;
+        justify-content: space-between;
+        align-items: flex-start;
+    }
+    .user-detail-info {
+        flex: 2;
+    }
+    .user-detail-info p {
+        margin-bottom: 1rem;
+        line-height: 1.6;
+    }
+    .user-photo-container {
+        flex: 1;
+        text-align: center;
+    }
+    .user-photo-container img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 8px;
+        border: 1px solid #ddd;
+    }
+    .action-links {
+        text-align: center;
+        margin-top: 2rem;
+        padding-top: 1rem;
+        border-top: 1px solid #eee;
+    }
+    .action-links a {
+        display: inline-block;
+        padding: 0.75rem 1.5rem;
+        border-radius: 5px;
+        text-decoration: none;
+        color: #fff;
+        margin: 0 0.5rem;
+        transition: background-color 0.3s;
+    }
+    .edit-link {
+        background-color: #007bff;
+    }
+    .edit-link:hover {
+        background-color: #0056b3;
+    }
+    .back-link {
+        background-color: #6c757d;
+    }
+    .back-link:hover {
+        background-color: #5a6268;
+    }
+</style>
 {% endblock extra_css %}
 
 {% block content %}
 <div class="user-detail-container">
     <h2>Detalles de: {{ visitante.nombres }} {{ visitante.apellidos }}</h2>
-    <div class="user-detail-info">
-        <p><strong>Documento:</strong> {{ visitante.get_tipo_documento_display }} - {{ visitante.numero_documento }}</p>
-        <p><strong>Teléfono:</strong> {{ visitante.telefono }}</p>
-        <p><strong>Estado:</strong> {{ visitante.get_estado_display }}</p>
-        <p><strong>Visitante Frecuente:</strong> {% if visitante.es_frecuente %}Sí{% else %}No{% endif %}</p>
-        <p><strong>Fecha de Registro:</strong> {{ visitante.fecha_registro_sistema }}</p>
+
+    <div class="detail-layout">
+        <div class="user-detail-info">
+            <p><strong>Documento:</strong> {{ visitante.get_tipo_documento_display }} - {{ visitante.numero_documento }}</p>
+            <p><strong>Teléfono:</strong> {{ visitante.telefono }}</p>
+            <p><strong>Estado:</strong> {{ visitante.get_estado_display }}</p>
+            <p><strong>Visitante Frecuente:</strong> {% if visitante.es_frecuente %}Sí{% else %}No{% endif %}</p>
+            <p><strong>Fecha de Registro:</strong> {{ visitante.fecha_registro_sistema|date:"d/m/Y H:i" }}</p>
+        </div>
+
         {% if visitante.foto_capturada %}
-            <p><strong>Foto:</strong></p>
-            <img src="{{ visitante.foto_capturada.url }}" alt="Foto del visitante" width="200">
+        <div class="user-photo-container">
+            <p>Foto del Visitante</p>
+            <img src="{{ visitante.foto_capturada.url }}" alt="Foto de {{ visitante.nombres }}">
+        </div>
         {% endif %}
     </div>
 

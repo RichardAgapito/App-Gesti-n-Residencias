@@ -60,7 +60,28 @@
                                 <td class="action-links">
                                     <a href="{% url 'detalle_visitante' visitante.id %}" class="btn btn-info btn-sm">Detalles</a>
                                     <a href="{% url 'editar_visitante' visitante.id %}" class="btn btn-warning btn-sm">Editar</a>
-                                    <a href="{% url 'eliminar_visitante' visitante.id %}" class="btn btn-danger btn-sm">Bloquear</a>
+                                    
+                                    {% if visitante.estado == 'activo' %}
+                                        <a href="#" role="button" class="btn btn-danger btn-sm" 
+                                           data-bs-toggle="modal" 
+                                           data-bs-target="#confirmActionModal"
+                                           data-visitor-name="{{ visitante.nombres }} {{ visitante.apellidos }}"
+                                           data-action-url="{% url 'eliminar_visitante' visitante.id %}"
+                                           data-action-name="Bloquear"
+                                           data-modal-body="¿Estás seguro de que deseas bloquear a">
+                                            Bloquear
+                                        </a>
+                                    {% else %}
+                                        <a href="#" role="button" class="btn btn-success btn-sm" 
+                                           data-bs-toggle="modal" 
+                                           data-bs-target="#confirmActionModal"
+                                           data-visitor-name="{{ visitante.nombres }} {{ visitante.apellidos }}"
+                                           data-action-url="{% url 'desbloquear_visitante' visitante.id %}"
+                                           data-action-name="Desbloquear"
+                                           data-modal-body="¿Estás seguro de que deseas desbloquear a">
+                                            Desbloquear
+                                        </a>
+                                    {% endif %}
                                 </td>
                             </tr>
                         {% endfor %}
@@ -92,4 +113,62 @@
 
     <a href="{% url 'dashboard_visitas' %}" class="back-link">← Volver al Dashboard</a>
 </div>
+
+<!-- Generic Confirmation Modal -->
+<div class="modal fade" id="confirmActionModal" tabindex="-1" aria-labelledby="confirmActionModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="confirmActionModalLabel">Confirmar Acción</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <span id="modalBodyText"></span> <strong id="modalVisitorName"></strong>?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <form id="actionForm" method="post" action="">
+          {% csrf_token %}
+          <button type="submit" class="btn" id="confirmActionButton">Confirmar</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var confirmActionModal = document.getElementById('confirmActionModal');
+    if (confirmActionModal) {
+        confirmActionModal.addEventListener('show.bs.modal', function (event) {
+            var button = event.relatedTarget;
+            
+            var visitorName = button.getAttribute('data-visitor-name');
+            var actionUrl = button.getAttribute('data-action-url');
+            var actionName = button.getAttribute('data-action-name');
+            var modalBody = button.getAttribute('data-modal-body');
+
+            var modalTitle = confirmActionModal.querySelector('.modal-title');
+            var modalBodyText = confirmActionModal.querySelector('#modalBodyText');
+            var modalVisitorName = confirmActionModal.querySelector('#modalVisitorName');
+            var actionForm = confirmActionModal.querySelector('#actionForm');
+            var confirmActionButton = confirmActionModal.querySelector('#confirmActionButton');
+            
+            modalTitle.textContent = 'Confirmar ' + actionName;
+            modalBodyText.textContent = modalBody;
+            modalVisitorName.textContent = visitorName;
+            actionForm.setAttribute('action', actionUrl);
+            confirmActionButton.textContent = actionName;
+
+            if (actionName === 'Bloquear') {
+                confirmActionButton.className = 'btn btn-danger';
+            } else {
+                confirmActionButton.className = 'btn btn-success';
+            }
+        });
+    }
+});
+</script>
 {% endblock %}

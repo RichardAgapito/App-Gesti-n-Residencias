@@ -6,89 +6,137 @@
 {% endblock extra_css %}
 
 {% block content %}
-<div class="user-form-container">
-    <h1 class="text-center">Registrar Nueva Visita</h1>
+<div class="form-container">
+    <h2><i class="fa-solid fa-car-side"></i> Registrar Nueva Visita</h2>
     
-    <form method="post" class="user-form">
+    <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
         
         {% if form.non_field_errors %}
-            <div class="errorlist">
-                {% for error in form.non_field_errors %}
-                    <li>{{ error }}</li>
-                {% endfor %}
-            </div>
+            <div class="form-errors">{{ form.non_field_errors }}</div>
         {% endif %}
 
-        {% for field in form %}
-            <div class="form-group">
-                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-                {{ field }}
-                {% if field.help_text %}
-                    <small style="display: block; margin-top: 5px; color: #6c757d;">{{ field.help_text }}</small>
-                {% endif %}
-                {% for error in field.errors %}
-                    <div class="errorlist">
-                        <li>{{ error }}</li>
-                    </div>
-                {% endfor %}
-            </div>
-        {% endfor %}
+        <p style="display: flex; flex-direction: column; width: 40%; gap: 5px;">
+            <label for="{{ form.propiedad.id_for_label }}">
+                {{ form.propiedad.label }}<span class="required-field">*</span>
+            </label>
+            {{ form.propiedad }}
+            <small>Propiedad a la que se dirige la visita.</small>
+            {{ form.propiedad.errors }}
+        </p>
+
+        <p style="display: flex; flex-direction: column;width: 40%; gap: 5px;">
+            <label for="{{ form.residente_autoriza.id_for_label }}">
+                {{ form.residente_autoriza.label }}
+            </label>
+            {{ form.residente_autoriza }}
+            <small>Selecciona una propiedad para cargar los residentes. (Opcional)</small>
+            {{ form.residente_autoriza.errors }}
+        </p>
+        
+        <hr>
+
+        <p>
+            <label for="{{ form.visitante.id_for_label }}">
+                {{ form.visitante.label }}<span class="required-field">*</span>
+            </label>
+            {{ form.visitante }}
+            <small>El visitante que ingresa.</small>
+            {{ form.visitante.errors }}
+        </p>
+
+        <p>
+            <label for="{{ form.fecha_hora_ingreso.id_for_label }}">
+                {{ form.fecha_hora_ingreso.label }}<span class="required-field">*</span>
+            </label>
+            {{ form.fecha_hora_ingreso }}
+            {{ form.fecha_hora_ingreso.errors }}
+        </p>
+
+        <p>
+            <label for="{{ form.motivo_visita.id_for_label }}">
+                {{ form.motivo_visita.label }}<span class="required-field">*</span>
+            </label>
+            {{ form.motivo_visita }}
+            {{ form.motivo_visita.errors }}
+        </p>
+
+        <p>
+            <label for="{{ form.placa_vehiculo.id_for_label }}">
+                {{ form.placa_vehiculo.label }}
+            </label>
+            {{ form.placa_vehiculo }}
+            {{ form.placa_vehiculo.errors }}
+        </p>
+
+        <p>
+            <label for="{{ form.cantidad_acompanantes.id_for_label }}">
+                {{ form.cantidad_acompanantes.label }}<span class="required-field">*</span>
+            </label>
+            {{ form.cantidad_acompanantes }}
+            {{ form.cantidad_acompanantes.errors }}
+        </p>
+
+        <p style="display: flex; flex-direction: column; gap: 5px;">
+            <label for="{{ form.observaciones.id_for_label }}">
+                {{ form.observaciones.label }}
+            </label>
+            {{ form.observaciones }}
+            {{ form.observaciones.errors }}
+        </p>
         
         <button type="submit" class="btn-submit">Guardar Visita</button>
     </form>
     
-    <div class="text-center mt-3">
-        <a href="{% url 'lista_visitas' %}" class="back-link">← Volver a la Lista</a>
-    </div>
+    <a href="{% url 'lista_visitas' %}" class="back-link">← Volver a la Lista</a>
 </div>
 {% endblock %}
 
 {% block extra_js %}
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const propiedadSelect = document.getElementById('id_propiedad');
-        const residenteSelect = document.getElementById('id_residente_autoriza');
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const propiedadSelect = document.getElementById('id_propiedad');
+            const residenteSelect = document.getElementById('id_residente_autoriza');
 
-        function cargarResidentes() {
-            const propiedadId = propiedadSelect.value;
-            residenteSelect.innerHTML = '<option value="">Cargando...</option>';
+            function cargarResidentes() {
+                const propiedadId = propiedadSelect.value;
+                residenteSelect.innerHTML = '<option value="">Cargando...</option>';
 
-            if (propiedadId) {
-                fetch(`/visitas/propiedad/${propiedadId}/residentes/`) 
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error('La respuesta de la red no fue exitosa');
-                        }
-                        return response.json();
-                    })
-                    .then(data => {
-                        residenteSelect.innerHTML = '<option value="">---------</option>';
-                        if (data.length > 0) {
-                            data.forEach(residente => {
-                                const option = new Option(residente.nombre, residente.id);
-                                residenteSelect.add(option);
-                            });
-                        } else {
-                            residenteSelect.innerHTML = '<option value="">No hay residentes activos</option>';
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error al cargar residentes:', error);
-                        residenteSelect.innerHTML = '<option value="">Error al cargar</option>';
-                    });
-            } else {
-                residenteSelect.innerHTML = '<option value="">Selecciona una propiedad</option>';
+                if (propiedadId) {
+                    fetch(`/visitas/propiedad/${propiedadId}/residentes/`) 
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error('La respuesta de la red no fue exitosa');
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            residenteSelect.innerHTML = '<option value="">---------</option>';
+                            if (data.length > 0) {
+                                data.forEach(residente => {
+                                    const option = new Option(residente.nombre, residente.id);
+                                    residenteSelect.add(option);
+                                });
+                            } else {
+                                residenteSelect.innerHTML = '<option value="">No hay residentes activos</option>';
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error al cargar residentes:', error);
+                            residenteSelect.innerHTML = '<option value="">Error al cargar</option>';
+                        });
+                } else {
+                    residenteSelect.innerHTML = '<option value="">Selecciona una propiedad</option>';
+                }
             }
-        }
 
-        propiedadSelect.addEventListener('change', cargarResidentes);
+            propiedadSelect.addEventListener('change', cargarResidentes);
 
-        if (propiedadSelect.value) {
-            cargarResidentes();
-        } else {
-             residenteSelect.innerHTML = '<option value="">Selecciona una propiedad</option>';
-        }
-    });
-</script>
+            if (propiedadSelect.value) {
+                cargarResidentes();
+            } else {
+                 residenteSelect.innerHTML = '<option value="">Selecciona una propiedad</G</option>';
+            }
+        });
+    </script>
 {% endblock extra_js %}

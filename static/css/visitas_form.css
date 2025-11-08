@@ -7,6 +7,15 @@ body {
     color: #333;
 }
 
+.form-container {
+    max-width: 800px;     /* (NUEVO) Define el ancho máximo */
+    margin: 2rem auto;    /* (NUEVO) Centra el formulario en la página */
+    padding: 2.5rem 3rem;
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e0e0e0;
+}
 /* El contenedor principal que actúa como la tarjeta del formulario */
 .user-form-container {
     max-width: 500px; /* Ancho máximo del formulario */
@@ -112,4 +121,21 @@ body {
 
 .errorlist li {
     margin-bottom: 0.25rem;
+}
+
+.required-field {
+    color: #e74c3c; /* Un color rojo */
+    margin-left: 4px;
+    font-weight: bold;
+}
+
+
+/* (NUEVO) Estilo para los mensajes de error */
+.form-errors, .errorlist {
+    list-style-type: none;
+    padding: 0;
+    margin: 5px 0 0 0;
+    font-size: 0.9em;
+    color: #e74c3c;
+    font-weight: bold;
 }
