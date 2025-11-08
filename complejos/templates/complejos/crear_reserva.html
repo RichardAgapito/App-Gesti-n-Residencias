@@ -139,49 +139,22 @@
             </a>
         </header>
 
+        {% if not has_active_contract %}
+        <div class="content-locked-message">
+            <h3><i class="fa-solid fa-triangle-exclamation"></i> Funcionalidad Limitada</h3>
+            <p>No puedes reservar amenidades porque no tienes un contrato activo. 
+               Por favor, comunícate con la administración.</p>
+        </div>
+        {% endif %}
+
+        {% if has_active_contract %}
         <div class="amenidad-grid">
             {% for amenidad in amenidades %}
-                <div class="amenidad-card">
-                    <h3>
-                        {{ amenidad.nombre }}
-                    </h3>
-
-                    <!-- (NUEVO) Detalles de la Amenidad -->
-                    <div class="amenidad-details">
-                        {% if amenidad.descripcion %}
-                        <div class="detail-item">
-                            <i class="fa-solid fa-info-circle"></i>
-                            <p>{{ amenidad.descripcion }}</p>
-                        </div>
-                        {% endif %}
-                        {% if amenidad.capacidad %}
-                        <div class="detail-item">
-                            <i class="fa-solid fa-users"></i>
-                            <p>Capacidad para <strong>{{ amenidad.capacidad }} personas</strong></p>
-                        </div>
-                        {% endif %}
-                        {% if amenidad.horario_disponibilidad %}
-                        <div class="detail-item">
-                            <i class="fa-solid fa-clock"></i>
-                            <p><strong>Horario:</strong> {{ amenidad.horario_disponibilidad }}</p>
-                        </div>
-                        {% endif %}
-                        {% if amenidad.reglas %}
-                        <div class="detail-item">
-                            <i class="fa-solid fa-scroll"></i>
-                            <p><strong>Reglas:</strong> {{ amenidad.reglas }}</p>
-                        </div>
-                        {% endif %}
-                    </div>
-
-                    <a href="{% url 'ver_disponibilidad' amenidad.id %}" class="btn-availability">
-                       <i class="fa-solid fa-calendar-days"></i> Ver Disponibilidad
-                    </a>
-                </div>
-            {% empty %}
+                {% empty %}
                 <p class="no-results-message">Este complejo no tiene amenidades para reservar.</p>
             {% endfor %}
         </div>
+        {% endif %}
         
     </div>
 </div>

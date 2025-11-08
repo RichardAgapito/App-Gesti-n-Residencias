@@ -154,63 +154,42 @@ body {
     margin-bottom: 1.5rem;
 }
 
-/* --- Grid de Tarjetas de Visita --- */
-.visita-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 20px;
-    padding-bottom: 2rem;
+/* --- Tabla de Visitas --- */
+.visitas-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 2rem;
 }
 
-.visita-card {
-    background-color: #ffffff;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
-    padding: 1.5rem;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-    transition: transform 0.2s, box-shadow 0.2s;
-    display: flex;
-    flex-direction: column;
+.visitas-table th, .visitas-table td {
+    border-bottom: 1px solid #e0e0e0;
+    padding: 1rem 1.5rem;
+    text-align: left;
+    vertical-align: middle;
 }
 
-.visita-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
-    border-color: #3498db;
+.visitas-table thead th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    color: #34495e;
 }
 
-.visita-card h4 {
-    color: #2c3e50;
-    font-size: 1.25rem;
-    margin-top: 0;
-    margin-bottom: 1rem;
-}
-
-.visita-card p {
-    margin: 0.5rem 0;
-    font-size: 0.95rem;
-    color: #555;
-    display: flex;
-}
-.visita-card p strong {
-    color: #333;
-    min-width: 90px;
-    display: inline-block;
-    margin-right: 5px;
+.visitas-table tbody tr:hover {
+    background-color: #f8faff;
 }
 
 /* Estilos para los estados */
-.status-dentro, .status-salio, .status-no_autorizado {
+.status-en_curso, .status-finalizado, .status-no_autorizado {
     font-weight: 600;
     padding: 3px 8px;
     border-radius: 4px;
     font-size: 0.85rem;
 }
-.status-dentro {
+.status-en_curso {
     background-color: #eafbf3;
     color: #27ae60;
 }
-.status-salio {
+.status-finalizado {
     background-color: #fdf3f2;
     color: #e74c3c;
 }
@@ -219,17 +198,12 @@ body {
     color: #f39c12;
 }
 
-/* --- (ACTUALIZADO) Acciones de la Tarjeta (Botones) --- */
-.user-card .action-links {
-    border-top: 1px solid #f0f0f0;
-    padding-top: 1rem;
-    margin-top: auto;
+/* --- Acciones de la Tabla (Botones) --- */
+.action-links {
     display: flex;
-    justify-content: flex-end;
-    gap: 0.5rem;
+    gap: 8px;
 }
 
-/* Estilo genérico para los botones de Gemini */
 .action-links .btn {
     text-decoration: none;
     color: #ffffff;
@@ -245,7 +219,6 @@ body {
     margin-right: 5px;
 }
 
-/* Colores de los botones */
 .action-links .btn-info {
     background-color: #3498db;
 }
@@ -268,7 +241,36 @@ body {
     background-color: #c0392b;
 }
 
-/* Mensaje "No hay usuarios" */
+/* --- Paginación --- */
+.pagination {
+    margin-top: 2rem;
+    text-align: center;
+}
+
+.pagination .step-links {
+    display: inline-block;
+}
+
+.pagination .step-links a, .pagination .step-links .current {
+    margin: 0 0.25rem;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #dee2e6;
+    border-radius: 5px;
+    text-decoration: none;
+    color: #3498db;
+}
+
+.pagination .step-links a:hover {
+    background-color: #f8f9fa;
+}
+
+.pagination .step-links .current {
+    background-color: #3498db;
+    color: #ffffff;
+    border-color: #3498db;
+}
+
+/* Mensaje "No hay visitas" */
 .no-results-message {
     font-size: 1.1rem;
     color: #777;

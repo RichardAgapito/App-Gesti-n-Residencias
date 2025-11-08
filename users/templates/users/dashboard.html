@@ -114,9 +114,7 @@
     
     {% include 'includes/resident_sidebar.html' %}
 
-    <!-- 2. Contenido Principal del Residente -->
     <div class="main-content">
-        <!-- Encabezado con Logout -->
         <header>
             <h1>Bienvenido, {{ request.user.persona.nombres|default:request.user.email }}</h1>
             <form method="post" action="{% url 'logout' %}">
@@ -171,21 +169,16 @@
                     <h3>Mis Reservas</h3>
                     <p>Consulta tus reservas activas y pasadas.</p>
                 </a>
-
-                <!--
-                <a href="#" class="action-card">
+                <a href="{% url 'mis_preautorizaciones' %}" class="action-card">
                     <div class="action-icon">
-                        <i class="fa-solid fa-triangle-exclamation"></i>
+                        <i class="fa-solid fa-id-card-clip"></i>
                     </div>
-                    <h3>Reportar Incidencia</h3>
-                    <p>Informa sobre un problema o avería en el complejo.</p>
+                    <h3>Pre-Autorizar Visitas</h3>
+                    <p>Registra a tus visitantes antes de que lleguen.</p>
                 </a>
-                -->
-
             </div>
         </section>
-        <!-- (FIN) SECCIÓN DE ACCIONES RÁPIDAS -->
-
+        {% endif %}
     </div>
 </div>
 <!-- (FIN) NUEVA ESTRUCTURA PARA RESIDENTE -->

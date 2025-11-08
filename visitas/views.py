@@ -1,26 +1,22 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
-from complejos.models import PropiedadPersona
+from complejos.models import Propiedad, PropiedadPersona
 from django.db import models
+from .models import Visitante, Visita, PreAutorizacion
+from .forms import VisitanteForm, VisitaForm, PreAutorizacionForm, EditarVisitaForm
 
 def get_residentes_por_propiedad(request, propiedad_id):
-    residentes = PropiedadPersona.objects.filter(
-        propiedad_id=propiedad_id, 
-        estado='activo'
-    ).select_related('persona', 'persona__persona')
+    # Usamos select_related para ser más eficientes
+    residentes = PropiedadPersona.objects.filter(propiedad_id=propiedad_id, estado='activo').select_related('persona__persona')
     
+    # Creamos una lista de diccionarios con el id y nombre
     residentes_data = [
-        {
-            'id': pp.persona.id, 
-            'nombre': f"{pp.persona.persona.nombres} {pp.persona.persona.apellidos}"
-        } 
-        for pp in residentes if pp.persona and pp.persona.persona
+        {'id': pp.persona.id, 'nombre': f"{pp.persona.persona.nombres} {pp.persona.persona.apellidos}"} 
+        for pp in residentes if pp.persona.persona # Nos aseguramos que la persona exista
     ]
-    
     return JsonResponse(residentes_data, safe=False)
 
-from .models import Visitante, Visita, PreAutorizacion
-from .forms import VisitanteForm, VisitaForm, PreAutorizacionForm
+
 
 def dashboard(request):
     visitantes_dentro = Visita.objects.filter(estado='dentro').count()
@@ -89,30 +85,44 @@ def eliminar_visitante_view(request, visitante_id):
         return redirect('lista_visitantes')
     return render(request, 'visitas/confirmar_eliminar_visitante.html', {'visitante': visitante})
 
+from django.core.paginator import Paginator
+
 # Visita Views
 def lista_visitas_view(request):
-    visitas = Visita.objects.all()
+    user = request.user
+    visitas_list = Visita.objects.all().order_by('-fecha_hora_ingreso')
+    propiedades = Propiedad.objects.all()
+
+    if user.is_authenticated and hasattr(user, 'rol') and user.rol == 'GUARDIA' and user.complejo_asignado:
+        visitas_list = visitas_list.filter(propiedad__complejo=user.complejo_asignado)
+        propiedades = propiedades.filter(complejo=user.complejo_asignado)
 
     query = request.GET.get('q')
     estado_filter = request.GET.get('estado')
-    motivo_visita_filter = request.GET.get('motivo_visita')
+    propiedad_filter = request.GET.get('propiedad')
 
     if query:
-        visitas = visitas.filter(
+        visitas_list = visitas_list.filter(
             models.Q(visitante__nombres__icontains=query) |
             models.Q(visitante__apellidos__icontains=query) |
             models.Q(visitante__numero_documento__icontains=query) |
-            models.Q(propiedad__nombre__icontains=query)
+            models.Q(propiedad__numero_identificador__icontains=query)
         )
 
     if estado_filter and estado_filter != '':
-        visitas = visitas.filter(estado=estado_filter)
+        visitas_list = visitas_list.filter(estado=estado_filter)
 
-    if motivo_visita_filter and motivo_visita_filter != '':
-        visitas = visitas.filter(motivo_visita=motivo_visita_filter)
+    if propiedad_filter and propiedad_filter != '':
+        visitas_list = visitas_list.filter(propiedad__id=propiedad_filter)
+
+    paginator = Paginator(visitas_list, 10) # Show 10 visitas per page.
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
 
     context = {
-        'visitas': visitas,
+        'page_obj': page_obj,
+        'estado_choices': Visita.ESTADO_CHOICES,
+        'propiedades': propiedades,
     }
     return render(request, 'visitas/lista_visitas.html', context)
 
@@ -124,12 +134,16 @@ def crear_visita_view(request):
         complejo_asignado = user.complejo_asignado
 
     if request.method == 'POST':
-        form = VisitaForm(request.POST, complejo_asignado=complejo_asignado)
+        # (MODIFICADO) Pasamos el 'user' al formulario
+        form = VisitaForm(request.POST, complejo_asignado=complejo_asignado, user=user)
         if form.is_valid():
-            form.save()
+            visita = form.save(commit=False)
+            visita.estado = 'dentro' # Estado por defecto al crear
+            visita.save()
             return redirect('lista_visitas')
     else:
-        form = VisitaForm(complejo_asignado=complejo_asignado)
+        # (MODIFICADO) Pasamos el 'user' al formulario
+        form = VisitaForm(complejo_asignado=complejo_asignado, user=user)
     
     return render(request, 'visitas/crear_visita.html', {'form': form})
 
@@ -143,21 +157,15 @@ def detalle_visita_view(request, visita_id):
 def editar_visita_view(request, visita_id):
     visita = get_object_or_404(Visita, id=visita_id)
     if request.method == 'POST':
-        form = VisitaForm(request.POST, instance=visita)
+        form = EditarVisitaForm(request.POST, instance=visita)
         if form.is_valid():
-            form.save()
+            visita = form.save(commit=False)
+            visita.estado = 'finalizado'
+            visita.save()
             return redirect('lista_visitas')
     else:
-        form = VisitaForm(instance=visita)
+        form = EditarVisitaForm(instance=visita)
     return render(request, 'visitas/editar_visita.html', {'form': form, 'visita': visita})
-
-def eliminar_visita_view(request, visita_id):
-    visita = get_object_or_404(Visita, id=visita_id)
-    if request.method == 'POST':
-        visita.estado = 'salio'
-        visita.save()
-        return redirect('lista_visitas')
-    return render(request, 'visitas/confirmar_eliminar_visita.html', {'visita': visita})
 
 # PreAutorizacion Views
 def lista_preautorizaciones_view(request):

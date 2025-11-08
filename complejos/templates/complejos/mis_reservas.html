@@ -74,10 +74,8 @@
     
     {% include 'includes/resident_sidebar.html' %}
 
-    <!-- 2. Contenido Principal del Residente -->
     <div class="main-content">
         
-        <!-- Encabezado con Logout (¡Ahora dentro de main-content!) -->
         <header>
             <h1><i class="fa-solid fa-calendar-check"></i> Mis Reservas</h1>
             <div>
@@ -90,11 +88,14 @@
             </div>
         </header>
 
-        <!-- (INICIO) TU CONTENIDO DE "MIS RESERVAS" -->
-        
+        {% if not has_active_contract %}
+        <div class="content-locked-message">
+            </div>
+        {% endif %}
+
         {% if reservas %}
             <table class="reservas-table">
-                <thead>
+                 <thead>
                     <tr>
                         <th>Amenidad</th>
                         <th>Fecha de Inicio</th>
@@ -116,11 +117,10 @@
                 </tbody>
             </table>
         {% else %}
+            {% if has_active_contract %}
             <p>No tienes ninguna reserva.</p>
+            {% endif %}
         {% endif %}
-
-        <!-- (FIN) TU CONTENIDO DE "MIS RESERVAS" -->
-
     </div>
 </div>
 <!-- (FIN) ESTRUCTURA DEL DASHBOARD DE RESIDENTE -->

@@ -89,4 +89,6 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     )
 
     def __str__(self):
+        if self.persona:
+            return f'{self.persona.nombres} {self.persona.apellidos}'
         return self.email

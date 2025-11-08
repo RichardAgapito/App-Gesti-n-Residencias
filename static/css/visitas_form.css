@@ -1,0 +1,115 @@
+/* Estilos para los formularios de la app 'visitas' (crear_visita, crear_visitante) */
+
+body {
+    background-color: #f0f2f5; /* Un fondo suave para que la tarjeta resalte */
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    color: #333;
+}
+
+/* El contenedor principal que actúa como la tarjeta del formulario */
+.user-form-container {
+    max-width: 500px; /* Ancho máximo del formulario */
+    margin: 3rem auto; /* Centrado vertical y horizontal */
+    padding: 2.5rem; /* Espaciado interno (padding) para dar aire */
+    background-color: #ffffff;
+    border-radius: 8px; /* Bordes redondeados */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* Sombra sutil para efecto de tarjeta */
+    border: 1px solid #e0e0e0;
+}
+
+.user-form-container h1 {
+    color: #2c3e50;
+    margin-top: 0;
+    margin-bottom: 2rem;
+    text-align: center;
+    font-size: 1.8rem;
+    font-weight: 600;
+}
+
+.user-form-container h1 i {
+    margin-right: 10px;
+    color: #3498db;
+}
+
+/* Estilos para cada grupo de label + input */
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: #495057;
+}
+
+/* Estilos para los campos de texto, email, contraseña y select */
+.form-group input[type="text"],
+.form-group input[type="email"],
+.form-group input[type="password"],
+.form-group input[type="datetime-local"],
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    border: 1px solid #ced4da;
+    border-radius: 5px;
+    box-sizing: border-box; /* Asegura que el padding no afecte el ancho total */
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    border-color: #3498db; /* Resalta el borde al hacer foco */
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+    outline: none;
+}
+
+/* Estilo para el botón de envío */
+.btn-submit {
+    width: 100%;
+    background-color: #3498db;
+    color: white;
+    border: none;
+    padding: 0.85rem;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1.1rem;
+    font-weight: 600;
+    transition: background-color 0.2s;
+    margin-top: 1rem;
+}
+
+.btn-submit:hover {
+    background-color: #2980b9; /* Un color un poco más oscuro al pasar el mouse */
+}
+
+/* Estilo para el enlace de "volver" */
+.back-link {
+    display: block;
+    text-align: center;
+    margin-top: 1.5rem;
+    color: #6c757d;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.back-link:hover {
+    text-decoration: underline;
+}
+
+/* Estilos para los errores de validación */
+.errorlist {
+    color: #e74c3c;
+    margin-top: 0.5rem;
+    padding-left: 1.2rem;
+    font-size: 0.9rem;
+    list-style-type: none;
+}
+
+.errorlist li {
+    margin-bottom: 0.25rem;
+}
