@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'users.apps.UsersConfig',
     'complejos.apps.ComplejosConfig',
     'visitas.apps.VisitasConfig',
+    'avisos.apps.AvisosConfig',
 ]
 
 MIDDLEWARE = [

@@ -1,0 +1,40 @@
+{% extends 'base_dashboard.html' %}
+
+{% block title %}Crear Aviso - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Crear Nuevo Aviso</h2>
+    <form method="post">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="id_titulo" class="form-label">Título</label>
+            {{ form.titulo }}
+        </div>
+        <div class="mb-3">
+            <label for="id_contenido" class="form-label">Contenido</label>
+            {{ form.contenido }}
+        </div>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label for="id_tipo_aviso" class="form-label">Tipo de Aviso</label>
+                {{ form.tipo_aviso }}
+            </div>
+            <div class="col-md-6 mb-3">
+                <label for="id_dirigido_a" class="form-label">Dirigido a</label>
+                {{ form.dirigido_a }}
+            </div>
+        </div>
+
+        {% if request.user.is_staff %}
+        <div class="mb-3">
+            <label for="id_complejo" class="form-label">Complejo</label>
+            {{ form.complejo }}
+        </div>
+        {% endif %}
+
+        <button type="submit" class="btn btn-primary">Guardar Aviso</button>
+        <a href="{% url 'avisos:lista_avisos' %}" class="btn btn-secondary">Cancelar</a>
+    </form>
+</div>
+{% endblock %}
