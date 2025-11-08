@@ -15,15 +15,8 @@
 {% block content %}
 {% if request.user.rol == 'ADMIN' %}
 <div class="dashboard-container">
-    <!-- 1. Barra Lateral (Sidebar) -->
-    <div class="sidebar">
-        <h2><i class="fa-solid fa-shield-halved"></i> Admin Panel</h2>
-        <a href="{% url 'lista_usuarios' %}"><i class="fa-solid fa-users"></i> Gestionar Usuarios</a>
-        <a href="{% url 'lista_complejos' %}"><i class="fa-solid fa-building-user"></i> Gestionar Complejos</a>
-        <a href="{% url 'admin_reservas' %}"><i class="fa-solid fa-calendar-days"></i> Gestionar Reservas</a>
-        <a href="{% url 'gestionar_amenidades' %}"><i class="fa-solid fa-star"></i> Gestionar Amenidades</a>
-        <a href="/admin/" class="dev-panel-link"><i class="fa-solid fa-code"></i> Panel Avanzado (Dev)</a>
-    </div>
+    
+    {% include 'includes/admin_sidebar.html' %}
 
     <!-- 2. Contenido Principal -->
     <div class="main-content">
@@ -112,28 +105,14 @@
         </section>
         <!-- (FIN) SECCIÓN DE ACCIONES RÁPIDAS -->
 
+
     </div>
 </div>
 {% else %}
 <!-- (INICIO) NUEVA ESTRUCTURA PARA RESIDENTE -->
 <div class="dashboard-container">
     
-    <div class="sidebar">
-        <h2><i class="fa-solid fa-house-user"></i> Panel Residente</h2>
-        <a href="{% if has_active_contract %}{% url 'crear_reserva' %}{% else %}#{% endif %}" 
-           class="{% if not has_active_contract %}disabled-link{% endif %}">
-           <i class="fa-solid fa-calendar-plus"></i> Reservar Amenidad
-        </a>
-        <a href="{% if has_active_contract %}{% url 'mis_reservas' %}{% else %}#{% endif %}"
-           class="{% if not has_active_contract %}disabled-link{% endif %}">
-           <i class="fa-solid fa-calendar-check"></i> Mis Reservas
-        </a>
-        
-        <a href="{% if has_active_contract %}{% url 'mis_preautorizaciones' %}{% else %}#{% endif %}"
-           class="{% if not has_active_contract %}disabled-link{% endif %}">
-           <i class="fa-solid fa-id-card-clip"></i> Pre-Autorizaciones
-        </a>
-    </div>
+    {% include 'includes/resident_sidebar.html' %}
 
     <div class="main-content">
         <header>
@@ -144,17 +123,33 @@
             </form>
         </header>
 
-        {% if not has_active_contract %}
-        <div class="content-locked-message">
-            <h3><i class="fa-solid fa-triangle-exclamation"></i> Funcionalidad Limitada</h3>
-            <p>No hemos detectado un contrato activo asociado a tu cuenta. 
-               Para reservar amenidades o registrar visitas, por favor, comunícate con la administración 
-               para verificar el estado de tu contrato.</p>
-        </div>
-        {% endif %}
+        <!-- (NUEVO) SECCIÓN DE AVISOS RECIENTES -->
+        <section class="quick-actions mt-4">
+            <h2><i class="fa-solid fa-bell"></i> Avisos Recientes</h2>
+            {% if avisos_recientes %}
+                <div class="notice-list">
+                    {% for aviso in avisos_recientes %}
+                        <a href="{% url 'avisos:detalle_aviso' aviso.pk %}" class="notice-item {% if user not in aviso.leido_por.all %}unread{% endif %}">
+                            <div class="notice-header">
+                                <h5>{{ aviso.titulo }}</h5>
+                                <span class="notice-time">{{ aviso.fecha_creacion|timesince }} ago</span>
+                            </div>
+                            <p class="notice-content">{{ aviso.contenido|truncatewords:15 }}</p>
+                            {% if user not in aviso.leido_por.all %}
+                                <span class="notice-new-badge">Nuevo</span>
+                            {% endif %}
+                        </a>
+                    {% endfor %}
+                </div>
+                <a href="{% url 'avisos:lista_avisos' %}" class="view-all-link">Ver todos los avisos</a>
+            {% else %}
+                <p class="text-center text-muted mt-3">No tienes avisos nuevos en este momento.</p>
+            {% endif %}
+        </section>
+        <!-- (FIN) SECCIÓN DE AVISOS RECIENTES -->
 
-        {% if has_active_contract %}
-        <section class="quick-actions">
+        <!-- (NUEVO) SECCIÓN DE ACCIONES RÁPIDAS -->
+        <section class="quick-actions mt-4">
             <h2><i class="fa-solid fa-bolt"></i> Acciones Rápidas</h2>
             <p>Selecciona una de las operaciones más comunes:</p>
             <div class="quick-actions-grid">
@@ -183,7 +178,7 @@
                 </a>
             </div>
         </section>
-        {% endif %}
+        
     </div>
 </div>
 <!-- (FIN) NUEVA ESTRUCTURA PARA RESIDENTE -->

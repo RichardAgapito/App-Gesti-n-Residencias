@@ -39,21 +39,26 @@ def dashboard(request):
 @login_required
 @user_passes_test(es_guardia)
 def lista_visitantes_view(request):
-    visitantes = Visitante.objects.all()
+    visitantes_list = Visitante.objects.all().order_by('-fecha_registro_sistema')
+
     query = request.GET.get('q')
     estado_filter = request.GET.get('estado')
 
     if query:
-        visitantes = visitantes.filter(
-            Q(nombres__icontains=query) |
-            Q(apellidos__icontains=query) |
-            Q(numero_documento__icontains=query)
+        visitantes_list = visitantes_list.filter(
+            models.Q(nombres__icontains=query) |
+            models.Q(numero_documento__icontains=query)
         )
     if estado_filter and estado_filter != '':
-        visitantes = visitantes.filter(estado=estado_filter)
+        visitantes_list = visitantes_list.filter(estado=estado_filter)
+
+    paginator = Paginator(visitantes_list, 10) # Show 10 visitantes per page.
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
 
     context = {
-        'visitantes': visitantes,
+        'page_obj': page_obj,
+        'estado_choices': Visitante.ESTADO_CHOICES,
     }
     return render(request, 'visitas/lista_visitantes.html', context)
 

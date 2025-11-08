@@ -27,8 +27,9 @@
                     <label for="id_estado">Estado:</label>
                     <select id="id_estado" name="estado">
                         <option value=""{% if not request.GET.estado %} selected{% endif %}>Todos</option>
-                        <option value="activo"{% if request.GET.estado == 'activo' %} selected{% endif %}>Activo</option>
-                        <option value="bloqueado"{% if request.GET.estado == 'bloqueado' %} selected{% endif %}>Bloqueado</option>
+                        {% for value, name in estado_choices %}
+                            <option value="{{ value }}"{% if request.GET.estado == value %} selected{% endif %}>{{ name }}</option>
+                        {% endfor %}
                     </select>
                 </div>
                 <button type="submit">Buscar y Filtrar</button>
@@ -38,21 +39,50 @@
         <main class="results-content">
             <h3>Visitantes Registrados</h3>
 
-            {% if visitantes %}
-                <div class="user-grid">
-                    {% for visitante in visitantes %}
-                        <div class="user-card">
-                            <h4>{{ visitante.nombres }} {{ visitante.apellidos }}</h4>
-                            <p><strong>Documento:</strong> {{ visitante.get_tipo_documento_display }} - {{ visitante.numero_documento }}</p>
-                            <p><strong>Teléfono:</strong> {{ visitante.telefono }}</p>
-                            <p><strong>Estado:</strong> <span class="status-{% if visitante.estado == 'activo' %}active{% else %}inactive{% endif %}">{{ visitante.get_estado_display }}</span></p>
-                            <div class="action-links">
-                                <a href="#" class="btn btn-info btn-sm"><i class="fa-solid fa-eye"></i> Detalles</a>
-                                <a href="#" class="btn btn-warning btn-sm"><i class="fa-solid fa-pencil"></i> Editar</a>
-                                <a href="#" class="btn btn-danger btn-sm"><i class="fa-solid fa-toggle-off"></i> Bloquear</a>
-                            </div>
-                        </div>
-                    {% endfor %}
+            {% if page_obj.object_list %}
+                <table class="visitantes-table">
+                    <thead>
+                        <tr>
+                            <th>Visitante</th>
+                            <th>Documento</th>
+                            <th>Teléfono</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for visitante in page_obj.object_list %}
+                            <tr>
+                                <td>{{ visitante.nombres }} {{ visitante.apellidos }}</td>
+                                <td>{{ visitante.numero_documento }}</td>
+                                <td>{{ visitante.telefono }}</td>
+                                <td><span class="status-{{ visitante.estado }}">{{ visitante.get_estado_display }}</span></td>
+                                <td class="action-links">
+                                    <a href="{% url 'detalle_visitante' visitante.id %}" class="btn btn-info btn-sm">Detalles</a>
+                                    <a href="{% url 'editar_visitante' visitante.id %}" class="btn btn-warning btn-sm">Editar</a>
+                                    <a href="{% url 'eliminar_visitante' visitante.id %}" class="btn btn-danger btn-sm">Bloquear</a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+
+                <div class="pagination">
+                    <span class="step-links">
+                        {% if page_obj.has_previous %}
+                            <a href="?page=1">&laquo; primera</a>
+                            <a href="?page={{ page_obj.previous_page_number }}">anterior</a>
+                        {% endif %}
+
+                        <span class="current">
+                            Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}.
+                        </span>
+
+                        {% if page_obj.has_next %}
+                            <a href="?page={{ page_obj.next_page_number }}">siguiente</a>
+                            <a href="?page={{ page_obj.paginator.num_pages }}">última &raquo;</a>
+                        {% endif %}
+                    </span>
                 </div>
             {% else %}
                 <p class="no-results-message">No se encontraron visitantes.</p>
