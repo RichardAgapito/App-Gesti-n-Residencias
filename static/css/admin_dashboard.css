@@ -86,22 +86,44 @@ body {
     margin: 0; /* Quita el margen del formulario */
 }
 
-.main-content header button[type="submit"] {
-    background-color: #e74c3c; /* Rojo para "Cerrar Sesión" */
-    color: white;
+.main-content header button[type="submit"], .btn-primary, .btn-secondary {
     border: none;
-    padding: 10px 20px; /* Más pequeño que el botón azul feo */
+    padding: 10px 20px;
     border-radius: 5px;
     cursor: pointer;
     font-size: 0.95rem;
     font-weight: 500;
-    width: auto; /* Resetea el ancho al 100% */
-    margin: 0; /* Resetea el margen */
+    width: auto;
+    margin: 0;
     transition: background-color 0.2s;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
 }
 
+.main-content header button[type="submit"] {
+    background-color: #e74c3c; /* Rojo para "Cerrar Sesión" */
+    color: white;
+}
 .main-content header button[type="submit"]:hover {
     background-color: #c0392b; /* Rojo más oscuro en hover */
+}
+
+.btn-primary {
+    background-color: #3498db;
+    color: white;
+}
+.btn-primary:hover {
+    background-color: #2980b9;
+}
+
+.btn-secondary {
+    background-color: #bdc3c7;
+    color: #2c3e50;
+}
+.btn-secondary:hover {
+    background-color: #95a5a6;
 }
 
 
@@ -195,6 +217,97 @@ body {
 .action-card p {
     font-size: 0.9rem;
     color: #555;
+}
+
+/* --- (NUEVO Y CORREGIDO) Estilos para Tablas de Datos --- */
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1.5rem;
+    display: table; /* Forzar renderizado de tabla */
+}
+.data-table thead {
+    display: table-header-group;
+}
+.data-table tbody {
+    display: table-row-group;
+}
+.data-table tr {
+    display: table-row;
+}
+.data-table th, .data-table td {
+    border-bottom: 1px solid #e0e0e0;
+    padding: 1rem 1.5rem;
+    text-align: left;
+    vertical-align: middle;
+    display: table-cell; /* Forzar renderizado de celda */
+}
+.data-table thead {
+    background-color: #f4f7f6;
+}
+.data-table th {
+    font-weight: 600;
+    color: #34495e;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.data-table tbody tr:hover {
+    background-color: #f8faff;
+}
+.data-table a {
+    color: #3498db;
+    text-decoration: none;
+    font-weight: 500;
+}
+.data-table a:hover {
+    text-decoration: underline;
+}
+
+/* --- (NUEVO) Estilos para Formularios --- */
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: #34495e;
+}
+
+.form-control {
+    display: block;
+    width: 100%;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    line-height: 1.5;
+    color: #212529;
+    background-color: #fff;
+    background-clip: padding-box;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+    box-sizing: border-box; /* Asegura que el padding no afecte el ancho */
+}
+
+.form-control:focus {
+    border-color: #86b7fe;
+    outline: 0;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+textarea.form-control {
+    min-height: 120px;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 2rem;
+    border-top: 1px solid #e0e0e0;
+    padding-top: 1.5rem;
 }
 
 

@@ -128,17 +128,7 @@
 {% block content %}
 <div class="dashboard-container">
     
-    <div class="sidebar">
-        <h2><i class="fa-solid fa-house-user"></i> Panel Residente</h2>
-        <a href="{% if has_active_contract %}{% url 'crear_reserva' %}{% else %}#{% endif %}" 
-           class="active {% if not has_active_contract %}disabled-link{% endif %}">
-           <i class="fa-solid fa-calendar-plus"></i> Reservar Amenidad
-        </a>
-        <a href="{% if has_active_contract %}{% url 'mis_reservas' %}{% else %}#{% endif %}"
-           class="{% if not has_active_contract %}disabled-link{% endif %}">
-           <i class="fa-solid fa-calendar-check"></i> Mis Reservas
-        </a>
-    </div>
+    {% include 'includes/resident_sidebar.html' %}
 
     <div class="main-content">
         

@@ -1,0 +1,10 @@
+<div class="sidebar">
+    <h2><i class="fa-solid fa-shield-halved"></i> Admin Panel</h2>
+    <a href="{% url 'dashboard' %}"><i class="fa-solid fa-table-columns"></i> Dashboard</a>
+    <a href="{% url 'lista_usuarios' %}"><i class="fa-solid fa-users"></i> Gestionar Usuarios</a>
+    <a href="{% url 'lista_complejos' %}"><i class="fa-solid fa-building-user"></i> Gestionar Complejos</a>
+    <a href="{% url 'admin_reservas' %}"><i class="fa-solid fa-calendar-days"></i> Gestionar Reservas</a>
+    <a href="{% url 'gestionar_amenidades' %}"><i class="fa-solid fa-star"></i> Gestionar Amenidades</a>
+    <a href="{% url 'avisos:lista_avisos' %}"><i class="fa-solid fa-bullhorn"></i> Gestionar Avisos</a>
+    <a href="/admin/" class="dev-panel-link"><i class="fa-solid fa-code"></i> Panel Avanzado (Dev)</a>
+</div>

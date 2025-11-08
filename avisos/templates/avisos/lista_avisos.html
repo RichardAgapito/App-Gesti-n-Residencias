@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    {% if user.is_staff %}Avisos Enviados{% else %}Bandeja de Entrada{% endif %}
+{% endblock %}
+
+{% block bootstrap_css %}{% endblock %}
+{% block global_styles %}{% endblock %}
+
+{% block extra_css %}
+    {% if user.is_staff %}
+        <link rel="stylesheet" href="{% static 'css/admin_dashboard.css' %}">
+    {% else %}
+        <link rel="stylesheet" href="{% static 'css/resident_dashboard.css' %}">
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+
+    {% if user.is_staff %}
+        {% include 'includes/admin_sidebar.html' %}
+    {% else %}
+        {% include 'includes/resident_sidebar.html' %}
+    {% endif %}
+
+    <div class="main-content">
+        <header>
+            <h1>
+                <i class="fas fa-bullhorn"></i> 
+                {% if user.is_staff %}
+                    Avisos Enviados
+                {% else %}
+                    Bandeja de Entrada
+                {% endif %}
+            </h1>
+            <div>
+                <a href="{% url 'dashboard' %}" class="btn btn-secondary">
+                    <i class="fa-solid fa-arrow-left"></i> Volver al Dashboard
+                </a>
+                {% if user.is_staff %}
+                    <a href="{% url 'avisos:crear_aviso' %}" class="btn-primary">
+                        <i class="fas fa-plus-circle"></i> Crear Aviso
+                    </a>
+                {% endif %}
+            </div>
+        </header>
+
+        <section>
+            {% if user.is_staff %}
+                {# --- VISTA PARA ADMIN --- #}
+                {% if avisos %}
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Título</th>
+                                <th>Complejo</th>
+                                <th>Tipo</th>
+                                <th>Fecha de Envío</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for aviso in avisos %}
+                                <tr>
+                                    <td>{{ aviso.titulo }}</td>
+                                    <td>{{ aviso.complejo.nombre }}</td>
+                                    <td>{{ aviso.get_tipo_aviso_display }}</td>
+                                    <td>{{ aviso.fecha_creacion|date:"d/m/Y H:i" }}</td>
+                                    <td>
+                                        <a href="{% url 'avisos:detalle_aviso' aviso.pk %}">Ver Detalle</a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <div class="text-center p-5">
+                        <h4 class="text-muted">No has enviado ningún aviso.</h4>
+                        <a href="{% url 'avisos:crear_aviso' %}" class="btn-primary mt-3">Crear mi primer aviso</a>
+                    </div>
+                {% endif %}
+
+            {% else %}
+                {# --- VISTA PARA RESIDENTE --- #}
+                <p class="text-muted" style="margin-top: -1rem; margin-bottom: 1.5rem;">
+                    Aquí están todos los avisos de tu complejo.
+                    {% if avisos_no_leidos > 0 %}
+                        Tienes <span class="badge bg-danger rounded-pill ms-1">{{ avisos_no_leidos }}</span> aviso(s) sin leer.
+                    {% endif %}
+                </p>
+                {% if avisos %}
+                    <div class="notice-list">
+                        {% for aviso in avisos %}
+                            <a href="{% url 'avisos:detalle_aviso' aviso.pk %}" class="notice-item {% if user not in aviso.leido_por.all %}unread{% endif %}">
+                                <div class="notice-header">
+                                    <h5>{{ aviso.titulo }}</h5>
+                                    <span class="notice-time">{{ aviso.fecha_creacion|date:"d M Y, H:i" }}</span>
+                                </div>
+                                <p class="notice-content">{{ aviso.contenido|truncatewords:25 }}</p>
+                                {% if user not in aviso.leido_por.all %}
+                                    <span class="notice-new-badge">Nuevo</span>
+                                {% endif %}
+                            </a>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center p-5">
+                        <h4 class="text-muted">No hay avisos para mostrar.</h4>
+                        <p>No tienes avisos recibidos en este momento.</p>
+                    </div>
+                {% endif %}
+            {% endif %}
+        </section>
+    </div>
+</div>
+{% endblock %}
