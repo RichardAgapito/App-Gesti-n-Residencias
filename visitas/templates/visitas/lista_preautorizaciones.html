@@ -1,44 +1,146 @@
 {% extends 'base_dashboard.html' %}
 {% load static %}
 
-{% block css_files %}
-    <link rel="stylesheet" href="{% static 'css/lista_usuarios.css' %}">
-{% endblock %}
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/lista_autorizaciones.css' %}?v=1.1">
+{% endblock extra_css %}
 
 {% block content %}
 <div class="user-list-container">
     <div class="list-header">
         <h1>Gestión de Pre-Autorizaciones</h1>
-        <a href="{% url 'crear_preautorizacion' %}" class="btn btn-primary">
-            <i class="fa-solid fa-plus"></i> Registrar Nueva Pre-Autorización
-        </a>
-    </div>
+        </div>
     <hr>
 
     <div class="list-layout-container">
+<aside class="filter-sidebar">
+            <h3><i class="fa-solid fa-filter"></i> Filtrar Autorizaciones</h3>
+            <form method="get" action="{% url 'lista_preautorizaciones' %}" class="filters-form-vertical">
+                <div class="form-group">
+                    <label for="id_q">Buscar:</label>
+                    <input id="id_q" type="search" name="q" placeholder="Visitante, documento, residente..." value="{{ query|default:'' }}">
+                </div>
+                <div class="form-group">
+                    <label for="id_estado">Estado:</label>
+                    <select id="id_estado" name="estado">
+                        <option value="">Todos los estados</option>
+                        {% for value, name in estado_choices %}
+                            <option value="{{ value }}" {% if current_estado == value %}selected{% endif %}>{{ name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="id_propiedad">Propiedad:</label>
+                    <select id="id_propiedad" name="propiedad">
+                        <option value="">Todas las propiedades</option>
+                        {% for prop in propiedades %}
+                            <option value="{{ prop.id }}" {% if current_propiedad == prop.id %}selected{% endif %}>
+                                {{ prop.numero_identificador }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+
+                <button type="submit">Buscar y Filtrar</button>
+            </form>
+        </aside>
+
         <main class="results-content">
             <h3>Pre-Autorizaciones Registradas</h3>
 
             {% if preautorizaciones %}
-                <div class="user-grid">
-                    {% for preautorizacion in preautorizaciones %}
-                        <div class="user-card">
-                            <h4>Pre-Autorización para {{ preautorizacion.nombre_visitante }}</h4>
-                            <p><strong>Propiedad:</strong> {{ preautorizacion.propiedad }}</p>
-                            <p><strong>Residente:</strong> {{ preautorizacion.residente }}</p>
-                            <p><strong>Estado:</strong> <span class="status-{% if preautorizacion.estado == 'pendiente' %}active{% else %}inactive{% endif %}">{{ preautorizacion.get_estado_display }}</span></p>
-                            <div class="action-links">
-                                <a href="#" class="btn btn-info btn-sm"><i class="fa-solid fa-eye"></i> Detalles</a>
-                            </div>
-                        </div>
-                    {% endfor %}
-                </div>
+                <table class="visitas-table">
+                    <thead>
+                        <tr>
+                            <th>Visitante</th>
+                            <th>Documento</th>
+                            <th>Residente</th>
+                            <th>Fecha Esperada</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for pa in preautorizaciones %}
+                        <tr>
+                            <td>{{ pa.nombre_visitante }}</td>
+                            <td>{{ pa.documento_visitante }}</td>
+                            <td>{{ pa.residente.persona.nombres|default:pa.residente.email }}</td>
+                            <td>{{ pa.fecha_hora_esperada|date:"d M Y, H:i" }}</td>
+                            <td><span class="status-{{ pa.estado }}">{{ pa.get_estado_display }}</span></td>
+                            <td class="action-links">
+                                <button class="btn btn-details btn-sm" onclick="openModal('modal-{{ pa.id }}')">
+                                    <i class="fa-solid fa-eye"></i> Detalles
+                                </button>
+                                {% if pa.estado == 'pendiente' %}
+                                    <form action="{% url 'aprobar_preautorizacion' pa.id %}" method="POST" style="display: inline;">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-success btn-sm" title="Aprobar Ingreso">
+                                            <i class="fa-solid fa-check"></i>
+                                        </button>
+                                    </form>
+                                    <form action="{% url 'cancelar_preautorizacion' pa.id %}" method="POST" style="display: inline;">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-danger btn-sm" title="Cancelar Autorización">
+                                            <i class="fa-solid fa-ban"></i>
+                                        </button>
+                                    </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             {% else %}
-                <p class="no-results-message">No se encontraron pre-autorizaciones.</p>
+                <p class="no-results-message">No se encontraron pre-autorizaciones con esos filtros.</p>
             {% endif %}
         </main>
     </div>
 
     <a href="{% url 'dashboard_visitas' %}" class="back-link">← Volver al Dashboard</a>
 </div>
+
+{% for pa in preautorizaciones %}
+<div id="modal-{{ pa.id }}" class="modal" onclick="closeModal('modal-{{ pa.id }}')">
+    <div class="modal-content" onclick="event.stopPropagation();">
+        <span class="modal-close" onclick="closeModal('modal-{{ pa.id }}')">&times;</span>
+        <h2>Detalles de la Autorización</h2>
+        <div class="modal-body">
+            <p><strong>Visitante:</strong> {{ pa.nombre_visitante }}</p>
+            <p><strong>Documento:</strong> {{ pa.documento_visitante }}</p>
+            <p><strong>Propiedad:</strong> {{ pa.propiedad.numero_identificador }} (Complejo {{ pa.propiedad.complejo.nombre }})</p>
+            <p><strong>Residente que autoriza:</strong> {{ pa.residente.persona.nombres }} {{ pa.residente.persona.apellidos }}</p>
+            <p><strong>Fecha Esperada:</strong> {{ pa.fecha_hora_esperada|date:"d M Y, H:i" }}</p>
+            <p><strong>Vigencia Desde:</strong> {{ pa.vigencia_desde|date:"d M Y, H:i" }}</p>
+            <p><strong>Vigencia Hasta:</strong> {{ pa.vigencia_hasta|date:"d M Y, H:i" }}</p>
+            <p><strong>Estado:</strong> <span class="status-{{ pa.estado }}">{{ pa.get_estado_display }}</span></p>
+            <p><strong>Recurrente:</strong> {{ pa.es_recurrente|yesno:"Sí,No" }}</p>
+            {% if pa.es_recurrente %}
+            <p><strong>Días:</strong> {{ pa.dias_semana }}</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endfor %}
 {% endblock %}
+
+{% block extra_js %}
+<script>
+    function openModal(modalId) {
+        document.getElementById(modalId).style.display = "block";
+    }
+
+    function closeModal(modalId) {
+        document.getElementById(modalId).style.display = "none";
+    }
+
+    // Cerrar el modal si se hace clic fuera del contenido
+    window.onclick = function(event) {
+        if (event.target.classList.contains('modal')) {
+            event.target.style.display = "none";
+        }
+    }
+</script>
+{% endblock extra_js %}
