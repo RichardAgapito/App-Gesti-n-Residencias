@@ -289,3 +289,177 @@ body {
     color: #3498db;
     text-decoration: underline;
 }
+/* --- (NUEVO) Estilos para la Tabla de Pre-Autorizaciones --- */
+.visitas-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1.5rem;
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+}
+.visitas-table th, .visitas-table td {
+    border-bottom: 1px solid #e0e0e0;
+    padding: 1rem 1.5rem;
+    text-align: left;
+    vertical-align: middle;
+}
+.visitas-table thead {
+    background-color: #f4f7f6;
+}
+.visitas-table th {
+    font-weight: 600;
+    color: #34495e;
+}
+.visitas-table tbody tr:last-child td {
+    border-bottom: none;
+}
+.visitas-table tbody tr:hover {
+    background-color: #f8faff;
+}
+
+/* Colores de estado para la tabla */
+.status-pendiente { color: #f39c12; font-weight: 600; }
+.status-usado { color: #27ae60; font-weight: 600; }
+.status-vencido, .status-cancelado { color: #e74c3c; font-weight: 600; }
+
+/* Botones de acción en la tabla */
+.action-links .btn-success {
+    background-color: #2ecc71;
+}
+.action-links .btn-success:hover {
+    background-color: #27ae60;
+}
+.action-links .btn-details {
+    background-color: #3498db;
+    cursor: pointer;
+}
+.action-links .btn-details:hover {
+    background-color: #2980b9;
+}
+
+
+/* --- (NUEVO) Estilos para el Modal de Detalles --- */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.5);
+    padding-top: 60px;
+}
+
+.modal-content {
+    background-color: #ffffff;
+    margin: 5% auto;
+    padding: 2rem 2.5rem;
+    border: 1px solid #888;
+    width: 80%;
+    max-width: 600px;
+    border-radius: 8px;
+    position: relative;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+
+.modal-close {
+    color: #aaa;
+    position: absolute;
+    top: 15px;
+    right: 25px;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+.modal-close:hover,
+.modal-close:focus {
+    color: #000;
+    text-decoration: none;
+}
+
+.modal-content h2 {
+    color: #2c3e50;
+    margin-top: 0;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid #e0e0e0;
+    padding-bottom: 1rem;
+}
+
+.modal-body p {
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+    color: #333;
+}
+.modal-body p strong {
+    color: #34495e;
+    min-width: 180px;
+    display: inline-block;
+}
+
+/* --- (ACTUALIZADO) Acciones de la Tarjeta (Botones) --- */
+.user-card .action-links {
+    border-top: 1px solid #f0f0f0;
+    padding-top: 1rem;
+    margin-top: auto;
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+}
+
+/* Estilo genérico para los botones de Gemini */
+.action-links .btn {
+    text-decoration: none;
+    color: #ffffff;
+    padding: 6px 12px;
+    border-radius: 5px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    transition: all 0.2s;
+    border: none;
+    cursor: pointer;
+}
+
+/* --- (NUEVO) Estilos para la Tabla de Pre-Autorizaciones --- */
+.visitas-table {
+    /* ... (tus estilos de tabla, sin cambios) ... */
+}
+/* ... (tus estilos de status, sin cambios) ... */
+
+
+/* --- (NUEVO) Regla para la celda <td> que contiene los botones --- */
+/* Esto soluciona el Problema 1: el botón de detalles que cambia de tamaño */
+.visitas-table .action-links {
+    display: flex;       /* Convierte la celda en un contenedor flex */
+    gap: 6px;            /* Añade un espacio uniforme entre los botones */
+    align-items: center; /* Asegura que todos los elementos (botones y forms) estén centrados verticalmente */
+}
+
+/* --- (NUEVO) Regla para los <form> de los botones --- */
+/* Esto asegura que los formularios no añadan márgenes extra */
+.visitas-table .action-links form {
+    margin: 0; /* Elimina cualquier margen por defecto del formulario */
+}
+
+
+/* --- (MODIFICADA) Regla de Botón existente --- */
+/* Esto soluciona el Problema 2 (altura) y 3 (centrado de íconos) */
+.action-links .btn {
+    display: inline-flex;     /* (MODIFICADO) Usa flex para alinear el contenido interno */
+    align-items: center;     /* (NUEVO) Centra verticalmente el ícono y el texto */
+    justify-content: center; /* (NUEVO) Centra horizontalmente (útil si un botón solo tuviera un ícono) */
+    
+    text-decoration: none;
+    color: #ffffff;
+    padding: 8px 12px;  /* (MODIFICADO) Un padding vertical un poco más grande para darle altura */
+    border-radius: 5px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    transition: all 0.2s;
+    border: none;
+    cursor: pointer;
+    box-sizing: border-box; /* (NUEVO) Asegura que el padding no afecte el tamaño total */
+}

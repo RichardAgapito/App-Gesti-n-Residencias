@@ -4,6 +4,7 @@ from complejos.models import Propiedad
 from users.models import CustomUser
 from django.utils import timezone
 
+
 class VisitanteForm(forms.ModelForm):
     class Meta:
         model = Visitante

@@ -8,16 +8,18 @@ urlpatterns = [
     path('visitantes/<int:visitante_id>/', views.detalle_visitante_view, name='detalle_visitante'),
     path('visitantes/<int:visitante_id>/editar/', views.editar_visitante_view, name='editar_visitante'),
     path('visitantes/<int:visitante_id>/eliminar/', views.eliminar_visitante_view, name='eliminar_visitante'),
+    
     path('visitas/', views.lista_visitas_view, name='lista_visitas'),
     path('visitas/crear/', views.crear_visita_view, name='crear_visita'),
     path('visitas/<int:visita_id>/', views.detalle_visita_view, name='detalle_visita'),
-    path('visitas/<int:visita_id>/editar/', views.editar_visita_view, name='editar_visita'),
-    path('visitas/<int:visita_id>/eliminar/', views.eliminar_visita_view, name='eliminar_visita'),
-    path('propiedad/<int:propiedad_id>/residentes/', views.get_residentes_por_propiedad, name='get_residentes_por_propiedad'),
-    #path('visitas/propiedad/<int:propiedad_id>/residentes/', views.get_residentes_por_propiedad, name='get_residentes_por_propiedad'),
+    
+    # (MODIFICADO) Renombramos esta URL para que sea más clara
+    path('visitas/<int:visita_id>/registrar-salida/', views.registrar_salida_visita_view, name='registrar_salida_visita'),
+    # (ELIMINADA) La URL de 'editar_visita' se ha ido
+    
+    path('visitas/propiedad/<int:propiedad_id>/residentes/', views.get_residentes_por_propiedad, name='get_residentes_por_propiedad'),
+    
     path('preautorizaciones/', views.lista_preautorizaciones_view, name='lista_preautorizaciones'),
-    path('preautorizaciones/crear/', views.crear_preautorizacion_view, name='crear_preautorizacion'),
-    path('preautorizaciones/<int:preautorizacion_id>/', views.detalle_preautorizacion_view, name='detalle_preautorizacion'),
-    path('preautorizaciones/<int:preautorizacion_id>/editar/', views.editar_preautorizacion_view, name='editar_preautorizacion'),
-    path('preautorizaciones/<int:preautorizacion_id>/eliminar/', views.eliminar_preautorizacion_view, name='eliminar_preautorizacion'),
+    path('preautorizaciones/<int:pa_id>/aprobar/', views.aprobar_preautorizacion_view, name='aprobar_preautorizacion'),
+    path('preautorizaciones/<int:pa_id>/cancelar/', views.cancelar_preautorizacion_view, name='cancelar_preautorizacion'),
 ]
