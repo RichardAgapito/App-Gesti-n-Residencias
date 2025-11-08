@@ -41,7 +41,7 @@ Sigue estos pasos para poner en marcha el proyecto en un entorno de desarrollo:
 
 1.  **Clonar el Repositorio:**
     ```bash
-    git clone <URL_DEL_REPOSITORIO>
+    git clone git@github.com:RichardAgapito/App-Gesti-n-Residencias.git
     cd App-Gesti-n-Residencias
     ```
 
