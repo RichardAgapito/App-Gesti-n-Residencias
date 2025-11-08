@@ -2,7 +2,73 @@
 {% load static %}
 
 {% block extra_css %}
-    <link rel="stylesheet" href="{% static 'css/editar_visitante.css' %}">
+<style>
+    .edit-user-container {
+        max-width: 600px;
+        margin: 2rem auto;
+        padding: 2rem;
+        background-color: #f9f9f9;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        font-family: sans-serif;
+    }
+    .edit-user-container h2 {
+        text-align: center;
+        color: #333;
+        margin-bottom: 2rem;
+    }
+    form {
+        display: flex;
+        flex-direction: column;
+    }
+    form p {
+        display: flex;
+        flex-direction: column;
+        margin-bottom: 1.5rem;
+    }
+    form label {
+        margin-bottom: 0.5rem;
+        font-weight: bold;
+        color: #555;
+    }
+    form input[type="text"],
+    form input[type="email"],
+    form input[type="password"],
+    form select {
+        padding: 0.75rem;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-size: 1rem;
+    }
+    form input[type="checkbox"] {
+        align-self: flex-start;
+        margin-top: 0.5rem;
+    }
+    button[type="submit"] {
+        padding: 0.8rem 1.5rem;
+        background-color: #28a745;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 1rem;
+        transition: background-color 0.3s;
+        align-self: center;
+    }
+    button[type="submit"]:hover {
+        background-color: #218838;
+    }
+    .back-link {
+        display: block;
+        text-align: center;
+        margin-top: 1rem;
+        color: #007bff;
+        text-decoration: none;
+    }
+    .back-link:hover {
+        text-decoration: underline;
+    }
+</style>
 {% endblock extra_css %}
 
 {% block content %}
@@ -16,6 +82,6 @@
     </form>
     
     <br>
-    <a href="{% url 'detalle_visitante' visitante.id %}" class="back-link">← Volver al Detalle del Visitante</a>
+    <a href="{% url 'lista_visitantes' %}" class="back-link">← Volver a la lista de Visitantes</a>
 </div>
 {% endblock %}

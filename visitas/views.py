@@ -107,8 +107,17 @@ def eliminar_visitante_view(request, visitante_id):
     if request.method == 'POST':
         visitante.estado = 'bloqueado'
         visitante.save()
-        return redirect('lista_visitantes')
-    return render(request, 'visitas/confirmar_eliminar_visitante.html', {'visitante': visitante})
+    return redirect('lista_visitantes')
+
+
+@login_required
+@user_passes_test(es_guardia)
+def desbloquear_visitante_view(request, visitante_id):
+    visitante = get_object_or_404(Visitante, id=visitante_id)
+    if request.method == 'POST':
+        visitante.estado = 'activo'
+        visitante.save()
+    return redirect('lista_visitantes')
 
 
 # --- Vistas de Visita (conservando tus decoradores y lógica) ---
