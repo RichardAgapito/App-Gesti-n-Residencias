@@ -348,3 +348,42 @@ form button[type="submit"] {
 form button[type="submit"]:hover {
     background-color: #0056b3;
 }
+
+/* --- (NUEVO) Estilos para Detalle de Aviso --- */
+.notice-detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #555;
+    font-size: 0.9rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e9ecef;
+    margin-bottom: 1.5rem;
+}
+.notice-detail-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.notice-detail-title {
+    font-size: 1.8rem;
+    color: #2c3e50;
+    margin-top: 1.5rem;
+    margin-bottom: 1rem;
+}
+.notice-detail-content {
+    font-size: 1.1rem;
+    line-height: 1.7;
+    color: #34495e;
+    white-space: pre-wrap; /* Mantiene saltos de línea */
+}
+.notice-detail-tag {
+    display: inline-block;
+    margin-top: 2rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+    padding: 0.4em 0.8em;
+    border-radius: 4px;
+    background-color: #eaf4ff;
+    color: #3498db;
+}
