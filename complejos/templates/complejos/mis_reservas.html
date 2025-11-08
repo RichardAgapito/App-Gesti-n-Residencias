@@ -72,57 +72,43 @@
 <!-- (INICIO) ESTRUCTURA DEL DASHBOARD DE RESIDENTE -->
 <div class="dashboard-container">
     
-    <!-- 1. Barra Lateral (Sidebar) del Residente -->
     <div class="sidebar">
         <h2><i class="fa-solid fa-house-user"></i> Panel Residente</h2>
-        <a href="{% url 'crear_reserva' %}"><i class="fa-solid fa-calendar-plus"></i> Reservar Amenidad</a>
-        <a href="{% url 'mis_reservas' %}" class="active"><i class="fa-solid fa-calendar-check"></i> Mis Reservas</a>
-        <!-- <a href="#"><i class="fa-solid fa-triangle-exclamation"></i> Reportar Incidencia</a> -->
-        <!-- <a href="#"><i class="fa-solid fa-user-pen"></i> Mi Perfil</a> -->
+        <a href="{% if has_active_contract %}{% url 'crear_reserva' %}{% else %}#{% endif %}"
+           class="{% if not has_active_contract %}disabled-link{% endif %}">
+           <i class="fa-solid fa-calendar-plus"></i> Reservar Amenidad
+        </a>
+        <a href="{% if has_active_contract %}{% url 'mis_reservas' %}{% else %}#{% endif %}" 
+           class="active {% if not has_active_contract %}disabled-link{% endif %}">
+           <i class="fa-solid fa-calendar-check"></i> Mis Reservas
+        </a>
     </div>
 
-    <!-- 2. Contenido Principal del Residente -->
     <div class="main-content">
         
-        <!-- Encabezado con Logout (¡Ahora dentro de main-content!) -->
         <header>
             <h1><i class="fa-solid fa-calendar-check"></i> Mis Reservas</h1>
+            {% if has_active_contract %}
             <a href="{% url 'crear_reserva' %}" class="btn btn-primary">
                 <i class="fa-solid fa-plus"></i> Nueva Reserva
             </a>
+            {% endif %}
         </header>
 
-        <!-- (INICIO) TU CONTENIDO DE "MIS RESERVAS" -->
-        
+        {% if not has_active_contract %}
+        <div class="content-locked-message">
+            <h3><i class="fa-solid fa-triangle-exclamation"></i> Funcionalidad Limitada</h3>
+            <p>No hemos detectado un contrato activo asociado a tu cuenta. 
+               Por favor, comunícate con la administración.</p>
+        </div>
+        {% endif %}
+
         {% if reservas %}
             <table class="reservas-table">
-                <thead>
-                    <tr>
-                        <th>Amenidad</th>
-                        <th>Fecha de Inicio</th>
-                        <th>Fecha de Fin</th>
-                        <th>Estado</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for reserva in reservas %}
-                        <tr>
-                            <td>{{ reserva.amenidad.nombre }}</td>
-                            <td>{{ reserva.fecha_inicio|date:"d M Y, H:i" }}</td>
-                            <td>{{ reserva.fecha_fin|date:"d M Y, H:i" }}</td>
-                            <td>
-                                <span class="status-{{ reserva.estado }}">{{ reserva.get_estado_display }}</span>
-                            </td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                </table>
         {% else %}
             <p>No tienes ninguna reserva.</p>
         {% endif %}
-
-        <!-- (FIN) TU CONTENIDO DE "MIS RESERVAS" -->
-
     </div>
 </div>
 <!-- (FIN) ESTRUCTURA DEL DASHBOARD DE RESIDENTE -->

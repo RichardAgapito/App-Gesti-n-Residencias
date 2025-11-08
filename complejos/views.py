@@ -2,12 +2,16 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import user_passes_test, login_required
 from django.http import JsonResponse
 from .models import Complejo, Propiedad, PropiedadPersona, Amenidad, Reserva
-from .forms import ComplejoForm, PropiedadForm, CrearPropiedadesMultiplesForm, EditarPropiedadForm, PropiedadPersonaForm, ReservaForm, AmenidadForm, AdminReservaForm, BloquearHorarioForm
+from .forms import ComplejoForm, PropiedadForm, CrearPropiedadesMultiplesForm, EditarPropiedadForm, PropiedadPersonaForm, ReservaForm, AmenidadForm, AdminReservaForm, BloquearHorarioForm, ResidentePreAutorizacionForm
 from users.views import es_admin
 from django.contrib.auth import get_user_model
 from users.models import CustomUser
 from django.db import models
 from django.utils import timezone
+from users.models import CustomUser
+from django.db import models
+from django.utils import timezone
+from visitas.models import PreAutorizacion
 
 
 @user_passes_test(es_admin, login_url='/')
@@ -299,7 +303,7 @@ def asignar_contrato(request, propiedad_id):
             )
             propiedad_persona.save()
 
-            # If it's a 'co-' relationship, create the second PropiedadPersona object
+
             if second_person_role:
                 asignacion2 = PropiedadPersona(
                     propiedad=propiedad,
@@ -362,6 +366,10 @@ def es_residente(user):
 @login_required
 @user_passes_test(es_residente)
 def crear_reserva_view(request):
+    complejo = None
+    amenidades = []
+    has_active_contract = False
+
     try:
         propiedad_persona = PropiedadPersona.objects.get(persona=request.user, estado='activo')
         complejo = propiedad_persona.propiedad.complejo
@@ -372,29 +380,33 @@ def crear_reserva_view(request):
                 to_attr='bloqueos_activos'
             )
         ).all()
-    except PropiedadPersona.DoesNotExist:
-        complejo = None
-        amenidades = []
+        has_active_contract = True 
 
-    # The form is no longer needed for GET requests. 
-    # The POST logic will be handled by a different view when we implement the availability calendar.
+    except PropiedadPersona.DoesNotExist:
+        pass 
     if request.method == 'POST':
-        # This part is temporarily disabled.
-        # The new flow will handle reservations through a dedicated availability view.
+
+        if not has_active_contract:
+            return redirect('crear_reserva') 
         pass
 
     context = {
         'complejo': complejo,
         'amenidades': amenidades,
+        'has_active_contract': has_active_contract 
     }
     return render(request, 'complejos/crear_reserva.html', context)
 
 @login_required
 @user_passes_test(es_residente)
 def mis_reservas_view(request):
+    # (NUEVO) Comprobación de contrato
+    has_active_contract = PropiedadPersona.objects.filter(persona=request.user, estado='activo').exists()
+    
     reservas = Reserva.objects.filter(residente=request.user).order_by('-fecha_inicio')
     context = {
-        'reservas': reservas
+        'reservas': reservas,
+        'has_active_contract': has_active_contract # (NUEVO) Pasa la variable
     }
     return render(request, 'complejos/mis_reservas.html', context)
 
@@ -402,6 +414,10 @@ def mis_reservas_view(request):
 @login_required
 @user_passes_test(es_residente)
 def ver_disponibilidad_view(request, amenidad_id):
+
+    has_active_contract = PropiedadPersona.objects.filter(persona=request.user, estado='activo').exists()
+    if not has_active_contract:
+        return redirect('dashboard')
     amenidad = get_object_or_404(Amenidad, id=amenidad_id)
 
     if request.method == 'POST':
@@ -421,6 +437,7 @@ def ver_disponibilidad_view(request, amenidad_id):
         'amenidad': amenidad,
         'reservas': reservas,
         'form': form,
+        'has_active_contract': has_active_contract
     }
     return render(request, 'complejos/ver_disponibilidad.html', context)
 
@@ -529,3 +546,91 @@ def lista_contratos(request):
     }
     return render(request, 'complejos/lista_contratos.html', context)
 
+@login_required
+@user_passes_test(es_residente)
+def mis_preautorizaciones_view(request):
+    has_active_contract = PropiedadPersona.objects.filter(persona=request.user, estado='activo').exists()
+
+    lista_autorizaciones = PreAutorizacion.objects.filter(
+        residente=request.user
+    ).order_by('-fecha_hora_esperada') # <--- ESTE ERA EL ERROR
+    
+    context = {
+        'has_active_contract': has_active_contract,
+        'autorizaciones': lista_autorizaciones
+    }
+    return render(request, 'complejos/mis_preautorizaciones.html', context)
+
+@login_required
+@user_passes_test(es_residente)
+def crear_preautorizacion_view(request):
+    try:
+        propiedad_persona = PropiedadPersona.objects.get(persona=request.user, estado='activo')
+        has_active_contract = True
+    except PropiedadPersona.DoesNotExist:
+        return redirect('dashboard') # Si no tiene contrato, no puede crear
+
+    if request.method == 'POST':
+        form = ResidentePreAutorizacionForm(request.POST)
+        if form.is_valid():
+            autorizacion = form.save(commit=False)
+            autorizacion.residente = request.user
+            autorizacion.propiedad = propiedad_persona.propiedad
+            autorizacion.estado = 'pendiente' # Estado por defecto
+            autorizacion.save()
+            return redirect('mis_preautorizaciones')
+    else:
+        form = ResidentePreAutorizacionForm()
+
+    context = {
+        'has_active_contract': has_active_contract,
+        'form': form
+    }
+    return render(request, 'complejos/form_preautorizacion.html', context)
+
+@login_required
+@user_passes_test(es_residente)
+def editar_preautorizacion_view(request, pa_id):
+    if not PropiedadPersona.objects.filter(persona=request.user, estado='activo').exists():
+        return redirect('dashboard') # Si no tiene contrato, no puede editar
+
+    autorizacion = get_object_or_404(PreAutorizacion, id=pa_id, residente=request.user)
+    
+    # No se puede editar si ya fue usada, vencida o cancelada
+    if autorizacion.estado != 'pendiente':
+        return redirect('mis_preautorizaciones')
+
+    if request.method == 'POST':
+        form = ResidentePreAutorizacionForm(request.POST, instance=autorizacion)
+        if form.is_valid():
+            form.save()
+            return redirect('mis_preautorizaciones')
+    else:
+        form = ResidentePreAutorizacionForm(instance=autorizacion)
+
+    context = {
+        'has_active_contract': True,
+        'form': form,
+        'autorizacion': autorizacion
+    }
+    return render(request, 'complejos/form_preautorizacion.html', context)
+
+@login_required
+@user_passes_test(es_residente)
+def cancelar_preautorizacion_view(request, pa_id):
+    if not PropiedadPersona.objects.filter(persona=request.user, estado='activo').exists():
+        return redirect('dashboard')
+
+    autorizacion = get_object_or_404(PreAutorizacion, id=pa_id, residente=request.user)
+
+    if request.method == 'POST':
+        if autorizacion.estado == 'pendiente':
+            autorizacion.estado = 'cancelado'
+            autorizacion.save()
+        return redirect('mis_preautorizaciones')
+
+    context = {
+        'has_active_contract': True,
+        'autorizacion': autorizacion
+    }
+    return render(request, 'complejos/cancelar_preautorizacion.html', context)

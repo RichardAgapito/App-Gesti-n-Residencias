@@ -5,13 +5,17 @@ from django.db.models import Q
 from .forms import CustomUserCreationForm, EditarUsuarioForm
 from .models import CustomUser
 from complejos.models import Complejo
+from complejos.models import PropiedadPersona
 
 @login_required
 def dashboard(request):
     if request.user.rol == 'ADMIN':
+        
+        # --- ESTAS LÍNEAS FALTABAN ---
         total_usuarios = CustomUser.objects.count()
         total_complejos = Complejo.objects.count()
         visitas_hoy = 0  # Placeholder
+        # -----------------------------
 
         context = {
             'total_usuarios': total_usuarios,
@@ -19,10 +23,18 @@ def dashboard(request):
             'visitas_hoy': visitas_hoy,
         }
         return render(request, 'users/dashboard.html', context)
+    
     elif request.user.rol == 'GUARDIA':
         return redirect('dashboard_visitas')
+    
     else:
-        return render(request, 'users/dashboard.html')
+        # Esta parte ya estaba correcta
+        has_active_contract = PropiedadPersona.objects.filter(persona=request.user, estado='activo').exists()
+        
+        context = {
+            'has_active_contract': has_active_contract
+        }
+        return render(request, 'users/dashboard.html', context)
 
 def es_admin(user):
     return user.is_authenticated and user.rol == CustomUser.Rol.ADMIN

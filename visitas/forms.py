@@ -44,12 +44,22 @@ class VisitaForm(forms.ModelForm):
     class Meta:
         model = Visita
         fields = '__all__'
+        # (NUEVO) Añadimos widgets para los campos de fecha y hora
+        widgets = {
+            'fecha_hora_ingreso': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
+            'fecha_hora_salida': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
+        }
 
     def __init__(self, *args, **kwargs):
         complejo_asignado = kwargs.pop('complejo_asignado', None)
         super(VisitaForm, self).__init__(*args, **kwargs)
+        
+        # (CORRECTO) Esto ya estaba bien:
+        # Hacemos que el campo de residentes empiece vacío.
         self.fields['residente_autoriza'].queryset = CustomUser.objects.none()
         self.fields['residente_autoriza'].required = False
+        
+        # (CORRECTO) Esto filtra las propiedades al complejo del guardia
         if complejo_asignado:
             self.fields['propiedad'].queryset = Propiedad.objects.filter(complejo=complejo_asignado)
 

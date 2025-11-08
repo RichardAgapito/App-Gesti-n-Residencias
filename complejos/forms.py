@@ -4,6 +4,8 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from datetime import date, timedelta
 from django.utils import timezone
+from visitas.models import PreAutorizacion
+from django.core.validators import RegexValidator
 
 class AmenidadForm(forms.ModelForm):
     class Meta:
@@ -283,4 +285,69 @@ class BloquearHorarioForm(forms.ModelForm):
             if fecha_fin.time() > self.amenidad.hora_fin:
                 raise ValidationError(f"La hora de fin no puede ser después del cierre de la amenidad ({self.amenidad.hora_fin.strftime('%H:%M')}).")
 
+        return cleaned_data
+    
+class ResidentePreAutorizacionForm(forms.ModelForm):
+    # (NUEVO) Validaciones de DNI
+    numero_documento = forms.CharField(
+        label="Documento del Visitante",
+        validators=[
+            RegexValidator(
+                r'^\d{8}$',
+                message="El número de documento debe contener 8 dígitos."
+            )
+        ]
+    )
+
+    class Meta:
+        model = PreAutorizacion
+        # Campos que el residente SÍ puede llenar
+        fields = [
+            'nombre_visitante', 
+            'numero_documento', # (Cambiado) Usamos el campo validado
+            'fecha_hora_esperada', 
+            'vigencia_desde', 
+            'vigencia_hasta',
+        ]
+        # Campos que se llenarán automáticamente (residente, propiedad)
+        exclude = [
+            'residente', 
+            'propiedad', 
+            'estado', 
+            'usado', 
+            'fecha_uso', 
+            'es_recurrente', 
+            'dias_semana'
+        ]
+        widgets = {
+            'fecha_hora_esperada': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
+            'vigencia_desde': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
+            'vigencia_hasta': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
+        }
+    
+    # (NUEVO) Renombramos 'numero_documento' a 'documento_visitante'
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['numero_documento'].label = "Documento del Visitante"
+        if self.instance and self.instance.pk:
+            self.fields['numero_documento'].initial = self.instance.documento_visitante
+
+    def clean(self):
+        cleaned_data = super().clean()
+        fecha_inicio = cleaned_data.get('vigencia_desde')
+        fecha_fin = cleaned_data.get('vigencia_hasta')
+        fecha_esperada = cleaned_data.get('fecha_hora_esperada')
+
+        if fecha_inicio and fecha_inicio < timezone.now():
+            raise ValidationError("La vigencia de la autorización no puede empezar en el pasado.")
+        
+        if fecha_inicio and fecha_fin and fecha_fin <= fecha_inicio:
+            raise ValidationError("La fecha de fin de vigencia debe ser posterior a la fecha de inicio.")
+
+        if fecha_esperada and fecha_inicio and fecha_fin:
+            if not (fecha_inicio <= fecha_esperada <= fecha_fin):
+                raise ValidationError("La fecha esperada de la visita debe estar dentro del rango de vigencia.")
+        
+        # (NUEVO) Asignamos el campo validado de vuelta al campo del modelo
+        cleaned_data['documento_visitante'] = cleaned_data.get('numero_documento')
         return cleaned_data

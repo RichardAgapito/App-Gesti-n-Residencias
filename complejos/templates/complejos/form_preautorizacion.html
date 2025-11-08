@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block bootstrap_css %}{% endblock %}
+{% block global_styles %}{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/resident_dashboard.css' %}">
+    <link rel="stylesheet" href="{% static 'css/crear_complejo.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    
+    <div class="sidebar">
+        <h2><i class="fa-solid fa-house-user"></i> Panel Residente</h2>
+        <a href="{% if has_active_contract %}{% url 'crear_reserva' %}{% else %}#{% endif %}" class="{% if not has_active_contract %}disabled-link{% endif %}">
+            <i class="fa-solid fa-calendar-plus"></i> Reservar Amenidad
+        </a>
+        <a href="{% if has_active_contract %}{% url 'mis_reservas' %}{% else %}#{% endif %}" class="{% if not has_active_contract %}disabled-link{% endif %}">
+            <i class="fa-solid fa-calendar-check"></i> Mis Reservas
+        </a>
+        <a href="{% if has_active_contract %}{% url 'mis_preautorizaciones' %}{% else %}#{% endif %}" class="active {% if not has_active_contract %}disabled-link{% endif %}">
+            <i class="fa-solid fa-id-card-clip"></i> Pre-Autorizaciones
+        </a>
+    </div>
+
+    <div class="main-content">
+        
+        <header>
+            <h1><i class="fa-solid fa-id-card-clip"></i> 
+                {% if autorizacion %}Editar{% else %}Crear{% endif %} Pre-Autorización
+            </h1>
+            <a href="{% url 'mis_preautorizaciones' %}" class="btn btn-secondary">
+                <i class="fa-solid fa-arrow-left"></i> Volver al Listado
+            </a>
+        </header>
+
+        <div class="form-container" style="max-width: 800px; margin: 1rem 0;">
+            <form method="post">
+                {% csrf_token %}
+                
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+                {% endif %}
+
+                {% for field in form %}
+                    <div class="form-group">
+                        {{ field.label_tag }}
+                        {{ field }}
+                        {% if field.help_text %}
+                            <small class="form-text text-muted">{{ field.help_text }}</small>
+                        {% endif %}
+                        {% for error in field.errors %}
+                            <div class="alert alert-danger">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+                <button type="submit" class="btn-submit">Guardar Autorización</button>
+            </form>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
