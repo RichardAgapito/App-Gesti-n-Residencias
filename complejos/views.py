@@ -398,24 +398,25 @@ def crear_reserva_view(request):
     amenidades = []
     has_active_contract = False
 
-    try:
-        propiedad_persona = PropiedadPersona.objects.get(persona=request.user, estado='activo')
+    # Usar filter().first() es más seguro que .get() para evitar errores
+    propiedad_persona = PropiedadPersona.objects.filter(persona=request.user, estado='activo').first()
+
+    if propiedad_persona:
+        has_active_contract = True
         complejo = propiedad_persona.propiedad.complejo
-        amenidades = complejo.amenidades.prefetch_related(
-            models.Prefetch(
-                'reservas',
-                queryset=Reserva.objects.filter(estado='bloqueada', fecha_fin__gt=timezone.now()),
-                to_attr='bloqueos_activos'
-            )
-        ).all()
-        has_active_contract = True 
+        if complejo:
+            amenidades = complejo.amenidades.prefetch_related(
+                models.Prefetch(
+                    'reservas',
+                    queryset=Reserva.objects.filter(estado='bloqueada', fecha_fin__gt=timezone.now()),
+                    to_attr='bloqueos_activos'
+                )
+            ).all()
 
-    except PropiedadPersona.DoesNotExist:
-        pass 
     if request.method == 'POST':
-
         if not has_active_contract:
             return redirect('crear_reserva') 
+        # La lógica POST para crear la reserva real iría aquí (posiblemente en otra vista)
         pass
 
     context = {

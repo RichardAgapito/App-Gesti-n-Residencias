@@ -150,7 +150,37 @@
         {% if has_active_contract %}
         <div class="amenidad-grid">
             {% for amenidad in amenidades %}
-                {% empty %}
+                <div class="amenidad-card">
+                    <h3>{{ amenidad.nombre }}</h3>
+
+                    <div class="amenidad-details">
+                        {% if amenidad.descripcion %}
+                        <div class="detail-item">
+                            <i class="fa-solid fa-info-circle"></i>
+                            <p>{{ amenidad.descripcion }}</p>
+                        </div>
+                        {% endif %}
+                        <div class="detail-item">
+                            <i class="fa-solid fa-users"></i>
+                            <p>Capacidad para <strong>{{ amenidad.capacidad }} personas</strong></p>
+                        </div>
+                        <div class="detail-item">
+                            <i class="fa-solid fa-clock"></i>
+                            <p>Horario: <strong>{{ amenidad.hora_inicio|time:"H:i" }} - {{ amenidad.hora_fin|time:"H:i" }}</strong></p>
+                        </div>
+                        {% if amenidad.reglas %}
+                        <div class="detail-item">
+                            <i class="fa-solid fa-scroll"></i>
+                            <p><strong>Reglas:</strong> {{ amenidad.reglas|linebreaksbr }}</p>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <a href="{% url 'ver_disponibilidad' amenidad.id %}" class="btn-availability">
+                        <i class="fa-solid fa-calendar-check"></i> Ver Disponibilidad y Reservar
+                    </a>
+                </div>
+            {% empty %}
                 <p class="no-results-message">Este complejo no tiene amenidades para reservar.</p>
             {% endfor %}
         </div>
