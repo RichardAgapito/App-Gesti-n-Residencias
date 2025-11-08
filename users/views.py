@@ -4,6 +4,8 @@ from django.views.decorators.http import require_POST
 from django.db.models import Q
 from .forms import CustomUserCreationForm, EditarUsuarioForm
 from .models import CustomUser
+from avisos.models import Aviso
+from django.db.models import Q
 from complejos.models import Complejo
 
 @login_required
@@ -22,7 +24,23 @@ def dashboard(request):
     elif request.user.rol == 'GUARDIA':
         return redirect('dashboard_visitas')
     else:
-        return render(request, 'users/dashboard.html')
+        # Residente: obtener avisos relevantes para el usuario
+        user = request.user
+        avisos = Aviso.objects.none()
+        complejo_residente = getattr(user, 'complejo_asignado', None)
+        if complejo_residente:
+            avisos = Aviso.objects.filter(
+                Q(complejo=complejo_residente) &
+                (
+                    Q(dirigido_a__in=[Aviso.DirigidoA.TODOS, Aviso.DirigidoA.RESIDENTES]) |
+                    Q(autor=user)
+                )
+            ).order_by('-fecha_creacion')[:5]
+
+        context = {
+            'avisos_recientes': avisos,
+        }
+        return render(request, 'users/dashboard.html', context)
 
 def es_admin(user):
     return user.is_authenticated and user.rol == CustomUser.Rol.ADMIN

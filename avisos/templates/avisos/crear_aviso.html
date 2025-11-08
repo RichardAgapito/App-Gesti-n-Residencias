@@ -1,0 +1,130 @@
+{% extends 'base_dashboard.html' %}
+
+{% block title %}Crear Aviso - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            
+            <!-- Mensajes de Django -->
+            {% if messages %}
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                {% endfor %}
+            {% endif %}
+
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-bullhorn"></i> Crear Nuevo Aviso
+                    </h4>
+                </div>
+                <div class="card-body">
+                    {% if form.errors %}
+                    <div class="alert alert-danger alert-dismissible fade show">
+                        <strong><i class="fas fa-exclamation-triangle"></i> Error:</strong>
+                        <ul class="mb-0">
+                            {% for field, errors in form.errors.items %}
+                                {% for error in errors %}
+                                    <li>{{ field }}: {{ error }}</li>
+                                {% endfor %}
+                            {% endfor %}
+                        </ul>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    {% endif %}
+
+                    <!-- Información de ayuda -->
+                    <div class="alert alert-info mb-4">
+                        <i class="fas fa-info-circle"></i> 
+                        {% if request.user.is_staff %}
+                            <strong>Como administrador:</strong> Puedes enviar avisos a <strong>Todos</strong>, solo a <strong>Residentes</strong> o solo a <strong>Administradores</strong>.
+                        {% else %}
+                            <strong>Como residente:</strong> Puedes enviar avisos a <strong>Todos</strong> o solo a <strong>Administradores</strong>.
+                        {% endif %}
+                    </div>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="id_titulo" class="form-label">
+                                <i class="fas fa-heading"></i> Título <span class="text-danger">*</span>
+                            </label>
+                            {{ form.titulo }}
+                            {% if form.titulo.errors %}
+                                <div class="text-danger small mt-1">{{ form.titulo.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="id_contenido" class="form-label">
+                                <i class="fas fa-align-left"></i> Contenido <span class="text-danger">*</span>
+                            </label>
+                            {{ form.contenido }}
+                            {% if form.contenido.errors %}
+                                <div class="text-danger small mt-1">{{ form.contenido.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="id_tipo_aviso" class="form-label">
+                                    <i class="fas fa-tag"></i> Tipo de Aviso <span class="text-danger">*</span>
+                                </label>
+                                {{ form.tipo_aviso }}
+                                <small class="form-text text-muted d-block">
+                                    Categoría del aviso
+                                </small>
+                                {% if form.tipo_aviso.errors %}
+                                    <div class="text-danger small mt-1">{{ form.tipo_aviso.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="id_dirigido_a" class="form-label">
+                                    <i class="fas fa-users"></i> Dirigido a <span class="text-danger">*</span>
+                                </label>
+                                {{ form.dirigido_a }}
+                                <small class="form-text text-muted d-block">
+                                    ¿Quién debe ver este aviso?
+                                </small>
+                                {% if form.dirigido_a.errors %}
+                                    <div class="text-danger small mt-1">{{ form.dirigido_a.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        {% if request.user.is_staff %}
+                        <div class="mb-3">
+                            <label for="id_complejo" class="form-label">
+                                <i class="fas fa-building"></i> Complejo <span class="text-danger">*</span>
+                            </label>
+                            {{ form.complejo }}
+                            {% if form.complejo.errors %}
+                                <div class="text-danger small mt-1">{{ form.complejo.errors }}</div>
+                            {% endif %}
+                            <small class="form-text text-muted">
+                                Seleccione el complejo al que pertenece este aviso.
+                            </small>
+                        </div>
+                        {% endif %}
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                            <a href="{% url 'avisos:lista_avisos' %}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-paper-plane"></i> Enviar Aviso
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
