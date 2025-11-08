@@ -1,6 +1,7 @@
 from django import forms
 from .models import Visitante, Visita, PreAutorizacion
 from complejos.models import Propiedad
+from users.models import CustomUser
 
 class VisitanteForm(forms.ModelForm):
     class Meta:
@@ -38,30 +39,43 @@ class VisitanteForm(forms.ModelForm):
                     self.add_error('numero_documento', "Para Carnet de Extranjería, el número de documento debe ser de 9 dígitos numéricos.")
         return cleaned_data
 
-from users.models import CustomUser
 
 class VisitaForm(forms.ModelForm):
     class Meta:
         model = Visita
-        fields = '__all__'
+        # (NUEVO) Excluimos los campos que se llenarán automáticamente
+        exclude = [
+            'usuario_registra', 
+            'estado', 
+            'fecha_hora_salida', 
+            'autorizado_previamente'
+        ]
         # (NUEVO) Añadimos widgets para los campos de fecha y hora
         widgets = {
             'fecha_hora_ingreso': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
-            'fecha_hora_salida': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
         }
 
     def __init__(self, *args, **kwargs):
         complejo_asignado = kwargs.pop('complejo_asignado', None)
+        self.user = kwargs.pop('user', None) # (NUEVO) Recibimos el usuario (guardia)
         super(VisitaForm, self).__init__(*args, **kwargs)
         
-        # (CORRECTO) Esto ya estaba bien:
-        # Hacemos que el campo de residentes empiece vacío.
-        self.fields['residente_autoriza'].queryset = CustomUser.objects.none()
-        self.fields['residente_autoriza'].required = False
-        
-        # (CORRECTO) Esto filtra las propiedades al complejo del guardia
+        # Filtramos las propiedades al complejo del guardia
         if complejo_asignado:
             self.fields['propiedad'].queryset = Propiedad.objects.filter(complejo=complejo_asignado)
+        
+        # Hacemos que el campo de residentes empiece vacío. Se llenará con JS.
+        self.fields['residente_autoriza'].queryset = CustomUser.objects.none()
+        self.fields['residente_autoriza'].required = False # No es obligatorio
+        
+    # (NUEVO) Sobrescribimos 'save' para asignar el guardia
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        if self.user:
+            instance.usuario_registra = self.user
+        if commit:
+            instance.save()
+        return instance
 
 class PreAutorizacionForm(forms.ModelForm):
     class Meta:

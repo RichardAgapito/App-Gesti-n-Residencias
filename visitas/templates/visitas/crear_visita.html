@@ -2,73 +2,72 @@
 {% load static %}
 
 {% block extra_css %}
-    <link rel="stylesheet" href="{% static 'css/crear_complejo.css' %}">
-{% endblock %}
+    <link rel="stylesheet" href="{% static 'css/editar_visitante.css' %}">
+{% endblock extra_css %}
 
 {% block content %}
-<div class="form-container" style="max-width: 800px;">
-    <h1 class="text-center">Registrar Nueva Visita</h1>
+<div class="edit-user-container"> <h1 class="text-center">Registrar Nueva Visita</h1>
     
     <form method="post">
         {% csrf_token %}
         
-        <div class="form-group">
-            {{ form.propiedad.label_tag }}
-            {{ form.propiedad }}
-            {{ form.propiedad.errors }}
-        </div>
+        {% if form.non_field_errors %}
+            <div style="color: red; margin-bottom: 1rem;">{{ form.non_field_errors }}</div>
+        {% endif %}
 
-        <div class="form-group">
+        <p> {{ form.propiedad.label_tag }}
+            {{ form.propiedad }}
+            <small>Propiedad a la que se dirige la visita.</small>
+            {{ form.propiedad.errors }}
+        </p>
+
+        <p>
             {{ form.residente_autoriza.label_tag }}
             {{ form.residente_autoriza }}
-            <small>Selecciona una propiedad para cargar los residentes.</small>
+            <small>Selecciona una propiedad para cargar los residentes. (Opcional)</small>
             {{ form.residente_autoriza.errors }}
-        </div>
+        </p>
         
         <hr>
 
-        <div class="form-group">
+        <p>
             {{ form.visitante.label_tag }}
             {{ form.visitante }}
+            <small>El visitante que ingresa.</small>
             {{ form.visitante.errors }}
-        </div>
+        </p>
 
-        <div class="form-group">
+        <p>
             {{ form.fecha_hora_ingreso.label_tag }}
             {{ form.fecha_hora_ingreso }}
             {{ form.fecha_hora_ingreso.errors }}
-        </div>
+        </p>
 
-        <div class="form-group">
+        <p>
             {{ form.motivo_visita.label_tag }}
             {{ form.motivo_visita }}
             {{ form.motivo_visita.errors }}
-        </div>
+        </p>
 
-        <div class="form-group">
+        <p>
             {{ form.placa_vehiculo.label_tag }}
             {{ form.placa_vehiculo }}
             {{ form.placa_vehiculo.errors }}
-        </div>
+        </p>
 
-        <div class="form-group">
+        <p>
             {{ form.cantidad_acompanantes.label_tag }}
             {{ form.cantidad_acompanantes }}
             {{ form.cantidad_acompanantes.errors }}
-        </div>
+        </p>
 
-        <div class="form-group">
+        <p>
             {{ form.observaciones.label_tag }}
             {{ form.observaciones }}
             {{ form.observaciones.errors }}
-        </div>
-
-        {{ form.usuario_registra.as_hidden }}
-        {{ form.estado.as_hidden }}
-        {{ form.fecha_hora_salida.as_hidden }}
-        {{ form.autorizado_previamente.as_hidden }}
+        </p>
         
-        <button type"submit" class="btn-submit">Guardar Visita</button>
+        <button type="submit">Guardar Visita</button>
     </form>
     
     <div class="text-center mt-3">
@@ -82,40 +81,45 @@
         const propiedadSelect = document.getElementById('id_propiedad');
         const residenteSelect = document.getElementById('id_residente_autoriza');
 
-        propiedadSelect.addEventListener('change', function() {
-            const propiedadId = this.value;
-            // Limpiamos el dropdown de residentes
+        function cargarResidentes() {
+            const propiedadId = propiedadSelect.value;
             residenteSelect.innerHTML = '<option value="">Cargando...</option>';
 
             if (propiedadId) {
-                // (NUEVO) Esta URL ya existía en tu 'visitas/urls.py', ¡perfecto!
+                // Esta URL ya existía en tu 'visitas/urls.py'
                 fetch(`/visitas/propiedad/${propiedadId}/residentes/`) 
-                    .then(response => response.json())
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('La respuesta de la red no fue exitosa');
+                        }
+                        return response.json();
+                    })
                     .then(data => {
                         residenteSelect.innerHTML = '<option value="">---------</option>';
                         if (data.length > 0) {
                             data.forEach(residente => {
-                                // (NUEVO) Usamos el 'nombre_completo' que definimos en la vista AJAX
                                 const option = new Option(residente.nombre, residente.id);
                                 residenteSelect.add(option);
                             });
                         } else {
-                            residenteSelect.innerHTML = '<option value="">No hay residentes activos en esta propiedad</option>';
+                            residenteSelect.innerHTML = '<option value="">No hay residentes activos</option>';
                         }
                     })
                     .catch(error => {
-                        console.error('Error fetching residentes:', error);
-                        residenteSelect.innerHTML = '<option value="">Error al cargar</option>';
+                        console.error('Error al cargar residentes:', error);
+                        residenteSelect.innerHTML = '<option value="">Error al cargar</G</option>';
                     });
             } else {
-                residenteSelect.innerHTML = '<option value="">Selecciona una propiedad primero</option>';
+                residenteSelect.innerHTML = '<option value="">Selecciona una propiedad</option>';
             }
-        });
+        }
 
-        // (NUEVO) Disparamos un 'change' al cargar la página si ya hay un valor
-        // (útil si el formulario se recarga con errores)
+        propiedadSelect.addEventListener('change', cargarResidentes);
+
         if (propiedadSelect.value) {
-            propiedadSelect.dispatchEvent(new Event('change'));
+            cargarResidentes();
+        } else {
+             residenteSelect.innerHTML = '<option value="">Selecciona una propiedad</option>';
         }
     });
 </script>
