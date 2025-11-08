@@ -20,7 +20,7 @@ urlpatterns = [
     path('visitas/<int:visita_id>/editar/', views.editar_visita_view, name='editar_visita'),
     
     # Mantenido de tu rama (guevara_r)
-    path('visitas/propiedad/<int:propiedad_id>/residentes/', views.get_residentes_por_propiedad, name='get_residentes_por_propiedad'),
+    path('propiedad/<int:propiedad_id>/residentes/', views.get_residentes_por_propiedad, name='get_residentes_por_propiedad'),
     
     path('preautorizaciones/', views.lista_preautorizaciones_view, name='lista_preautorizaciones'),
     path('preautorizaciones/<int:pa_id>/aprobar/', views.aprobar_preautorizacion_view, name='aprobar_preautorizacion'),
