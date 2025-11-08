@@ -2,25 +2,21 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
 from complejos.models import PropiedadPersona
 from django.db import models
-
-def get_residentes_por_propiedad(request, propiedad_id):
-    residentes = PropiedadPersona.objects.filter(
-        propiedad_id=propiedad_id, 
-        estado='activo'
-    ).select_related('persona', 'persona__persona')
-    
-    residentes_data = [
-        {
-            'id': pp.persona.id, 
-            'nombre': f"{pp.persona.persona.nombres} {pp.persona.persona.apellidos}"
-        } 
-        for pp in residentes if pp.persona and pp.persona.persona
-    ]
-    
-    return JsonResponse(residentes_data, safe=False)
-
 from .models import Visitante, Visita, PreAutorizacion
 from .forms import VisitanteForm, VisitaForm, PreAutorizacionForm
+
+def get_residentes_por_propiedad(request, propiedad_id):
+    # Usamos select_related para ser más eficientes
+    residentes = PropiedadPersona.objects.filter(propiedad_id=propiedad_id, estado='activo').select_related('persona__persona')
+    
+    # Creamos una lista de diccionarios con el id y nombre
+    residentes_data = [
+        {'id': pp.persona.id, 'nombre': f"{pp.persona.persona.nombres} {pp.persona.persona.apellidos}"} 
+        for pp in residentes if pp.persona.persona # Nos aseguramos que la persona exista
+    ]
+    return JsonResponse(residentes_data, safe=False)
+
+
 
 def dashboard(request):
     visitantes_dentro = Visita.objects.filter(estado='dentro').count()
@@ -124,13 +120,15 @@ def crear_visita_view(request):
         complejo_asignado = user.complejo_asignado
 
     if request.method == 'POST':
+        # (MODIFICADO) Pasamos el 'user' al formulario
         form = VisitaForm(request.POST, complejo_asignado=complejo_asignado, user=user)
         if form.is_valid():
             visita = form.save(commit=False)
-            visita.usuario_registra = user
+            visita.estado = 'dentro' # Estado por defecto al crear
             visita.save()
             return redirect('lista_visitas')
     else:
+        # (MODIFICADO) Pasamos el 'user' al formulario
         form = VisitaForm(complejo_asignado=complejo_asignado, user=user)
     
     return render(request, 'visitas/crear_visita.html', {'form': form})

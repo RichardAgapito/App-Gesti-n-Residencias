@@ -72,31 +72,48 @@
 <!-- (INICIO) ESTRUCTURA DEL DASHBOARD DE RESIDENTE -->
 <div class="dashboard-container">
     
-    <!-- 1. Barra Lateral (Sidebar) del Residente -->
     <div class="sidebar">
         <h2><i class="fa-solid fa-house-user"></i> Panel Residente</h2>
-        <a href="{% url 'crear_reserva' %}"><i class="fa-solid fa-calendar-plus"></i> Reservar Amenidad</a>
-        <a href="{% url 'mis_reservas' %}" class="active"><i class="fa-solid fa-calendar-check"></i> Mis Reservas</a>
-        <!-- <a href="#"><i class="fa-solid fa-triangle-exclamation"></i> Reportar Incidencia</a> -->
-        <!-- <a href="#"><i class="fa-solid fa-user-pen"></i> Mi Perfil</a> -->
+        <a href="{% if has_active_contract %}{% url 'crear_reserva' %}{% else %}#{% endif %}"
+           class="{% if not has_active_contract %}disabled-link{% endif %}">
+           <i class="fa-solid fa-calendar-plus"></i> Reservar Amenidad
+        </a>
+        <a href="{% if has_active_contract %}{% url 'mis_reservas' %}{% else %}#{% endif %}" 
+           class="active {% if not has_active_contract %}disabled-link{% endif %}">
+           <i class="fa-solid fa-calendar-check"></i> Mis Reservas
+        </a>
+        
+        <a href="{% if has_active_contract %}{% url 'mis_preautorizaciones' %}{% else %}#{% endif %}"
+           class="{% if not has_active_contract %}disabled-link{% endif %}">
+           <i class="fa-solid fa-id-card-clip"></i> Pre-Autorizaciones
+        </a>
     </div>
 
-    <!-- 2. Contenido Principal del Residente -->
     <div class="main-content">
         
-        <!-- Encabezado con Logout (¡Ahora dentro de main-content!) -->
         <header>
             <h1><i class="fa-solid fa-calendar-check"></i> Mis Reservas</h1>
-            <a href="{% url 'crear_reserva' %}" class="btn btn-primary">
-                <i class="fa-solid fa-plus"></i> Nueva Reserva
-            </a>
+            
+            <div>
+                <a href="{% url 'dashboard' %}" class="btn btn-secondary">
+                    <i class="fa-solid fa-arrow-left"></i> Volver al Dashboard
+                </a>
+                {% if has_active_contract %}
+                <a href="{% url 'crear_reserva' %}" class="btn btn-primary">
+                    <i class="fa-solid fa-plus"></i> Nueva Reserva
+                </a>
+                {% endif %}
+            </div>
         </header>
 
-        <!-- (INICIO) TU CONTENIDO DE "MIS RESERVAS" -->
-        
+        {% if not has_active_contract %}
+        <div class="content-locked-message">
+            </div>
+        {% endif %}
+
         {% if reservas %}
             <table class="reservas-table">
-                <thead>
+                 <thead>
                     <tr>
                         <th>Amenidad</th>
                         <th>Fecha de Inicio</th>
@@ -118,11 +135,10 @@
                 </tbody>
             </table>
         {% else %}
+            {% if has_active_contract %}
             <p>No tienes ninguna reserva.</p>
+            {% endif %}
         {% endif %}
-
-        <!-- (FIN) TU CONTENIDO DE "MIS RESERVAS" -->
-
     </div>
 </div>
 <!-- (FIN) ESTRUCTURA DEL DASHBOARD DE RESIDENTE -->

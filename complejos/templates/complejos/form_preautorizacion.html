@@ -1,0 +1,140 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block bootstrap_css %}{% endblock %}
+{% block global_styles %}{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/resident_dashboard.css' %}">
+    <link rel="stylesheet" href="{% static 'css/crear_complejo.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    
+    <div class="sidebar">
+        <h2><i class="fa-solid fa-house-user"></i> Panel Residente</h2>
+        <a href="{% if has_active_contract %}{% url 'crear_reserva' %}{% else %}#{% endif %}" class="{% if not has_active_contract %}disabled-link{% endif %}">
+            <i class="fa-solid fa-calendar-plus"></i> Reservar Amenidad
+        </a>
+        <a href="{% if has_active_contract %}{% url 'mis_reservas' %}{% else %}#{% endif %}" class="{% if not has_active_contract %}disabled-link{% endif %}">
+            <i class="fa-solid fa-calendar-check"></i> Mis Reservas
+        </a>
+        <a href="{% if has_active_contract %}{% url 'mis_preautorizaciones' %}{% else %}#{% endif %}" class="active {% if not has_active_contract %}disabled-link{% endif %}">
+            <i class="fa-solid fa-id-card-clip"></i> Pre-Autorizaciones
+        </a>
+    </div>
+
+    <div class="main-content">
+        
+        <header>
+            <h1><i class="fa-solid fa-id-card-clip"></i> 
+                {% if autorizacion %}Editar{% else %}Crear{% endif %} Pre-Autorización
+            </h1>
+            <a href="{% url 'mis_preautorizaciones' %}" class="btn btn-secondary" style="background-color: #95a5a6;">
+                <i class="fa-solid fa-arrow-left"></i> Volver al Listado
+            </a>
+        </header>
+
+        <div class="form-container" style="max-width: 800px; margin: 1rem 0;">
+            <form method="post">
+                {% csrf_token %}
+                
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+                {% endif %}
+
+                <div class="form-group">
+                    {{ form.nombre_visitante.label_tag }}
+                    {{ form.nombre_visitante }}
+                    {% for error in form.nombre_visitante.errors %}
+                        <div class_alert="alert-danger" style="color: red; margin-top: 5px; font-size: 0.9em;">{{ error }}</div>
+                    {% endfor %}
+                </div>
+
+                <div class="form-group">
+                    {{ form.numero_documento.label_tag }}
+                    {{ form.numero_documento }}
+                    {% for error in form.numero_documento.errors %}
+                        <div class_alert="alert-danger" style="color: red; margin-top: 5px; font-size: 0.9em;">{{ error }}</div>
+                    {% endfor %}
+                </div>
+
+                <div class="form-group">
+                    {{ form.fecha_hora_esperada.label_tag }}
+                    {{ form.fecha_hora_esperada }}
+                    {% for error in form.fecha_hora_esperada.errors %}
+                        <div class_alert="alert-danger" style="color: red; margin-top: 5px; font-size: 0.9em;">{{ error }}</div>
+                    {% endfor %}
+                </div>
+
+                <div class="form-group">
+                    {{ form.vigencia_desde.label_tag }}
+                    {{ form.vigencia_desde }}
+                    {% for error in form.vigencia_desde.errors %}
+                        <div class_alert="alert-danger" style="color: red; margin-top: 5px; font-size: 0.9em;">{{ error }}</div>
+                    {% endfor %}
+                </div>
+
+                <div class="form-group">
+                    {{ form.vigencia_hasta.label_tag }}
+                    {{ form.vigencia_hasta }}
+                    {% for error in form.vigencia_hasta.errors %}
+                        <div class_alert="alert-danger" style="color: red; margin-top: 5px; font-size: 0.9em;">{{ error }}</div>
+                    {% endfor %}
+                </div>
+
+                <div class="form-group" style="display: flex; flex-direction: row; align-items: center; gap: 10px; background-color: #f8f9fa; padding: 1rem; border-radius: 5px;">
+                    {{ form.es_recurrente }}
+                    {{ form.es_recurrente.label_tag }}
+                    {% for error in form.es_recurrente.errors %}
+                        <div class_alert="alert-danger" style="color: red; margin-top: 5px; font-size: 0.9em;">{{ error }}</div>
+                    {% endfor %}
+                </div>
+
+                <div class="form-group" id="dias-semana-field" style="display: none;">
+                    {{ form.dias_semana.label_tag }}
+                    <div class="dias-semana-container">
+                        {% for choice in form.dias_semana %}
+                        <div class="dia-choice">
+                            {{ choice.tag }}
+                            <label for="{{ choice.id_for_label }}">{{ choice.choice_label }}</label>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% for error in form.dias_semana.errors %}
+                        <div class_alert="alert-danger" style="color: red; margin-top: 5px; font-size: 0.9em;">{{ error }}</div>
+                    {% endfor %}
+                </div>
+
+                <button type="submit" class="btn-submit" style="background-color: #f39c12;">Guardar Autorización</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Seleccionamos los elementos del DOM
+        const recurrenteCheckbox = document.getElementById('id_es_recurrente');
+        const diasSemanaField = document.getElementById('dias-semana-field');
+
+        // Función para mostrar u ocultar el campo de días
+        function toggleDiasSemana() {
+            if (recurrenteCheckbox.checked) {
+                diasSemanaField.style.display = 'block'; // Mostrar
+            } else {
+                diasSemanaField.style.display = 'none'; // Ocultar
+            }
+        }
+
+        // Ejecutar la función una vez al cargar la página (por si se está editando)
+        toggleDiasSemana();
+
+        // Añadir un "listener" para que la función se ejecute cada vez que se haga clic
+        recurrenteCheckbox.addEventListener('change', toggleDiasSemana);
+    });
+</script>
+{% endblock %}
