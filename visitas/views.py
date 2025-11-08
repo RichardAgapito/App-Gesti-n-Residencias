@@ -17,10 +17,10 @@ def es_guardia(user):
     return user.is_authenticated and user.rol == CustomUser.Rol.GUARDIA
 
 def get_residentes_por_propiedad(request, propiedad_id):
-    residentes = PropiedadPersona.objects.filter(propiedad_id=propiedad_id, estado='activo').select_related('persona__persona')
+    residentes = PropiedadPersona.objects.filter(propiedad_id=propiedad_id, estado='activo')
     residentes_data = [
         {'id': pp.persona.id, 'nombre': f"{pp.persona.persona.nombres} {pp.persona.persona.apellidos}"} 
-        for pp in residentes if pp.persona.persona
+        for pp in residentes if pp.persona and pp.persona.persona
     ]
     return JsonResponse(residentes_data, safe=False)
 
