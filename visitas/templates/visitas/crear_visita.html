@@ -2,72 +2,40 @@
 {% load static %}
 
 {% block extra_css %}
-    <link rel="stylesheet" href="{% static 'css/editar_visitante.css' %}">
+    <link rel="stylesheet" href="{% static 'css/visitas_form.css' %}">
 {% endblock extra_css %}
 
 {% block content %}
-<div class="edit-user-container"> <h1 class="text-center">Registrar Nueva Visita</h1>
+<div class="user-form-container">
+    <h1 class="text-center">Registrar Nueva Visita</h1>
     
-    <form method="post">
+    <form method="post" class="user-form">
         {% csrf_token %}
         
         {% if form.non_field_errors %}
-            <div style="color: red; margin-bottom: 1rem;">{{ form.non_field_errors }}</div>
+            <div class="errorlist">
+                {% for error in form.non_field_errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </div>
         {% endif %}
 
-        <p> {{ form.propiedad.label_tag }}
-            {{ form.propiedad }}
-            <small>Propiedad a la que se dirige la visita.</small>
-            {{ form.propiedad.errors }}
-        </p>
-
-        <p>
-            {{ form.residente_autoriza.label_tag }}
-            {{ form.residente_autoriza }}
-            <small>Selecciona una propiedad para cargar los residentes. (Opcional)</small>
-            {{ form.residente_autoriza.errors }}
-        </p>
+        {% for field in form %}
+            <div class="form-group">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% if field.help_text %}
+                    <small style="display: block; margin-top: 5px; color: #6c757d;">{{ field.help_text }}</small>
+                {% endif %}
+                {% for error in field.errors %}
+                    <div class="errorlist">
+                        <li>{{ error }}</li>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endfor %}
         
-        <hr>
-
-        <p>
-            {{ form.visitante.label_tag }}
-            {{ form.visitante }}
-            <small>El visitante que ingresa.</small>
-            {{ form.visitante.errors }}
-        </p>
-
-        <p>
-            {{ form.fecha_hora_ingreso.label_tag }}
-            {{ form.fecha_hora_ingreso }}
-            {{ form.fecha_hora_ingreso.errors }}
-        </p>
-
-        <p>
-            {{ form.motivo_visita.label_tag }}
-            {{ form.motivo_visita }}
-            {{ form.motivo_visita.errors }}
-        </p>
-
-        <p>
-            {{ form.placa_vehiculo.label_tag }}
-            {{ form.placa_vehiculo }}
-            {{ form.placa_vehiculo.errors }}
-        </p>
-
-        <p>
-            {{ form.cantidad_acompanantes.label_tag }}
-            {{ form.cantidad_acompanantes }}
-            {{ form.cantidad_acompanantes.errors }}
-        </p>
-
-        <p>
-            {{ form.observaciones.label_tag }}
-            {{ form.observaciones }}
-            {{ form.observaciones.errors }}
-        </p>
-        
-        <button type="submit">Guardar Visita</button>
+        <button type="submit" class="btn-submit">Guardar Visita</button>
     </form>
     
     <div class="text-center mt-3">
@@ -76,7 +44,8 @@
 </div>
 {% endblock %}
 
-{% block extra_js %} <script>
+{% block extra_js %}
+<script>
     document.addEventListener('DOMContentLoaded', function() {
         const propiedadSelect = document.getElementById('id_propiedad');
         const residenteSelect = document.getElementById('id_residente_autoriza');
@@ -86,7 +55,6 @@
             residenteSelect.innerHTML = '<option value="">Cargando...</option>';
 
             if (propiedadId) {
-                // Esta URL ya existía en tu 'visitas/urls.py'
                 fetch(`/visitas/propiedad/${propiedadId}/residentes/`) 
                     .then(response => {
                         if (!response.ok) {
@@ -107,7 +75,7 @@
                     })
                     .catch(error => {
                         console.error('Error al cargar residentes:', error);
-                        residenteSelect.innerHTML = '<option value="">Error al cargar</G</option>';
+                        residenteSelect.innerHTML = '<option value="">Error al cargar</option>';
                     });
             } else {
                 residenteSelect.innerHTML = '<option value="">Selecciona una propiedad</option>';
