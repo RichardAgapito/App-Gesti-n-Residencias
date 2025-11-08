@@ -101,30 +101,19 @@ class CrearAviso(LoginRequiredMixin, CreateView):
         return kwargs
 
     def get(self, request, *args, **kwargs):
-        # Verificar que el usuario tenga un complejo asignado antes de mostrar el formulario
-        if not request.user.complejo_asignado:
+        # Para residentes, verificar que tengan un complejo asignado.
+        if not request.user.is_staff and not request.user.complejo_asignado:
             messages.error(request, 'No tienes un complejo asignado. Contacta al administrador para que te asigne uno.')
             return redirect('avisos:lista_avisos')
         return super().get(request, *args, **kwargs)
 
     def form_valid(self, form):
-        # Asignar el autor
         form.instance.autor = self.request.user
-        
-        # Asignar complejo ANTES de validar
+        # Si el usuario no es staff, el complejo se asigna automáticamente.
         if not self.request.user.is_staff:
-            # Para residentes, asignar automáticamente su complejo
             form.instance.complejo = self.request.user.complejo_asignado
-        else:
-            # Para staff, verificar que hayan seleccionado un complejo
-            if not form.cleaned_data.get('complejo'):
-                if self.request.user.complejo_asignado:
-                    form.instance.complejo = self.request.user.complejo_asignado
-                else:
-                    form.add_error('complejo', 'Debes seleccionar un complejo.')
-                    return self.form_invalid(form)
         
-        # Ahora sí, guardar
+        messages.success(self.request, 'Aviso creado con éxito.')
         return super().form_valid(form)
 
 
