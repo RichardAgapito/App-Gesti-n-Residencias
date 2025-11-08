@@ -10,7 +10,7 @@ from datetime import date
 class EditarUsuarioForm(forms.ModelForm):
     tipo_documento = forms.ChoiceField(choices=Persona.TipoDocumento.choices, required=True)
     numero_documento = forms.CharField(
-        max_length=8, # Set max_length to 8 for consistency
+        max_length=8,
         validators=[
             RegexValidator(
                 r'^\d{8}$',
@@ -40,7 +40,7 @@ class EditarUsuarioForm(forms.ModelForm):
         required=True
     )
     telefono = forms.CharField(
-        max_length=9, # Set max_length to 9 for consistency
+        max_length=9,
         validators=[
             RegexValidator(
                 r'^9\d{8}$',
@@ -64,7 +64,7 @@ class EditarUsuarioForm(forms.ModelForm):
 class CustomUserCreationForm(forms.ModelForm):
     tipo_documento = forms.ChoiceField(choices=Persona.TipoDocumento.choices)
     numero_documento = forms.CharField(
-        max_length=8, # Set max_length to 8 for consistency
+        max_length=8,
         validators=[
             RegexValidator(
                 r'^\d{8}$',
@@ -91,7 +91,7 @@ class CustomUserCreationForm(forms.ModelForm):
         ]
     )
     telefono = forms.CharField(
-        max_length=9, # Set max_length to 9 for consistency
+        max_length=9,
         validators=[
             RegexValidator(
                 r'^9\d{8}$',
@@ -143,19 +143,19 @@ class CustomUserCreationForm(forms.ModelForm):
             if not complejo_asignado:
                 self.add_error('complejo_asignado', 'Este campo es obligatorio para los guardias.')
             else:
-                # Check if another guard is already assigned to this complex
-                # Exclude the current user if it's an update scenario
+
+
                 existing_guards = CustomUser.objects.filter(
                     rol=CustomUser.Rol.GUARDIA,
                     complejo_asignado=complejo_asignado
                 )
-                if self.instance and self.instance.pk: # If updating an existing user
+                if self.instance and self.instance.pk:
                     existing_guards = existing_guards.exclude(pk=self.instance.pk)
 
                 if existing_guards.exists():
                     self.add_error('complejo_asignado', 'Este complejo ya tiene un guardia asignado.')
 
-        # Age validation
+
         if fecha_nacimiento:
             today = date.today()
             age = today.year - fecha_nacimiento.year - ((today.month, today.day) < (fecha_nacimiento.month, fecha_nacimiento.day))
@@ -181,7 +181,7 @@ class CustomUserCreationForm(forms.ModelForm):
         return user
     
 class ResidentePreAutorizacionForm(forms.ModelForm):
-    # Validaciones de DNI
+
     numero_documento = forms.CharField(
         label="Documento del Visitante",
         validators=[
@@ -194,15 +194,15 @@ class ResidentePreAutorizacionForm(forms.ModelForm):
 
     class Meta:
         model = PreAutorizacion
-        # Campos que el residente SÍ puede llenar
+
         fields = [
             'nombre_visitante', 
-            'numero_documento', # Usamos el campo validado
+            'numero_documento',
             'fecha_hora_esperada', 
             'vigencia_desde', 
             'vigencia_hasta',
         ]
-        # Campos que se llenarán automáticamente (residente, propiedad, etc.)
+
         exclude = [
             'residente', 
             'propiedad', 
@@ -218,11 +218,11 @@ class ResidentePreAutorizacionForm(forms.ModelForm):
             'vigencia_hasta': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
         }
     
-    # Renombramos 'numero_documento' a 'documento_visitante'
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['numero_documento'].label = "Documento del Visitante"
-        # Si estamos editando, poblamos el campo con el valor existente
+
         if self.instance and self.instance.pk:
             self.fields['numero_documento'].initial = self.instance.documento_visitante
 
@@ -242,6 +242,6 @@ class ResidentePreAutorizacionForm(forms.ModelForm):
             if not (fecha_inicio <= fecha_esperada <= fecha_fin):
                 raise ValidationError("La fecha esperada de la visita debe estar dentro del rango de vigencia.")
         
-        # Asignamos el campo validado de vuelta al campo del modelo
+
         cleaned_data['documento_visitante'] = cleaned_data.get('numero_documento')
         return cleaned_data

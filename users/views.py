@@ -14,11 +14,11 @@ from complejos.models import PropiedadPersona
 def dashboard(request):
     if request.user.rol == 'ADMIN':
         
-        # --- ESTAS LÍNEAS FALTABAN ---
+
         total_usuarios = CustomUser.objects.count()
         total_complejos = Complejo.objects.count()
-        visitas_hoy = 0  # Placeholder
-        # -----------------------------
+        visitas_hoy = 0
+
 
         context = {
             'total_usuarios': total_usuarios,
@@ -31,11 +31,11 @@ def dashboard(request):
         return redirect('dashboard_visitas')
     
     else:
-        # Residente: obtener avisos relevantes para el usuario
+
         user = request.user
         avisos_recientes = Aviso.objects.none()
         
-        # Lógica corregida: Obtener complejo a través de la propiedad
+
         propiedad_activa = user.propiedades_asociadas.filter(estado='activo').first()
         if propiedad_activa:
             complejo_residente = propiedad_activa.propiedad.complejo

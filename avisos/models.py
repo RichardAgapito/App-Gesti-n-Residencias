@@ -18,13 +18,13 @@ class Aviso(models.Model):
     autor = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='avisos_creados_nuevos'  # Use a new related_name to avoid conflicts
+        related_name='avisos_creados_nuevos'
     )
     
     complejo = models.ForeignKey(
         Complejo,
         on_delete=models.CASCADE,
-        related_name='avisos_nuevos'  # Use a new related_name
+        related_name='avisos_nuevos'
     )
     
     tipo_aviso = models.CharField(
@@ -35,7 +35,7 @@ class Aviso(models.Model):
     
     leido_por = models.ManyToManyField(
         settings.AUTH_USER_MODEL,
-        related_name='avisos_leidos_nuevos',  # Use a new related_name
+        related_name='avisos_leidos_nuevos',
         blank=True
     )
 

@@ -24,11 +24,11 @@ class ListaAvisos(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         user = self.request.user
-        # Los administradores pueden ver los avisos que han enviado
+
         if user.is_staff:
             return Aviso.objects.filter(autor=user).order_by('-fecha_creacion')
         
-        # Lógica corregida para residentes: Obtener complejo a través de la propiedad
+
         propiedad_activa = user.propiedades_asociadas.filter(estado='activo').first()
         if propiedad_activa:
             complejo_residente = propiedad_activa.propiedad.complejo
@@ -55,7 +55,7 @@ class DetalleAviso(LoginRequiredMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         aviso = self.get_object()
-        # Marcar como leído al verlo
+
         aviso.leido_por.add(self.request.user)
         return context
 

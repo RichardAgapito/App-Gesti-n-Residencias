@@ -7,7 +7,7 @@ from django.utils import timezone
 from visitas.models import PreAutorizacion
 from django.core.validators import RegexValidator
 
-# Custom ModelChoiceField to display user's full name
+
 class UserChoiceField(forms.ModelChoiceField):
     def label_from_instance(self, obj):
         return obj.persona.__str__() if obj.persona else obj.email
@@ -31,10 +31,10 @@ class ComplejoForm(forms.ModelForm):
     def clean_telefono_contacto(self):
         telefono = self.cleaned_data.get('telefono_contacto')
         if telefono:
-            # Primera validación: ¿Contiene solo números?
+
             if not telefono.isdigit():
                 raise ValidationError("Este campo solo debe contener números.")
-            # Segunda validación: ¿Tiene la longitud correcta?
+
             if len(telefono) != 9:
                 raise ValidationError("El número de teléfono debe tener exactamente 9 dígitos.")
         return telefono
@@ -79,8 +79,8 @@ class PropiedadPersonaForm(forms.ModelForm):
         )
 
         persona2_initial = None
-        # The persona2 is not part of the model, so we don't need to set an initial value for it
-        # when editing. It will be populated from the form data.
+
+
 
         self.fields['persona2'] = forms.ModelChoiceField(
             queryset=active_residents,
@@ -126,7 +126,7 @@ class PropiedadPersonaForm(forms.ModelForm):
         if fecha_inicio and fecha_fin and fecha_fin < fecha_inicio + timedelta(days=30):
             raise ValidationError({"fecha_fin": "La fecha de fin no puede ser menor a 30 días después de la fecha de inicio."})
 
-        # Validations moved from model
+
         if self.propiedad and persona:
             if tipo_relacion == 'inquilino' and cleaned_data.get('es_principal') and cleaned_data.get('estado') == 'activo':
                 if PropiedadPersona.objects.filter(
@@ -142,7 +142,7 @@ class PropiedadPersonaForm(forms.ModelForm):
                     propiedad=self.propiedad,
                     persona=persona,
                     tipo_relacion='inquilino',
-                    estado='activo' # Only check active contracts
+                    estado='activo'
                 ).exists():
                     raise ValidationError('Esta persona ya es inquilino activo de esta propiedad.')
             
@@ -151,7 +151,7 @@ class PropiedadPersonaForm(forms.ModelForm):
                     propiedad=self.propiedad,
                     persona=persona,
                     tipo_relacion__in=['propietario', 'co-propietario'],
-                    estado='activo' # Only check active contracts
+                    estado='activo'
                 ).exists():
                     raise ValidationError('Esta persona ya es propietaria activa de esta propiedad.')
 
@@ -159,7 +159,7 @@ class PropiedadPersonaForm(forms.ModelForm):
                 co_relations = PropiedadPersona.objects.filter(
                     propiedad=self.propiedad,
                     tipo_relacion=tipo_relacion,
-                    estado='activo' # Only check active contracts
+                    estado='activo'
                 )
                 if co_relations.count() >= 2:
                     raise ValidationError(f'No se pueden agregar más de 2 {tipo_relacion}s activos a esta propiedad.')
@@ -203,7 +203,7 @@ class GlobalContratoForm(forms.ModelForm):
         if fecha_inicio and fecha_inicio < date.today():
             raise ValidationError({"fecha_inicio": "La fecha de inicio no puede ser anterior a la fecha actual."})
 
-        # Handle fecha_fin logic
+
         if tipo_relacion in ['propietario', 'co-propietario']:
             cleaned_data['fecha_fin'] = None
         elif tipo_relacion in ['inquilino', 'co-inquilino']:
@@ -213,7 +213,7 @@ class GlobalContratoForm(forms.ModelForm):
                 self.add_error('fecha_fin', 'La fecha de fin no puede ser menor a 30 días después de la fecha de inicio.')
 
         if propiedad and persona:
-            # Block creating a new principal if one already exists and is active
+
             if tipo_relacion in ['propietario', 'co-propietario']:
                 if PropiedadPersona.objects.filter(propiedad=propiedad, tipo_relacion='propietario', es_principal=True, estado='activo').exists():
                     raise ValidationError(f"La propiedad '{propiedad}' ya tiene un Propietario principal activo.")
@@ -222,7 +222,7 @@ class GlobalContratoForm(forms.ModelForm):
                 if PropiedadPersona.objects.filter(propiedad=propiedad, tipo_relacion='inquilino', es_principal=True, estado='activo').exists():
                     raise ValidationError(f"La propiedad '{propiedad}' ya tiene un Inquilino principal activo.")
 
-            # Block assigning a person who is already in an active, conflicting role
+
             if tipo_relacion in ['propietario', 'co-propietario']:
                 if PropiedadPersona.objects.filter(propiedad=propiedad, persona=persona, tipo_relacion='inquilino', estado='activo').exists():
                     raise ValidationError('Esta persona ya es inquilino activo de esta propiedad.')
@@ -266,7 +266,7 @@ class ReservaForm(forms.ModelForm):
             raise ValidationError("La fecha de fin debe ser posterior a la fecha de inicio.")
 
         if self.amenidad and fecha_inicio and fecha_fin:
-            # Check for conflicts with existing reservations
+
             reservas_en_conflicto = Reserva.objects.filter(
                 amenidad=self.amenidad,
                 estado__in=['confirmada', 'bloqueada'],
@@ -277,7 +277,7 @@ class ReservaForm(forms.ModelForm):
             if reservas_en_conflicto:
                 raise ValidationError("Este horario ya no está disponible. Por favor, elige otro.")
 
-            # Check if the reservation is within the amenity's operating hours
+
             if fecha_inicio.time() < self.amenidad.hora_inicio:
                 raise ValidationError(f"La hora de inicio no puede ser antes de la apertura de la amenidad ({self.amenidad.hora_inicio.strftime('%H:%M')}).")
             
@@ -313,7 +313,7 @@ class AdminReservaForm(forms.ModelForm):
             raise ValidationError("La fecha de fin debe ser posterior a la fecha de inicio.")
 
         if amenidad and fecha_inicio and fecha_fin:
-            # Check for conflicts with existing reservations
+
             reservas_en_conflicto = Reserva.objects.filter(
                 amenidad=amenidad,
                 estado__in=['confirmada', 'bloqueada'],
@@ -324,7 +324,7 @@ class AdminReservaForm(forms.ModelForm):
             if reservas_en_conflicto.exists():
                 raise ValidationError("Este horario ya no está disponible. Por favor, elige otro.")
 
-            # Check if the reservation is within the amenity's operating hours
+
             if fecha_inicio.time() < amenidad.hora_inicio:
                 raise ValidationError(f"La hora de inicio no puede ser antes de la apertura de la amenidad ({amenidad.hora_inicio.strftime('%H:%M')}).")
             
@@ -358,7 +358,7 @@ class BloquearHorarioForm(forms.ModelForm):
             raise ValidationError("La fecha de fin debe ser posterior a la fecha de inicio.")
 
         if self.amenidad and fecha_inicio and fecha_fin:
-            # Check for conflicts with existing reservations
+
             reservas_en_conflicto = Reserva.objects.filter(
                 amenidad=self.amenidad,
                 estado__in=['confirmada', 'bloqueada'],
@@ -369,7 +369,7 @@ class BloquearHorarioForm(forms.ModelForm):
             if reservas_en_conflicto:
                 raise ValidationError("Este horario ya no está disponible. Por favor, elige otro.")
 
-            # Check if the reservation is within the amenity's operating hours
+
             if fecha_inicio.time() < self.amenidad.hora_inicio:
                 raise ValidationError(f"La hora de inicio no puede ser antes de la apertura de la amenidad ({self.amenidad.hora_inicio.strftime('%H:%M')}).")
             
@@ -380,7 +380,7 @@ class BloquearHorarioForm(forms.ModelForm):
 
 class ResidentePreAutorizacionForm(forms.ModelForm):
     
-    # ... (campo nombre_visitante sin cambios) ...
+
     nombre_visitante = forms.CharField(
         label="Nombre del Visitante",
         validators=[
@@ -391,7 +391,7 @@ class ResidentePreAutorizacionForm(forms.ModelForm):
         ]
     )
 
-    # ... (campo numero_documento sin cambios) ...
+
     numero_documento = forms.CharField(
         label="Documento del Visitante",
         validators=[
@@ -405,13 +405,13 @@ class ResidentePreAutorizacionForm(forms.ModelForm):
         })
     )
 
-    # (NUEVO) Campo para "Es recurrente"
+
     es_recurrente = forms.BooleanField(
         label="¿Es una visita recurrente?",
-        required=False # Es opcional
+        required=False
     )
     
-    # (NUEVO) Opciones para los días de la semana
+
     DIAS_CHOICES = (
         ('lunes', 'Lunes'),
         ('martes', 'Martes'),
@@ -422,12 +422,12 @@ class ResidentePreAutorizacionForm(forms.ModelForm):
         ('domingo', 'Domingo'),
     )
     
-    # (NUEVO) Campo de selección múltiple para los días
+
     dias_semana = forms.MultipleChoiceField(
         label="Días de la semana recurrentes",
         choices=DIAS_CHOICES,
         widget=forms.CheckboxSelectMultiple,
-        required=False # Lo validaremos en el método clean()
+        required=False
     )
 
     class Meta:
@@ -438,10 +438,10 @@ class ResidentePreAutorizacionForm(forms.ModelForm):
             'fecha_hora_esperada', 
             'vigencia_desde', 
             'vigencia_hasta',
-            'es_recurrente', # (NUEVO) Añadido
-            'dias_semana',   # (NUEVO) Añadido
+            'es_recurrente',
+            'dias_semana',
         ]
-        # (MODIFICADO) Quitamos los campos nuevos de 'exclude'
+
         exclude = [
             'residente', 
             'propiedad', 
@@ -460,10 +460,10 @@ class ResidentePreAutorizacionForm(forms.ModelForm):
         self.fields['numero_documento'].label = "Documento del Visitante"
         if self.instance and self.instance.pk:
             self.fields['numero_documento'].initial = self.instance.documento_visitante
-            # (NUEVO) Poblar los campos nuevos si estamos editando
+
             self.fields['es_recurrente'].initial = self.instance.es_recurrente
             if self.instance.dias_semana:
-                # Convertimos el string "lunes,martes" de nuevo a una lista ['lunes', 'martes']
+
                 self.fields['dias_semana'].initial = self.instance.dias_semana.split(',')
 
     def clean(self):
@@ -496,16 +496,16 @@ class ResidentePreAutorizacionForm(forms.ModelForm):
         instance.documento_visitante = self.cleaned_data.get('numero_documento')
         instance.nombre_visitante = self.cleaned_data.get('nombre_visitante')
         
-        # (NUEVO) Asignar los nuevos campos
+
         instance.es_recurrente = self.cleaned_data.get('es_recurrente')
         
         dias_semana_list = self.cleaned_data.get('dias_semana')
         if dias_semana_list:
-            # Convertimos la lista ['lunes', 'viernes'] al string "lunes,viernes"
-            # que requiere el modelo
+
+
             instance.dias_semana = ",".join(dias_semana_list)
         else:
-            instance.dias_semana = "" # Asegurarse de que esté vacío
+            instance.dias_semana = ""
         
         if commit:
             instance.save()

@@ -75,13 +75,13 @@ def bloquear_horario_view(request, amenidad_id):
             reserva = form.save(commit=False)
             reserva.amenidad = amenidad
             reserva.estado = 'bloqueada'
-            reserva.residente = None # A block does not have a resident
+            reserva.residente = None
             reserva.save()
             return redirect('gestionar_amenidades')
     else:
         form = BloquearHorarioForm(amenidad=amenidad)
 
-    # Fetch existing reservations to display on the calendar
+
     reservas = Reserva.objects.filter(
         amenidad=amenidad, 
         estado__in=['confirmada', 'bloqueada'], 
@@ -91,7 +91,7 @@ def bloquear_horario_view(request, amenidad_id):
     context = {
         'form': form,
         'amenidad': amenidad,
-        'reservas': reservas, # Pass reservations to the template
+        'reservas': reservas,
     }
     return render(request, 'complejos/bloquear_horario.html', context)
 
@@ -186,16 +186,16 @@ def crear_propiedad(request, complejo_id):
         if form.is_valid():
             propiedad = form.save(commit=False)
             propiedad.complejo = complejo
-            propiedad.tipo = 'casa' if complejo.tipo == 'residencial' else 'departamento' # Set tipo here
+            propiedad.tipo = 'casa' if complejo.tipo == 'residencial' else 'departamento'
 
-            # Auto-generate numero_identificador
+
             last_propiedad = Propiedad.objects.filter(complejo=complejo).order_by('id').last()
             last_id_number = 0
             if last_propiedad:
                 try:
                     last_id_number = int(last_propiedad.numero_identificador.split('-')[-1])
                 except (ValueError, IndexError):
-                    pass # handle cases where the format is not as expected
+                    pass
 
             prefix = 'D-' if propiedad.tipo == 'departamento' else 'P-'
             propiedad.numero_identificador = f'{prefix}{last_id_number + 1}'
@@ -220,16 +220,16 @@ def crear_propiedades_multiples(request, complejo_id):
                 try:
                     last_id_number = int(last_propiedad.numero_identificador.split('-')[-1])
                 except (ValueError, IndexError):
-                    pass # handle cases where the format is not as expected
+                    pass
 
-            prefix = 'D-' if complejo.tipo == 'condominio' else 'P-' # Use complejo.tipo here
+            prefix = 'D-' if complejo.tipo == 'condominio' else 'P-'
 
             for i in range(1, cantidad + 1):
                 numero_identificador = f'{prefix}{last_id_number + i}'
                 propiedad = Propiedad(
                     complejo=complejo,
                     numero_identificador=numero_identificador,
-                    tipo='casa' if complejo.tipo == 'residencial' else 'departamento', # Set tipo here
+                    tipo='casa' if complejo.tipo == 'residencial' else 'departamento',
                     area=form.cleaned_data['area'],
                     numero_habitaciones=form.cleaned_data['numero_habitaciones'],
                     numero_banos=form.cleaned_data['numero_banos'],
@@ -259,7 +259,7 @@ def editar_complejo(request, complejo_id):
 def detalle_propiedad(request, propiedad_id):
     propiedad = get_object_or_404(Propiedad, id=propiedad_id)
     
-    # Fetch only active contracts
+
     contratos_activos = propiedad.personas_asociadas.filter(estado='activo').order_by('-fecha_inicio')
 
     context = {
@@ -275,7 +275,7 @@ def asignar_contrato(request, propiedad_id):
     if request.method == 'POST':
         form = PropiedadPersonaForm(request.POST, propiedad=propiedad)
         if form.is_valid():
-            # Determine the actual tipo_relacion for the first person
+
             tipo_relacion_form = form.cleaned_data['tipo_relacion']
             if tipo_relacion_form == 'co-propietario':
                 first_person_role = 'propietario'
@@ -284,11 +284,11 @@ def asignar_contrato(request, propiedad_id):
                 first_person_role = 'inquilino'
                 second_person_role = 'co-inquilino'
             else:
-                # For single propietario or inquilino, roles are as submitted
-                first_person_role = tipo_relacion_form
-                second_person_role = None # No second person
 
-            # Create the first PropiedadPersona object
+                first_person_role = tipo_relacion_form
+                second_person_role = None
+
+
             propiedad_persona = PropiedadPersona(
                 propiedad=propiedad,
                 persona=form.cleaned_data['persona'],
@@ -296,7 +296,7 @@ def asignar_contrato(request, propiedad_id):
                 porcentaje_propiedad=form.cleaned_data['porcentaje_propiedad'],
                 fecha_inicio=form.cleaned_data['fecha_inicio'],
                 fecha_fin=form.cleaned_data['fecha_fin'],
-                es_principal=True, # The first person is always principal
+                es_principal=True,
                 estado=form.cleaned_data['estado']
             )
             propiedad_persona.save()
@@ -343,7 +343,7 @@ def get_residentes_json(request):
 def cancelar_contrato(request, propiedad_id, propiedad_persona_id):
     contrato_a_cancelar = get_object_or_404(PropiedadPersona, id=propiedad_persona_id)
     
-    # Find partner contract
+
     partner_contract = PropiedadPersona.objects.filter(
         propiedad_id=propiedad_id,
         fecha_inicio=contrato_a_cancelar.fecha_inicio,
@@ -353,7 +353,7 @@ def cancelar_contrato(request, propiedad_id, propiedad_persona_id):
     contrato_a_cancelar.estado = 'inactivo'
     contrato_a_cancelar.save()
 
-    # If a partner exists and we are canceling the main one, promote the partner
+
     if partner_contract and contrato_a_cancelar.es_principal:
         if partner_contract.tipo_relacion == 'co-propietario':
             partner_contract.tipo_relacion = 'propietario'
@@ -398,7 +398,7 @@ def crear_reserva_view(request):
     amenidades = []
     has_active_contract = False
 
-    # Usar filter().first() es más seguro que .get() para evitar errores
+
     propiedad_persona = PropiedadPersona.objects.filter(persona=request.user, estado='activo').first()
 
     if propiedad_persona:
@@ -416,7 +416,7 @@ def crear_reserva_view(request):
     if request.method == 'POST':
         if not has_active_contract:
             return redirect('crear_reserva') 
-        # La lógica POST para crear la reserva real iría aquí (posiblemente en otra vista)
+
         pass
 
     context = {
@@ -429,13 +429,13 @@ def crear_reserva_view(request):
 @login_required
 @user_passes_test(es_residente)
 def mis_reservas_view(request):
-    # (NUEVO) Comprobación de contrato
+
     has_active_contract = PropiedadPersona.objects.filter(persona=request.user, estado='activo').exists()
     
     reservas = Reserva.objects.filter(residente=request.user).order_by('-fecha_inicio')
     context = {
         'reservas': reservas,
-        'has_active_contract': has_active_contract # (NUEVO) Pasa la variable
+        'has_active_contract': has_active_contract
     }
     return render(request, 'complejos/mis_reservas.html', context)
 
@@ -474,7 +474,7 @@ def ver_disponibilidad_view(request, amenidad_id):
 def admin_reservas_view(request):
     reservas = Reserva.objects.all().order_by('-fecha_inicio')
 
-    # Filtering
+
     complejo_id = request.GET.get('complejo')
     if complejo_id:
         reservas = reservas.filter(amenidad__complejo__id=complejo_id)
@@ -508,7 +508,7 @@ def admin_crear_reserva(request):
         form = AdminReservaForm(request.POST)
         if form.is_valid():
             reserva = form.save(commit=False)
-            reserva.residente = form.cleaned_data['residente'] # Assign the selected resident
+            reserva.residente = form.cleaned_data['residente']
             reserva.save()
             return redirect('admin_reservas')
     else:
@@ -525,7 +525,7 @@ def admin_editar_reserva(request, reserva_id):
         form = AdminReservaForm(request.POST, instance=reserva)
         if form.is_valid():
             reserva = form.save(commit=False)
-            reserva.residente = form.cleaned_data['residente'] # Assign the selected resident
+            reserva.residente = form.cleaned_data['residente']
             reserva.save()
             return redirect('admin_reservas')
     else:
@@ -557,7 +557,7 @@ def lista_contratos(request):
         'persona__persona'
     ).order_by('propiedad__numero_identificador', '-fecha_inicio')
 
-    # Filtering
+
     tipo_relacion = request.GET.get('tipo_relacion', '')
     estado = request.GET.get('estado', '')
     propiedad_id = request.GET.get('propiedad_id', '')
@@ -571,7 +571,7 @@ def lista_contratos(request):
     if propiedad_id:
         contratos_qs = contratos_qs.filter(propiedad__id=propiedad_id)
 
-    # Group contracts by property
+
     contratos_por_propiedad = defaultdict(list)
     for contrato in contratos_qs:
         contratos_por_propiedad[contrato.propiedad].append(contrato)
@@ -592,7 +592,7 @@ def mis_preautorizaciones_view(request):
     
     lista_autorizaciones = PreAutorizacion.objects.filter(
         residente=request.user
-    ).order_by('-fecha_hora_esperada') # <--- Corregido (ordena por fecha esperada)
+    ).order_by('-fecha_hora_esperada')
     
     context = {
         'has_active_contract': has_active_contract,
@@ -604,11 +604,11 @@ def mis_preautorizaciones_view(request):
 @user_passes_test(es_residente)
 def crear_preautorizacion_view(request):
     try:
-        # Verifica si tiene contrato y obtiene la propiedad
+
         propiedad_persona = PropiedadPersona.objects.get(persona=request.user, estado='activo')
         has_active_contract = True
     except PropiedadPersona.DoesNotExist:
-        return redirect('dashboard') # Si no tiene contrato, no puede crear
+        return redirect('dashboard')
 
     if request.method == 'POST':
         form = ResidentePreAutorizacionForm(request.POST)
@@ -616,7 +616,7 @@ def crear_preautorizacion_view(request):
             autorizacion = form.save(commit=False)
             autorizacion.residente = request.user
             autorizacion.propiedad = propiedad_persona.propiedad
-            autorizacion.estado = 'pendiente' # Estado por defecto
+            autorizacion.estado = 'pendiente'
             autorizacion.save()
             return redirect('mis_preautorizaciones')
     else:
@@ -632,11 +632,11 @@ def crear_preautorizacion_view(request):
 @user_passes_test(es_residente)
 def editar_preautorizacion_view(request, pa_id):
     if not PropiedadPersona.objects.filter(persona=request.user, estado='activo').exists():
-        return redirect('dashboard') # Seguridad
+        return redirect('dashboard')
 
     autorizacion = get_object_or_404(PreAutorizacion, id=pa_id, residente=request.user)
     
-    # No se puede editar si ya no está pendiente
+
     if autorizacion.estado != 'pendiente':
         return redirect('mis_preautorizaciones')
 
@@ -659,7 +659,7 @@ def editar_preautorizacion_view(request, pa_id):
 @user_passes_test(es_residente)
 def cancelar_preautorizacion_view(request, pa_id):
     if not PropiedadPersona.objects.filter(persona=request.user, estado='activo').exists():
-        return redirect('dashboard') # Seguridad
+        return redirect('dashboard')
 
     autorizacion = get_object_or_404(PreAutorizacion, id=pa_id, residente=request.user)
 

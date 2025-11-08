@@ -3,7 +3,7 @@ from django.http import JsonResponse
 from complejos.models import Propiedad, PropiedadPersona
 from django.db import models
 from .models import Visitante, Visita, PreAutorizacion
-# --- Bloque de importaciones combinado ---
+
 from .forms import VisitanteForm, VisitaForm, PreAutorizacionForm, EditarVisitaForm
 from django.db.models import Q 
 from django.contrib.auth.decorators import login_required, user_passes_test
@@ -12,7 +12,7 @@ from django.core.paginator import Paginator
 from django.db.models import Case, When, Value
 from django.utils import timezone
 
-# --- Función de tu rama ---
+
 def es_guardia(user):
     return user.is_authenticated and user.rol == CustomUser.Rol.GUARDIA
 
@@ -35,7 +35,7 @@ def dashboard(request):
     }
     return render(request, 'visitas/dashboard.html', context)
 
-# --- Vistas de Visitante (conservando tus decoradores) ---
+
 @login_required
 @user_passes_test(es_guardia)
 def lista_visitantes_view(request):
@@ -52,7 +52,7 @@ def lista_visitantes_view(request):
     if estado_filter and estado_filter != '':
         visitantes_list = visitantes_list.filter(estado=estado_filter)
 
-    paginator = Paginator(visitantes_list, 10) # Show 10 visitantes per page.
+    paginator = Paginator(visitantes_list, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
@@ -105,7 +105,7 @@ def eliminar_visitante_view(request, visitante_id):
     return render(request, 'visitas/confirmar_eliminar_visitante.html', {'visitante': visitante})
 
 
-# --- Vistas de Visita (conservando tus decoradores y lógica) ---
+
 @login_required
 @user_passes_test(es_guardia)
 def lista_visitas_view(request):
@@ -133,7 +133,7 @@ def lista_visitas_view(request):
     if propiedad_filter and propiedad_filter != '':
         visitas_list = visitas_list.filter(propiedad__id=propiedad_filter)
 
-    paginator = Paginator(visitas_list, 10) # Show 10 visitas per page.
+    paginator = Paginator(visitas_list, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
@@ -171,8 +171,8 @@ def detalle_visita_view(request, visita_id):
     context = { 'visitante': visita }
     return render(request, 'visitas/detalle_visita.html', context)
 
-# --- Bloque resuelto según tus instrucciones ---
-# Mantenemos tu nueva vista
+
+
 @login_required
 @user_passes_test(es_guardia)
 def registrar_salida_visita_view(request, visita_id):
@@ -184,7 +184,7 @@ def registrar_salida_visita_view(request, visita_id):
         return redirect('lista_visitas')
     return render(request, 'visitas/confirmar_eliminar_visita.html', {'visita': visita})
 
-# Y también la vista de editar que se necesita por el urls.py combinado
+
 def editar_visita_view(request, visita_id):
     visita = get_object_or_404(Visita, id=visita_id)
     if request.method == 'POST':
@@ -199,7 +199,7 @@ def editar_visita_view(request, visita_id):
     return render(request, 'visitas/editar_visita.html', {'form': form, 'visita': visita})
 
 
-# --- Vistas de PreAutorizacion (conservando tus decoradores) ---
+
 @login_required
 @user_passes_test(es_guardia)
 def lista_preautorizaciones_view(request):
