@@ -85,6 +85,18 @@ class VisitaForm(forms.ModelForm):
             raise forms.ValidationError("Debe seleccionar un visitante registrado.")
         return visitante
 
+class EditarVisitaForm(forms.ModelForm):
+    class Meta:
+        model = Visita
+        fields = ['fecha_hora_salida']
+        widgets = {
+            'fecha_hora_salida': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super(EditarVisitaForm, self).__init__(*args, **kwargs)
+        self.fields['fecha_hora_salida'].required = True
+
 class PreAutorizacionForm(forms.ModelForm):
     class Meta:
         model = PreAutorizacion

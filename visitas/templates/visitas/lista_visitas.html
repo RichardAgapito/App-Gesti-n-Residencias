@@ -4,8 +4,6 @@
     <link rel="stylesheet" href="{% static 'css/lista_visitas.css' %}">
 {% endblock extra_css %}
 
-
-
 {% block content %}
 <div class="user-list-container">
     <div class="list-header">
@@ -28,20 +26,18 @@
                     <label for="id_estado">Estado:</label>
                     <select id="id_estado" name="estado">
                         <option value=""{% if not request.GET.estado %} selected{% endif %}>Todos</option>
-                        <option value="dentro"{% if request.GET.estado == 'dentro' %} selected{% endif %}>Dentro</option>
-                        <option value="salio"{% if request.GET.estado == 'salio' %} selected{% endif %}>Salió</option>
-                        <option value="no_autorizado"{% if request.GET.estado == 'no_autorizado' %} selected{% endif %}>No Autorizado</option>
+                        {% for value, name in estado_choices %}
+                            <option value="{{ value }}"{% if request.GET.estado == value %} selected{% endif %}>{{ name }}</option>
+                        {% endfor %}
                     </select>
                 </div>
                 <div class="form-group">
-                    <label for="id_motivo_visita">Motivo de Visita:</label>
-                    <select id="id_motivo_visita" name="motivo_visita">
-                        <option value=""{% if not request.GET.motivo_visita %} selected{% endif %}>Todos</option>
-                        <option value="social"{% if request.GET.motivo_visita == 'social' %} selected{% endif %}>Social</option>
-                        <option value="proveedor"{% if request.GET.motivo_visita == 'proveedor' %} selected{% endif %}>Proveedor</option>
-                        <option value="delivery"{% if request.GET.motivo_visita == 'delivery' %} selected{% endif %}>Delivery</option>
-                        <option value="mudanza"{% if request.GET.motivo_visita == 'mudanza' %} selected{% endif %}>Mudanza</option>
-                        <option value="tecnico"{% if request.GET.motivo_visita == 'tecnico' %} selected{% endif %}>Técnico</option>
+                    <label for="id_propiedad">Propiedad:</label>
+                    <select id="id_propiedad" name="propiedad">
+                        <option value=""{% if not request.GET.propiedad %} selected{% endif %}>Todas</option>
+                        {% for propiedad in propiedades %}
+                            <option value="{{ propiedad.id }}"{% if request.GET.propiedad == propiedad.id|stringformat:"s" %} selected{% endif %}>{{ propiedad.numero_identificador }}</option>
+                        {% endfor %}
                     </select>
                 </div>
                 <button type="submit">Buscar y Filtrar</button>
@@ -51,23 +47,51 @@
         <main class="results-content">
             <h3>Visitas Registradas</h3>
 
-            {% if visitas %}
-                <div class="visita-grid">
-                    {% for visita in visitas %}
-                        <div class="visita-card">
-                            <h4>Visita de {{ visita.visitante.nombres }} {{ visita.visitante.apellidos }}</h4>
-                            <p><strong>Propiedad:</strong> {{ visita.propiedad.nombre }}</p>
-                            <p><strong>Motivo:</strong> {{ visita.get_motivo_visita_display }}</p>
-                            <p><strong>Ingreso:</strong> {{ visita.fecha_hora_ingreso|date:"d/m/Y H:i" }}</p>
-                            <p><strong>Salida:</strong> {% if visita.fecha_hora_salida %}{{ visita.fecha_hora_salida|date:"d/m/Y H:i" }}{% else %}Pendiente{% endif %}</p>
-                            <p><strong>Estado:</strong> <span class="status-{{ visita.estado }}">{{ visita.get_estado_display }}</span></p>
-                            <div class="action-links">
-                                <a href="{% url 'detalle_visita' visita.id %}" class="btn btn-info btn-sm"><i class="fa-solid fa-eye"></i> Detalles</a>
-                                <a href="{% url 'editar_visita' visita.id %}" class="btn btn-warning btn-sm"><i class="fa-solid fa-pencil"></i> Editar</a>
-                                <a href="{% url 'eliminar_visita' visita.id %}" class="btn btn-danger btn-sm"><i class="fa-solid fa-arrow-right-from-bracket"></i> Registrar Salida</a>
-                            </div>
-                        </div>
-                    {% endfor %}
+            {% if page_obj.object_list %}
+                <table class="visitas-table">
+                    <thead>
+                        <tr>
+                            <th>Visitante</th>
+                            <th>Propiedad</th>
+                            <th>Ingreso</th>
+                            <th>Salida</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for visita in page_obj.object_list %}
+                            <tr>
+                                <td>{{ visita.visitante.nombres }} {{ visita.visitante.apellidos }}</td>
+                                <td>{{ visita.propiedad.numero_identificador }}</td>
+                                <td>{{ visita.fecha_hora_ingreso|date:"d/m/Y H:i" }}</td>
+                                <td>{% if visita.fecha_hora_salida %}{{ visita.fecha_hora_salida|date:"d/m/Y H:i" }}{% else %}Pendiente{% endif %}</td>
+                                <td><span class="status-{{ visita.estado }}">{{ visita.get_estado_display }}</span></td>
+                                <td class="action-links">
+                                    <a href="{% url 'detalle_visita' visita.id %}" class="btn btn-info btn-sm">Detalles</a>
+                                    <a href="{% url 'editar_visita' visita.id %}" class="btn btn-warning btn-sm">Registrar Salida</a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+
+                <div class="pagination">
+                    <span class="step-links">
+                        {% if page_obj.has_previous %}
+                            <a href="?page=1">&laquo; primera</a>
+                            <a href="?page={{ page_obj.previous_page_number }}">anterior</a>
+                        {% endif %}
+
+                        <span class="current">
+                            Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}.
+                        </span>
+
+                        {% if page_obj.has_next %}
+                            <a href="?page={{ page_obj.next_page_number }}">siguiente</a>
+                            <a href="?page={{ page_obj.paginator.num_pages }}">última &raquo;</a>
+                        {% endif %}
+                    </span>
                 </div>
             {% else %}
                 <p class="no-results-message">No se encontraron visitas.</p>
