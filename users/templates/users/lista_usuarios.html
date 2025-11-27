@@ -15,116 +15,133 @@
     {% include 'includes/admin_sidebar.html' %}
 
     <main class="flex-1 lg:ml-64 p-8">
-        <!-- Header -->
-        <div class="mb-6 flex items-center justify-between">
+        <div class="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-                <h1 class="text-3xl font-bold text-gray-900">Gestión de Usuarios 👥</h1>
-                <p class="text-gray-600 mt-1">Administra los usuarios del sistema</p>
+                <h1 class="text-3xl font-bold text-gray-900 flex items-center gap-3">
+                    <i class="fa-solid fa-users-cog text-blue-600"></i>
+                    Gestión de Usuarios
+                </h1>
+                <p class="text-gray-600 mt-1">Busca, visualiza y administra los perfiles de los usuarios del sistema.</p>
             </div>
-            <a href="{% url 'crear_usuario' %}" class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                <i class="fa-solid fa-user-plus"></i> Registrar Nuevo Usuario
+            <a href="{% url 'crear_usuario' %}" class="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white font-semibold rounded-lg shadow-sm hover:bg-blue-700 transition-all duration-200">
+                <i class="fa-solid fa-user-plus"></i>
+                <span>Registrar Usuario</span>
             </a>
         </div>
 
         <!-- Content Container -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div class=" p-6">
             <!-- Filters Section -->
-            <div class="mb-6 pb-6 border-b border-gray-200">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">
-                    <i class="fa-solid fa-filter text-blue-600"></i> Filtrar Usuarios
+            <div class="mb-6 pb-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-filter text-blue-500"></i>
+                    Filtros de Búsqueda
                 </h3>
                 
-                <form method="get" action="{% url 'lista_usuarios' %}" class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div>
-                        <label for="id_q" class="block text-sm font-medium text-gray-700 mb-2">Buscar:</label>
-                        <input id="id_q" type="search" name="q" placeholder="Email, nombre..." value="{{ request.GET.q }}"
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                    </div>
+                <form method="get" action="{% url 'lista_usuarios' %}" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <input type="search" name="q" placeholder="Nombre, email, documento..." value="{{ request.GET.q }}"
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition-shadow">
                     
-                    <div>
-                        <label for="id_rol" class="block text-sm font-medium text-gray-700 mb-2">Rol:</label>
-                        <select id="id_rol" name="rol" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                            <option value="">Todos los roles</option>
-                            {% for value, name in rol_choices %}
-                                <option value="{{ value }}" {% if current_rol == value %}selected{% endif %}>{{ name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
+                    <select name="rol" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition-shadow">
+                        <option value="">Todos los Roles</option>
+                        {% for value, name in rol_choices %}
+                            <option value="{{ value }}" {% if current_rol == value %}selected{% endif %}>{{ name }}</option>
+                        {% endfor %}
+                    </select>
 
-                    <div>
-                        <label for="id_estado" class="block text-sm font-medium text-gray-700 mb-2">Estado:</label>
-                        <select id="id_estado" name="estado" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                            <option value="">Todos los estados</option>
-                            <option value="True" {% if current_estado == 'True' %}selected{% endif %}>Activo</option>
-                            <option value="False" {% if current_estado == 'False' %}selected{% endif %}>Inactivo</option>
-                        </select>
-                    </div>
+                    <select name="estado" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition-shadow">
+                        <option value="">Cualquier Estado</option>
+                        <option value="True" {% if current_estado == 'True' %}selected{% endif %}>Activo</option>
+                        <option value="False" {% if current_estado == 'False' %}selected{% endif %}>Inactivo</option>
+                    </select>
 
-                    <div class="flex items-end">
-                        <button type="submit" class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                            <i class="fa-solid fa-search"></i> Buscar y Filtrar
-                        </button>
-                    </div>
+                    <button type="submit" class="w-full px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-all duration-200 flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-search"></i>
+                        <span>Buscar</span>
+                    </button>
                 </form>
             </div>
 
             <!-- Results Section -->
             <div>
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">Usuarios Registrados</h3>
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                    {{ users|length }} Usuario{{ users|pluralize }} Encontrado{{ users|pluralize }}
+                </h3>
 
                 {% if users %}
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
                         {% for user in users %}
-                            <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                                <h4 class="text-lg font-semibold text-gray-900 mb-2">
-                                    {{ user.persona.nombres|default:"Usuario" }} {{ user.persona.apellidos|default:"" }}
-                                </h4>
-                                <div class="space-y-1 text-sm mb-4">
-                                    <p><strong class="text-gray-700">Email:</strong> <span class="text-gray-600">{{ user.email }}</span></p>
-                                    <p><strong class="text-gray-700">Rol:</strong> <span class="text-gray-600">{{ user.get_rol_display }}</span></p>
-                                    <p><strong class="text-gray-700">Documento:</strong> <span class="text-gray-600">{{ user.persona.get_tipo_documento_display|default:"-" }} - {{ user.persona.numero_documento|default:"" }}</span></p>
-                                    <p><strong class="text-gray-700">Teléfono:</strong> <span class="text-gray-600">{{ user.persona.telefono|default:"-" }}</span></p>
-                                    <p>
-                                        <strong class="text-gray-700">Estado:</strong> 
-                                        {% if user.is_active %}
-                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">Activo</span>
-                                        {% else %}
-                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">Inactivo</span>
-                                        {% endif %}
-                                    </p>
+                            <div class="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-lg transition-all duration-200 flex flex-col">
+                                <div class="p-5 flex-grow">
+                                    <div class="flex items-center gap-4 mb-4">
+                                        <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xl">
+                                            {{ user.persona.nombres|default:"U"|first }}
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <h4 class="text-md font-bold text-gray-800 truncate" title="{{ user.persona.nombres|default:'Usuario' }} {{ user.persona.apellidos|default:'' }}">
+                                                {{ user.persona.nombres|default:"Usuario" }} {{ user.persona.apellidos|default:"" }}
+                                            </h4>
+                                            <p class="text-xs text-gray-500 truncate" title="{{ user.email }}">{{ user.email }}</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="space-y-2 text-xs">
+                                        <p class="flex items-center gap-2">
+                                            <i class="fa-solid fa-id-badge w-4 text-center text-gray-400"></i>
+                                            <strong class="text-gray-600">{{ user.get_rol_display }}</strong>
+                                        </p>
+                                        <p class="flex items-center gap-2">
+                                            <i class="fa-solid fa-id-card w-4 text-center text-gray-400"></i>
+                                            <span class="text-gray-600">{{ user.persona.get_tipo_documento_display|default:"-" }} - {{ user.persona.numero_documento|default:"N/A" }}</span>
+                                        </p>
+                                        <p class="flex items-center gap-2">
+                                            <i class="fa-solid fa-phone w-4 text-center text-gray-400"></i>
+                                            <span class="text-gray-600">{{ user.persona.telefono|default:"No registrado" }}</span>
+                                        </p>
+                                        <div class="flex items-center gap-2 pt-1">
+                                            <i class="fa-solid fa-circle w-4 text-center {% if user.is_active %}text-green-500{% else %}text-red-500{% endif %}"></i>
+                                            {% if user.is_active %}
+                                                <span class="px-2 py-0.5 text-xs font-semibold bg-green-100 text-green-800 rounded-full">Activo</span>
+                                            {% else %}
+                                                <span class="px-2 py-0.5 text-xs font-semibold bg-red-100 text-red-800 rounded-full">Inactivo</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
                                 </div>
                                 
-                                <div class="flex gap-2">
-                                    <a href="{% url 'detalle_usuario' user.id %}" class="flex-1 text-center px-3 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors">
-                                        <i class="fa-solid fa-eye"></i> Detalles
-                                    </a>
-                                    <a href="{% url 'editar_usuario' user.id %}" class="flex-1 text-center px-3 py-2 bg-yellow-600 text-white text-sm rounded-lg hover:bg-yellow-700 transition-colors">
-                                        <i class="fa-solid fa-pencil"></i> Editar
-                                    </a>
-                                    {% if not user.is_superuser %}
-                                    <form action="{% url 'toggle_user_active' user.id %}" method="post" class="flex-1">
-                                        {% csrf_token %}
-                                        <button type="submit" class="w-full px-3 py-2 {% if user.is_active %}bg-red-600 hover:bg-red-700{% else %}bg-green-600 hover:bg-green-700{% endif %} text-white text-sm rounded-lg transition-colors">
-                                            <i class="fa-solid {% if user.is_active %}fa-toggle-off{% else %}fa-toggle-on{% endif %}"></i>
-                                        </button>
-                                    </form>
-                                    {% endif %}
+                                <div class="bg-gray-50 p-3 border-t border-gray-200">
+                                    <div class="grid grid-cols-3 gap-2 text-xs">
+                                        <a href="{% url 'detalle_usuario' user.id %}" class="flex items-center justify-center gap-1.5 py-2 px-2 bg-white border border-gray-300 rounded-md hover:bg-gray-100 transition-colors">
+                                            <i class="fa-solid fa-eye text-gray-600"></i> Ver
+                                        </a>
+                                        <a href="{% url 'editar_usuario' user.id %}" class="flex items-center justify-center gap-1.5 py-2 px-2 bg-white border border-gray-300 rounded-md hover:bg-gray-100 transition-colors">
+                                            <i class="fa-solid fa-pencil text-gray-600"></i> Editar
+                                        </a>
+                                        {% if not user.is_superuser %}
+                                        <form action="{% url 'toggle_user_active' user.id %}" method="post" class="contents">
+                                            {% csrf_token %}
+                                            <button type="submit" class="flex items-center justify-center gap-1.5 py-2 px-2 rounded-md {% if user.is_active %}bg-red-500 text-white hover:bg-red-600{% else %}bg-green-500 text-white hover:bg-green-600{% endif %} transition-colors">
+                                                <i class="fa-solid {% if user.is_active %}fa-toggle-off{% else %}fa-toggle-on{% endif %}"></i>
+                                            </button>
+                                        </form>
+                                        {% endif %}
+                                    </div>
                                 </div>
                             </div>
                         {% endfor %}
                     </div>
                 {% else %}
-                    <p class="text-center text-gray-500 py-8">No se encontraron usuarios con esos filtros.</p>
+                    <div class="text-center py-12">
+                        <i class="fa-solid fa-user-slash text-4xl text-gray-300 mb-4"></i>
+                        <h3 class="text-lg font-semibold text-gray-800">No se Encontraron Usuarios</h3>
+                        <p class="text-gray-500 mt-1">Prueba con diferentes filtros o registra un nuevo usuario.</p>
+                    </div>
                 {% endif %}
             </div>
         </div>
 
         <!-- Back Link -->
-        <div class="mt-6">
-            <a href="{% url 'dashboard' %}" class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700">
-                <i class="fa-solid fa-arrow-left"></i> Volver al Dashboard
-            </a>
-        </div>
+
     </main>
 </div>
 {% endblock %}
