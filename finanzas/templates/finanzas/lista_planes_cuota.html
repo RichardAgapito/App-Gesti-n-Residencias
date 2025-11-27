@@ -1,42 +1,69 @@
 {% extends 'base.html' %}
 {% load static %}
 
+{% block bootstrap_css %}{% endblock %}
+{% block global_styles %}{% endblock %}
+
 {% block extra_css %}
-    <link rel="stylesheet" href="{% static 'css/complejos.css' %}"> {# Reusing existing CSS for now #}
+    <script src="https://cdn.tailwindcss.com"></script>
 {% endblock %}
 
 {% block content %}
-<div class="complejos-container"> {# Reusing container class #}
-    <div class="list-header">
-        <h1><i class="fa-solid fa-file-invoice"></i> Gestión de Planes de Cuota</h1>
-        <a href="{% url 'crear_plan_cuota' %}" class="btn btn-primary">
-            <i class="fa-solid fa-plus"></i> Crear Nuevo Plan de Cuota
-        </a>
-    </div>
-    <hr>
+<div class="min-h-screen bg-gray-50 flex font-sans">
+    
+    {% include 'includes/admin_sidebar.html' %}
 
-    <main class="results-content">
-        {% if planes %}
-            <div class="list-group"> {# Using a simple list group for now #}
-                {% for plan in planes %}
-                    <div class="list-group-item">
-                        <h4>{{ plan.nombre }}</h4>
-                        <p><strong>Frecuencia:</strong> {{ plan.get_frecuencia_display }}</p>
-                        <p><strong>Monto Base:</strong> ${{ plan.monto_base }}</p>
-                        <p><strong>Activo:</strong> {% if plan.activo %}Sí{% else %}No{% endif %}</p>
-                        <div class="action-links">
-                            <a href="{% url 'editar_plan_cuota' plan.id %}" class="btn btn-warning">
-                                <i class="fa-solid fa-pencil"></i> Editar
-                            </a>
-                            {# TODO: Add delete functionality later #}
-                        </div>
-                    </div>
-                {% endfor %}
+    <main class="flex-1 lg:ml-64 p-8">
+        <!-- Header -->
+        <div class="mb-6 flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900"><i class="fa-solid fa-file-invoice-dollar text-blue-600"></i> Gestión de Planes de Cuota</h1>
+                <p class="text-gray-600 mt-1">Administra los planes de cuota del sistema</p>
             </div>
-        {% else %}
-            <p class="no-results-message">No se encontraron planes de cuota.</p>
-        {% endif %}
+            <a href="{% url 'crear_plan_cuota' %}" class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                <i class="fa-solid fa-plus"></i> Crear Nuevo Plan de Cuota
+            </a>
+        </div>
+
+        <!-- Content Container -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            {% if planes %}
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {% for plan in planes %}
+                        <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                            <h4 class="text-lg font-semibold text-gray-900 mb-2">{{ plan.nombre }}</h4>
+                            <div class="space-y-1 text-sm mb-4">
+                                <p><strong class="text-gray-700">Frecuencia:</strong> <span class="text-gray-600">{{ plan.get_frecuencia_display }}</span></p>
+                                <p><strong class="text-gray-700">Monto Base:</strong> <span class="text-gray-600 font-semibold">${{ plan.monto_base }}</span></p>
+                                <p>
+                                    <strong class="text-gray-700">Activo:</strong> 
+                                    {% if plan.activo %}
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">Sí</span>
+                                    {% else %}
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">No</span>
+                                    {% endif %}
+                                </p>
+                            </div>
+                            
+                            <div class="flex gap-2">
+                                <a href="{% url 'editar_plan_cuota' plan.id %}" class="flex-1 text-center px-3 py-2 bg-yellow-600 text-white text-sm rounded-lg hover:bg-yellow-700 transition-colors">
+                                    <i class="fa-solid fa-pencil"></i> Editar
+                                </a>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-center text-gray-500 py-8">No se encontraron planes de cuota.</p>
+            {% endif %}
+        </div>
+
+        <!-- Back Link -->
+        <div class="mt-6">
+            <a href="{% url 'dashboard' %}" class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700">
+                <i class="fa-solid fa-arrow-left"></i> Volver al Dashboard
+            </a>
+        </div>
     </main>
-    <a href="{% url 'dashboard' %}" class="back-link">← Volver al Dashboard</a>
 </div>
 {% endblock %}

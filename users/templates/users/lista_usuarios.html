@@ -1,107 +1,130 @@
+{% extends 'base.html' %}
 {% load static %}
 
-{% block css_files %}
+{% block bootstrap_css %}{% endblock %}
+{% block global_styles %}{% endblock %}
+
+{% block extra_css %}
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="{% static 'css/lista_usuarios.css' %}">
 {% endblock %}
 
 {% block content %}
-<div class="user-list-container">
+<div class="min-h-screen bg-gray-50 flex font-sans">
     
-    <!-- Encabezado y botón se quedan arriba -->
-    <div class="list-header">
-        <h1>Gestión de Usuarios 👥</h1>
-        <a href="{% url 'crear_usuario' %}" class="btn btn-primary">
-            <i class="fa-solid fa-user-plus"></i> Registrar Nuevo Usuario
-        </a>
-    </div>
-    <hr>
+    {% include 'includes/admin_sidebar.html' %}
 
-    <!-- (NUEVO) Contenedor para el layout de 2 columnas -->
-    <div class="list-layout-container">
+    <main class="flex-1 lg:ml-64 p-8">
+        <!-- Header -->
+        <div class="mb-6 flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900">Gestión de Usuarios 👥</h1>
+                <p class="text-gray-600 mt-1">Administra los usuarios del sistema</p>
+            </div>
+            <a href="{% url 'crear_usuario' %}" class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                <i class="fa-solid fa-user-plus"></i> Registrar Nuevo Usuario
+            </a>
+        </div>
 
-        <!-- (NUEVO) Columna Izquierda: Filtros -->
-        <aside class="filter-sidebar">
-            <h3><i class="fa-solid fa-filter"></i> Filtrar Usuarios</h3>
-            
-            <form method="get" action="{% url 'lista_usuarios' %}" class="filters-form-vertical">
+        <!-- Content Container -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <!-- Filters Section -->
+            <div class="mb-6 pb-6 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                    <i class="fa-solid fa-filter text-blue-600"></i> Filtrar Usuarios
+                </h3>
                 
-                <div class="form-group">
-                    <label for="id_q">Buscar:</label>
-                    <input id="id_q" type="search" name="q" placeholder="Email, nombre..." value="{{ request.GET.q }}">
-                </div>
-                
-                <div class="form-group">
-                    <label for="id_rol">Rol:</label>
-                    <select id="id_rol" name="rol">
-                        <option value="">Todos los roles</option>
-                        {% for value, name in rol_choices %}
-                            <option value="{{ value }}" {% if current_rol == value %}selected{% endif %}>{{ name }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
+                <form method="get" action="{% url 'lista_usuarios' %}" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div>
+                        <label for="id_q" class="block text-sm font-medium text-gray-700 mb-2">Buscar:</label>
+                        <input id="id_q" type="search" name="q" placeholder="Email, nombre..." value="{{ request.GET.q }}"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    
+                    <div>
+                        <label for="id_rol" class="block text-sm font-medium text-gray-700 mb-2">Rol:</label>
+                        <select id="id_rol" name="rol" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">Todos los roles</option>
+                            {% for value, name in rol_choices %}
+                                <option value="{{ value }}" {% if current_rol == value %}selected{% endif %}>{{ name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
 
-                <div class="form-group">
-                    <label for="id_estado">Estado:</label>
-                    <select id="id_estado" name="estado">
-                        <option value="">Todos los estados</option>
-                        <option value="True" {% if current_estado == 'True' %}selected{% endif %}>Activo</option>
-                        <option value="False" {% if current_estado == 'False' %}selected{% endif %}>Inactivo</option>
-                    </select>
-                </div>
+                    <div>
+                        <label for="id_estado" class="block text-sm font-medium text-gray-700 mb-2">Estado:</label>
+                        <select id="id_estado" name="estado" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">Todos los estados</option>
+                            <option value="True" {% if current_estado == 'True' %}selected{% endif %}>Activo</option>
+                            <option value="False" {% if current_estado == 'False' %}selected{% endif %}>Inactivo</option>
+                        </select>
+                    </div>
 
-                <button type="submit">Buscar y Filtrar</button>
-            </form>
-        </aside>
+                    <div class="flex items-end">
+                        <button type="submit" class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                            <i class="fa-solid fa-search"></i> Buscar y Filtrar
+                        </button>
+                    </div>
+                </form>
+            </div>
 
-        <!-- (NUEVO) Columna Derecha: Resultados con Scroll -->
-        <main class="results-content">
-            <h3>Usuarios Registrados</h3>
+            <!-- Results Section -->
+            <div>
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Usuarios Registrados</h3>
 
-            {% if users %}
-                <div class="user-grid">
-                    {% for user in users %}
-                        <div class="user-card">
-                            <h4>{{ user.persona.nombres|default:"Usuario" }} {{ user.persona.apellidos|default:"" }}</h4>
-                            <p><strong>Email:</strong> {{ user.email }}</p>
-                            <p><strong>Rol:</strong> {{ user.get_rol_display }}</p>
-                            <p><strong>Documento:</strong> {{ user.persona.get_tipo_documento_display|default:"-" }} - {{ user.persona.numero_documento|default:"" }}</p>
-                            <p><strong>Teléfono:</strong> {{ user.persona.telefono|default:"-" }}</p>
-                            <p>
-                                <strong>Estado:</strong> 
-                                {% if user.is_active %}
-                                    <span class="status-active">Activo</span>
-                                {% else %}
-                                    <span class="status-inactive">Inactivo</span>
-                                {% endif %}
-                            </p>
-                            
-                            <!-- (MODIFICADO) Los 3 botones de Gemini -->
-                            <div class="action-links">
-                                <a href="{% url 'detalle_usuario' user.id %}" class="btn btn-info btn-sm">
-                                    <i class="fa-solid fa-eye"></i> Detalles
-                                </a>
-                                <a href="{% url 'editar_usuario' user.id %}" class="btn btn-warning btn-sm">
-                                    <i class="fa-solid fa-pencil"></i> Editar
-                                </a>
-                                {% if not user.is_superuser %}
-                                <form action="{% url 'toggle_user_active' user.id %}" method="post" style="display: inline;">
-                                    {% csrf_token %}
-                                    <button type="submit" class="btn {% if user.is_active %}btn-danger{% else %}btn-success{% endif %} btn-sm">
-                                        <i class="fa-solid {% if user.is_active %}fa-toggle-off{% else %}fa-toggle-on{% endif %}"></i> {% if user.is_active %}Desactivar{% else %}Activar{% endif %}
-                                    </button>
-                                </form>
-                                {% endif %}
+                {% if users %}
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {% for user in users %}
+                            <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                                <h4 class="text-lg font-semibold text-gray-900 mb-2">
+                                    {{ user.persona.nombres|default:"Usuario" }} {{ user.persona.apellidos|default:"" }}
+                                </h4>
+                                <div class="space-y-1 text-sm mb-4">
+                                    <p><strong class="text-gray-700">Email:</strong> <span class="text-gray-600">{{ user.email }}</span></p>
+                                    <p><strong class="text-gray-700">Rol:</strong> <span class="text-gray-600">{{ user.get_rol_display }}</span></p>
+                                    <p><strong class="text-gray-700">Documento:</strong> <span class="text-gray-600">{{ user.persona.get_tipo_documento_display|default:"-" }} - {{ user.persona.numero_documento|default:"" }}</span></p>
+                                    <p><strong class="text-gray-700">Teléfono:</strong> <span class="text-gray-600">{{ user.persona.telefono|default:"-" }}</span></p>
+                                    <p>
+                                        <strong class="text-gray-700">Estado:</strong> 
+                                        {% if user.is_active %}
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">Activo</span>
+                                        {% else %}
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">Inactivo</span>
+                                        {% endif %}
+                                    </p>
+                                </div>
+                                
+                                <div class="flex gap-2">
+                                    <a href="{% url 'detalle_usuario' user.id %}" class="flex-1 text-center px-3 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors">
+                                        <i class="fa-solid fa-eye"></i> Detalles
+                                    </a>
+                                    <a href="{% url 'editar_usuario' user.id %}" class="flex-1 text-center px-3 py-2 bg-yellow-600 text-white text-sm rounded-lg hover:bg-yellow-700 transition-colors">
+                                        <i class="fa-solid fa-pencil"></i> Editar
+                                    </a>
+                                    {% if not user.is_superuser %}
+                                    <form action="{% url 'toggle_user_active' user.id %}" method="post" class="flex-1">
+                                        {% csrf_token %}
+                                        <button type="submit" class="w-full px-3 py-2 {% if user.is_active %}bg-red-600 hover:bg-red-700{% else %}bg-green-600 hover:bg-green-700{% endif %} text-white text-sm rounded-lg transition-colors">
+                                            <i class="fa-solid {% if user.is_active %}fa-toggle-off{% else %}fa-toggle-on{% endif %}"></i>
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                </div>
                             </div>
-                        </div>
-                    {% endfor %}
-                </div>
-            {% else %}
-                <p class="no-results-message">No se encontraron usuarios con esos filtros.</p>
-            {% endif %}
-        </main> <!-- Fin de .results-content -->
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-center text-gray-500 py-8">No se encontraron usuarios con esos filtros.</p>
+                {% endif %}
+            </div>
+        </div>
 
-    </div> <!-- Fin de .list-layout-container -->
-
-    <a href="{% url 'dashboard' %}" class="back-link">← Volver al Dashboard</a>
+        <!-- Back Link -->
+        <div class="mt-6">
+            <a href="{% url 'dashboard' %}" class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700">
+                <i class="fa-solid fa-arrow-left"></i> Volver al Dashboard
+            </a>
+        </div>
+    </main>
 </div>
 {% endblock %}

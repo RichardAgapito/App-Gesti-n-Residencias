@@ -5,268 +5,129 @@
 {% block global_styles %}{% endblock %}
 
 {% block extra_css %}
-    <!-- 1. (ELIMINADO) Ya no carga el CSS del dashboard -->
-    
-    <!-- 2. Estilos de esta página -->
-    <style>
-        /* (NUEVO) Estilos de Body y Contenedor Principal */
-        body {
-            background-color: #f0f2f5 !important;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            margin: 0;
-            color: #333;
-        }
-        .amenidades-container {
-            max-width: 1400px;
-            margin: 2rem auto;
-            padding: 2rem;
-        }
-
-        .amenidades-container h2 {
-            color: #2c3e50;
-            margin-bottom: 2rem;
-            text-align: center;
-            font-size: 2rem;
-            font-weight: 600;
-        }
-        
-        /* (TUS ESTILOS ORIGINALES) */
-        .amenidades-content {
-            display: grid;
-            grid-template-columns: 1fr 2fr;
-            gap: 2rem;
-        }
-        .amenidad-card {
-            background-color: #fff;
-            padding: 2rem;
-            border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.07);
-        }
-        .amenidad-card h3 {
-            color: #34495e;
-            margin-top: 0;
-            margin-bottom: 1.5rem;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        /* Form Styles */
-        form .form-group {
-            margin-bottom: 1.2rem;
-        }
-        form label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 600;
-            color: #555;
-        }
-        form input[type="text"],
-        form input[type="number"],
-        form textarea {
-            width: 100%;
-            padding: 10px 14px;
-            border: 1px solid #ced4da;
-            border-radius: 5px;
-            font-size: 1rem;
-            box-sizing: border-box; /* Añadido para consistencia */
-            transition: border-color 0.2s, box-shadow 0.2s;
-        }
-        form input:focus, form textarea:focus {
-            outline: none;
-            border-color: #3498db;
-            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.15);
-        }
-        form .form-errors {
-            color: #e74c3c;
-            font-size: 0.9rem;
-            margin-top: 0.3rem;
-        }
-        .btn-submit {
-            width: 100%;
-            padding: 12px;
-            background-color: #3498db;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            font-size: 1.1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-        .btn-submit:hover {
-            background-color: #2980b9;
-        }
-
-        /* Amenity List Styles */
-        .amenidades-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-        .amenidad-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 1rem;
-            border-bottom: 1px solid #f1f3f5;
-        }
-        .amenidad-item:last-child {
-            border-bottom: none;
-        }
-        .amenidad-item span {
-            font-weight: 500;
-            color: #333;
-        }
-        .amenidad-actions {
-            display: flex;
-            gap: 0.5rem;
-        }
-        .amenidad-actions a {
-            padding: 8px 12px;
-            border-radius: 5px;
-            text-decoration: none;
-            color: white;
-            font-size: 0.85rem;
-            transition: opacity 0.2s;
-        }
-        .amenidad-actions a:hover { opacity: 0.85; }
-        .btn-edit { background-color: #f39c12; }
-        .btn-block { background-color: #e74c3c; }
-        .btn-delete { background-color: #95a5a6; }
-
-        .back-link {
-            display: inline-block;
-            margin-top: 2rem;
-            text-decoration: none;
-            color: #3498db;
-            font-weight: 500;
-        }
-
-        /* Responsive */
-        @media (max-width: 992px) {
-            .amenidades-content {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        .bloqueos-list {
-            margin-top: 1rem;
-            padding-top: 1rem;
-            border-top: 1px solid #f1f3f5;
-            text-align: left;
-        }
-        .bloqueos-list h4 {
-            font-size: 0.95rem;
-            color: #555;
-            margin-bottom: 0.8rem;
-        }
-        .bloqueos-list ul {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-        .bloqueos-list li {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0.5rem 0;
-            font-size: 0.9rem;
-            color: #666;
-            border-bottom: 1px dashed #e0e0e0;
-        }
-        .bloqueos-list li:last-child {
-            border-bottom: none;
-        }
-        .btn-unblock {
-            background-color: #2ecc71; /* Green color for unblock */
-            padding: 8px 12px; /* Reusing existing button padding */
-            border-radius: 5px;
-            text-decoration: none;
-            color: white;
-            font-size: 0.85rem;
-            transition: opacity 0.2s;
-        }
-        .btn-unblock:hover { opacity: 0.85; }
-    </style>
+    <script src="https://cdn.tailwindcss.com"></script>
 {% endblock %}
 
 {% block content %}
-<!-- (INICIO) ESTRUCTURA STANDALONE -->
-<div class="amenidades-container">
+<div class="min-h-screen bg-gray-50 flex font-sans">
     
-    <h2><i class="fas fa-concierge-bell"></i> Gestionar Amenidades</h2>
-            
-    <div class="amenidades-content">
-        <div class="amenidad-card">
-            <h3><i class="fas fa-plus-circle"></i> Crear Nueva Amenidad</h3>
-            <form method="post">
+    {% include 'includes/admin_sidebar.html' %}
+
+    <main class="flex-1 lg:ml-64 p-8">
+        <!-- Header -->
+        <div class="mb-6">
+            <h1 class="text-3xl font-bold text-gray-900"><i class="fa-solid fa-star text-blue-600"></i> Gestionar Amenidades</h1>
+            <p class="text-gray-600 mt-1">Administra las amenidades de los complejos</p>
+        </div>
+
+        <!-- Content Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Create Amenity Form -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                    <i class="fa-solid fa-plus-circle text-blue-600"></i> Crear Nueva Amenidad
+                </h3>
+                
+                <form method="post">
                     {% csrf_token %}
                     {% if form.non_field_errors %}
-                        <div class="form-errors">
+                        <div class="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
                             {{ form.non_field_errors }}
                         </div>
                     {% endif %}
                     
                     {% for field in form %}
-                        <div class="form-group">
-                            {{ field.label_tag }}
-                            {{ field }}
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">{{ field.label }}</label>
+                            {% if field.field.widget.input_type == 'textarea' %}
+                                <textarea name="{{ field.name }}" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" rows="3">{{ field.value|default:'' }}</textarea>
+                            {% else %}
+                                {{ field }}
+                            {% endif %}
                             {% if field.help_text %}
-                                <small style="color: #777;">{{ field.help_text }}</small>
+                                <small class="text-gray-500 text-xs mt-1 block">{{ field.help_text }}</small>
                             {% endif %}
                             {% for error in field.errors %}
-                                <div class="form-errors">{{ error }}</div>
+                                <div class="text-red-600 text-sm mt-1">{{ error }}</div>
                             {% endfor %}
                         </div>
                     {% endfor %}
                     
-                    <button type="submit" class="btn-submit">Guardar Amenidad</button>
+                    <button type="submit" class="w-full px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold">
+                        <i class="fa-solid fa-save"></i> Guardar Amenidad
+                    </button>
                 </form>
             </div>
 
-            <div class="amenidad-card">
-                <h3><i class="fas fa-list-ul"></i> Amenidades Existentes</h3>
-                <ul class="amenidades-list">
+            <!-- Existing Amenities List -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                    <i class="fa-solid fa-list-ul text-blue-600"></i> Amenidades Existentes
+                </h3>
+                
+                <div class="space-y-4">
                     {% for amenidad in amenidades %}
-                        <li class="amenidad-item">
-                            <span>{{ amenidad.nombre }}</span>
-                            <div class="amenidad-actions">
-                                <a href="{% url 'editar_amenidad' amenidad.id %}" class="btn-edit" title="Editar">
-                                    <i class="fas fa-pencil-alt"></i>
-                                </a>
-                                <a href="{% url 'bloquear_horario' amenidad.id %}" class="btn-block" title="Bloquear Horario">
-                                    <i class="fas fa-ban"></i>
-                                </a>
-                                <a href="{% url 'eliminar_amenidad' amenidad.id %}" class="btn-delete" title="Eliminar">
-                                    <i class="fas fa-trash-alt"></i>
-                                </a>
+                        <div class="border border-gray-200 rounded-lg p-4">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="font-semibold text-gray-900">{{ amenidad.nombre }}</span>
+                                <div class="flex gap-2">
+                                    <a href="{% url 'editar_amenidad' amenidad.id %}" class="px-3 py-1 bg-yellow-600 text-white rounded hover:bg-yellow-700 text-sm" title="Editar">
+                                        <i class="fa-solid fa-pencil"></i>
+                                    </a>
+                                    <a href="{% url 'bloquear_horario' amenidad.id %}" class="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-sm" title="Bloquear Horario">
+                                        <i class="fa-solid fa-ban"></i>
+                                    </a>
+                                    <a href="{% url 'eliminar_amenidad' amenidad.id %}" class="px-3 py-1 bg-gray-600 text-white rounded hover:bg-gray-700 text-sm" title="Eliminar">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </a>
+                                </div>
                             </div>
-                        </li>
-                        {% if amenidad.bloqueos %}
-                            <div class="bloqueos-list">
-                                <h4>Horarios Bloqueados:</h4>
-                                <ul>
-                                    {% for bloqueo in amenidad.bloqueos %}
-                                        <li>
-                                            {{ bloqueo.fecha_inicio|date:"d M Y H:i" }} - {{ bloqueo.fecha_fin|date:"d M Y H:i" }}
-                                            <a href="{% url 'unblock_horario' bloqueo.id %}" class="btn-unblock" title="Desbloquear">
-                                                <i class="fas fa-unlock"></i>
-                                            </a>
-                                        </li>
-                                    {% endfor %}
-                                </ul>
-                            </div>
-                        {% endif %}
+                            
+                            {% if amenidad.bloqueos %}
+                                <div class="mt-3 pt-3 border-t border-gray-200">
+                                    <h4 class="text-sm font-medium text-gray-700 mb-2">Horarios Bloqueados:</h4>
+                                    <ul class="space-y-2">
+                                        {% for bloqueo in amenidad.bloqueos %}
+                                            <li class="flex justify-between items-center text-sm text-gray-600 pb-2 border-b border-dashed border-gray-200 last:border-0">
+                                                <span>{{ bloqueo.fecha_inicio|date:"d M Y H:i" }} - {{ bloqueo.fecha_fin|date:"d M Y H:i" }}</span>
+                                                <a href="{% url 'unblock_horario' bloqueo.id %}" class="px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-xs" title="Desbloquear">
+                                                    <i class="fa-solid fa-unlock"></i>
+                                                </a>
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            {% endif %}
+                        </div>
                     {% empty %}
-                        <li class="amenidad-item-empty">No hay amenidades creadas.</li>
+                        <p class="text-center text-gray-500 py-8">No hay amenidades creadas.</p>
                     {% endfor %}
-                </ul>
+                </div>
             </div>
         </div>
 
-        <a href="{% url 'dashboard' %}" class="back-link"> <i class="fas fa-arrow-left"></i> Volver al Dashboard</a>
-        
+        <!-- Back Link -->
+        <div class="mt-6">
+            <a href="{% url 'dashboard' %}" class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700">
+                <i class="fa-solid fa-arrow-left"></i> Volver al Dashboard
+            </a>
+        </div>
+    </main>
 </div>
-<!-- (FIN) ESTRUCTURA STANDALONE -->
+
+<style>
+/* Estilos para los campos del formulario de Django */
+#id_nombre, #id_descripcion, #id_capacidad, #id_costo_reserva, #id_complejo {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+}
+#id_nombre:focus, #id_descripcion:focus, #id_capacidad:focus, #id_costo_reserva:focus, #id_complejo:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+</style>
 {% endblock %}

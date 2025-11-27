@@ -14,17 +14,61 @@ from complejos.models import PropiedadPersona
 @login_required
 def dashboard(request):
     if request.user.rol == 'ADMIN':
+        from django.db.models import Count, Q
+        from datetime import timedelta
+        from django.utils import timezone
         
-
+        # Estadísticas básicas
         total_usuarios = CustomUser.objects.count()
         total_complejos = Complejo.objects.count()
         visitas_hoy = 0
 
+        # Calcular ocupación por complejo
+        complejos_data = []
+        complejos = Complejo.objects.all()
+        for complejo in complejos:
+            total_propiedades = complejo.propiedades.count()
+            if total_propiedades > 0:
+                propiedades_ocupadas = complejo.propiedades.filter(estado_ocupacion='ocupado').count()
+                porcentaje_ocupacion = int((propiedades_ocupadas / total_propiedades) * 100)
+                complejos_data.append({
+                    'nombre': complejo.nombre,
+                    'ocupacion': porcentaje_ocupacion,
+                    'unidades': total_propiedades
+                })
+
+        # Actividad reciente (últimos 7 días)
+        hace_7_dias = timezone.now() - timedelta(days=7)
+        actividad_reciente = []
+
+        # Usuarios recientes
+        usuarios_recientes = CustomUser.objects.filter(date_joined__gte=hace_7_dias).order_by('-date_joined')[:3]
+        for usuario in usuarios_recientes:
+            actividad_reciente.append({
+                'tipo': 'usuario',
+                'descripcion': f'Nuevo usuario registrado: {usuario.persona.nombres if usuario.persona else usuario.email}',
+                'tiempo': usuario.date_joined
+            })
+
+        # Avisos recientes
+        avisos_recientes = Aviso.objects.filter(fecha_creacion__gte=hace_7_dias).order_by('-fecha_creacion')[:2]
+        for aviso in avisos_recientes:
+            actividad_reciente.append({
+                'tipo': 'aviso',
+                'descripcion': f'Nuevo aviso publicado: {aviso.titulo}',
+                'tiempo': aviso.fecha_creacion
+            })
+
+        # Ordenar por tiempo (más reciente primero)
+        actividad_reciente.sort(key=lambda x: x['tiempo'], reverse=True)
+        actividad_reciente = actividad_reciente[:5]  # Limitar a 5 items
 
         context = {
             'total_usuarios': total_usuarios,
             'total_complejos': total_complejos,
             'visitas_hoy': visitas_hoy,
+            'complejos_data': complejos_data,
+            'actividad_reciente': actividad_reciente,
         }
         return render(request, 'users/dashboard.html', context)
     
@@ -54,6 +98,7 @@ def dashboard(request):
             'avisos_recientes': avisos_recientes,
         }
         return render(request, 'users/dashboard.html', context)
+
 
 def es_admin(user):
     return user.is_authenticated and user.rol == CustomUser.Rol.ADMIN
