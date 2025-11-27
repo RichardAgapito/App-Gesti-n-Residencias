@@ -60,6 +60,10 @@ class EditarUsuarioForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         if user:
             self.fields['is_active'].initial = user.is_active
+        
+        for field_name, field in self.fields.items():
+            field.widget.attrs['class'] = 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
+
 
 class CustomUserCreationForm(forms.ModelForm):
     tipo_documento = forms.ChoiceField(choices=Persona.TipoDocumento.choices)
@@ -128,6 +132,9 @@ class CustomUserCreationForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        for field_name, field in self.fields.items():
+            field.widget.attrs['class'] = 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
+
 
     def clean(self):
         cleaned_data = super().clean()

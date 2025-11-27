@@ -14,134 +14,251 @@
     
     {% include 'includes/admin_sidebar.html' %}
 
-    <main class="flex-1 lg:ml-64 p-8">
-        <div class="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-                <h1 class="text-3xl font-bold text-gray-900 flex items-center gap-3">
-                    <i class="fa-solid fa-users-cog text-blue-600"></i>
-                    Gestión de Usuarios
-                </h1>
-                <p class="text-gray-600 mt-1">Busca, visualiza y administra los perfiles de los usuarios del sistema.</p>
+    <main class="flex-1 lg:ml-64 p-8 overflow-y-auto">
+        <div id="user-list-view">
+            <div class="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900 flex items-center gap-3">
+                        <i class="fa-solid fa-users-cog text-blue-600"></i>
+                        Gestión de Usuarios
+                    </h1>
+                    <p class="text-gray-600 mt-1">Busca, visualiza y administra los perfiles de los usuarios del sistema.</p>
+                </div>
+                <a href="{% url 'crear_usuario' %}" id="btn-crear-usuario" class="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white font-semibold rounded-lg shadow-sm hover:bg-blue-700 transition-all duration-200">
+                    <i class="fa-solid fa-user-plus"></i>
+                    <span>Registrar Usuario</span>
+                </a>
             </div>
-            <a href="{% url 'crear_usuario' %}" class="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white font-semibold rounded-lg shadow-sm hover:bg-blue-700 transition-all duration-200">
-                <i class="fa-solid fa-user-plus"></i>
-                <span>Registrar Usuario</span>
-            </a>
-        </div>
 
-        <!-- Content Container -->
-        <div class=" p-6">
-            <!-- Filters Section -->
-            <div class="mb-6 pb-6">
-                <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                    <i class="fa-solid fa-filter text-blue-500"></i>
-                    Filtros de Búsqueda
-                </h3>
-                
-                <form method="get" action="{% url 'lista_usuarios' %}" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <input type="search" name="q" placeholder="Nombre, email, documento..." value="{{ request.GET.q }}"
-                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition-shadow">
+            <!-- Content Container -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <!-- Filters Section -->
+                <div class="mb-6 pb-6 border-b border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-filter text-blue-500"></i>
+                        Filtros de Búsqueda
+                    </h3>
                     
-                    <select name="rol" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition-shadow">
-                        <option value="">Todos los Roles</option>
-                        {% for value, name in rol_choices %}
-                            <option value="{{ value }}" {% if current_rol == value %}selected{% endif %}>{{ name }}</option>
-                        {% endfor %}
-                    </select>
+                    <form method="get" action="{% url 'lista_usuarios' %}" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <input type="search" name="q" placeholder="Nombre, email, documento..." value="{{ request.GET.q }}"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition-shadow">
+                        
+                        <select name="rol" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition-shadow">
+                            <option value="">Todos los Roles</option>
+                            {% for value, name in rol_choices %}
+                                <option value="{{ value }}" {% if current_rol == value %}selected{% endif %}>{{ name }}</option>
+                            {% endfor %}
+                        </select>
 
-                    <select name="estado" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition-shadow">
-                        <option value="">Cualquier Estado</option>
-                        <option value="True" {% if current_estado == 'True' %}selected{% endif %}>Activo</option>
-                        <option value="False" {% if current_estado == 'False' %}selected{% endif %}>Inactivo</option>
-                    </select>
+                        <select name="estado" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition-shadow">
+                            <option value="">Cualquier Estado</option>
+                            <option value="True" {% if current_estado == 'True' %}selected{% endif %}>Activo</option>
+                            <option value="False" {% if current_estado == 'False' %}selected{% endif %}>Inactivo</option>
+                        </select>
 
-                    <button type="submit" class="w-full px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-all duration-200 flex items-center justify-center gap-2">
-                        <i class="fa-solid fa-search"></i>
-                        <span>Buscar</span>
-                    </button>
-                </form>
-            </div>
+                        <button type="submit" class="w-full px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-all duration-200 flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-search"></i>
+                            <span>Buscar</span>
+                        </button>
+                    </form>
+                </div>
 
-            <!-- Results Section -->
-            <div>
-                <h3 class="text-lg font-semibold text-gray-800 mb-4">
-                    {{ users|length }} Usuario{{ users|pluralize }} Encontrado{{ users|pluralize }}
-                </h3>
+                <!-- Results Section -->
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                        {{ users|length }} Usuario{{ users|pluralize }} Encontrado{{ users|pluralize }}
+                    </h3>
 
-                {% if users %}
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-                        {% for user in users %}
-                            <div class="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-lg transition-all duration-200 flex flex-col">
-                                <div class="p-5 flex-grow">
-                                    <div class="flex items-center gap-4 mb-4">
-                                        <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xl">
-                                            {{ user.persona.nombres|default:"U"|first }}
+                    {% if users %}
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+                            {% for user in users %}
+                                <div class="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-lg transition-all duration-200 flex flex-col">
+                                    <div class="p-5 flex-grow">
+                                        <div class="flex items-center gap-4 mb-4">
+                                            <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xl">
+                                                {{ user.persona.nombres|default:"U"|first }}
+                                            </div>
+                                            <div class="flex-1 min-w-0">
+                                                <h4 class="text-md font-bold text-gray-800 truncate" title="{{ user.persona.nombres|default:'Usuario' }} {{ user.persona.apellidos|default:'' }}">
+                                                    {{ user.persona.nombres|default:"Usuario" }} {{ user.persona.apellidos|default:"" }}
+                                                </h4>
+                                                <p class="text-xs text-gray-500 truncate" title="{{ user.email }}">{{ user.email }}</p>
+                                            </div>
                                         </div>
-                                        <div class="flex-1 min-w-0">
-                                            <h4 class="text-md font-bold text-gray-800 truncate" title="{{ user.persona.nombres|default:'Usuario' }} {{ user.persona.apellidos|default:'' }}">
-                                                {{ user.persona.nombres|default:"Usuario" }} {{ user.persona.apellidos|default:"" }}
-                                            </h4>
-                                            <p class="text-xs text-gray-500 truncate" title="{{ user.email }}">{{ user.email }}</p>
+                                        
+                                        <div class="space-y-2 text-xs">
+                                            <p class="flex items-center gap-2">
+                                                <i class="fa-solid fa-id-badge w-4 text-center text-gray-400"></i>
+                                                <strong class="text-gray-600">{{ user.get_rol_display }}</strong>
+                                            </p>
+                                            <p class="flex items-center gap-2">
+                                                <i class="fa-solid fa-id-card w-4 text-center text-gray-400"></i>
+                                                <span class="text-gray-600">{{ user.persona.get_tipo_documento_display|default:"-" }} - {{ user.persona.numero_documento|default:"N/A" }}</span>
+                                            </p>
+                                            <p class="flex items-center gap-2">
+                                                <i class="fa-solid fa-phone w-4 text-center text-gray-400"></i>
+                                                <span class="text-gray-600">{{ user.persona.telefono|default:"No registrado" }}</span>
+                                            </p>
+                                            <div class="flex items-center gap-2 pt-1">
+                                                <i class="fa-solid fa-circle w-4 text-center {% if user.is_active %}text-green-500{% else %}text-red-500{% endif %}"></i>
+                                                {% if user.is_active %}
+                                                    <span class="px-2 py-0.5 text-xs font-semibold bg-green-100 text-green-800 rounded-full">Activo</span>
+                                                {% else %}
+                                                    <span class="px-2 py-0.5 text-xs font-semibold bg-red-100 text-red-800 rounded-full">Inactivo</span>
+                                                {% endif %}
+                                            </div>
                                         </div>
                                     </div>
                                     
-                                    <div class="space-y-2 text-xs">
-                                        <p class="flex items-center gap-2">
-                                            <i class="fa-solid fa-id-badge w-4 text-center text-gray-400"></i>
-                                            <strong class="text-gray-600">{{ user.get_rol_display }}</strong>
-                                        </p>
-                                        <p class="flex items-center gap-2">
-                                            <i class="fa-solid fa-id-card w-4 text-center text-gray-400"></i>
-                                            <span class="text-gray-600">{{ user.persona.get_tipo_documento_display|default:"-" }} - {{ user.persona.numero_documento|default:"N/A" }}</span>
-                                        </p>
-                                        <p class="flex items-center gap-2">
-                                            <i class="fa-solid fa-phone w-4 text-center text-gray-400"></i>
-                                            <span class="text-gray-600">{{ user.persona.telefono|default:"No registrado" }}</span>
-                                        </p>
-                                        <div class="flex items-center gap-2 pt-1">
-                                            <i class="fa-solid fa-circle w-4 text-center {% if user.is_active %}text-green-500{% else %}text-red-500{% endif %}"></i>
-                                            {% if user.is_active %}
-                                                <span class="px-2 py-0.5 text-xs font-semibold bg-green-100 text-green-800 rounded-full">Activo</span>
-                                            {% else %}
-                                                <span class="px-2 py-0.5 text-xs font-semibold bg-red-100 text-red-800 rounded-full">Inactivo</span>
+                                    <div class="bg-gray-50 p-3 border-t border-gray-200">
+                                        <div class="grid grid-cols-3 gap-2 text-xs">
+                                            <a href="{% url 'detalle_usuario' user.id %}" class="btn-detalle-usuario flex items-center justify-center gap-1.5 py-2 px-2 bg-white border border-gray-300 rounded-md hover:bg-gray-100 transition-colors">
+                                                <i class="fa-solid fa-eye text-gray-600"></i> Ver
+                                            </a>
+                                            <a href="{% url 'editar_usuario' user.id %}" class="btn-editar-usuario flex items-center justify-center gap-1.5 py-2 px-2 bg-white border border-gray-300 rounded-md hover:bg-gray-100 transition-colors">
+                                                <i class="fa-solid fa-pencil text-gray-600"></i> Editar
+                                            </a>
+                                            {% if not user.is_superuser %}
+                                            <form action="{% url 'toggle_user_active' user.id %}" method="post" class="contents">
+                                                {% csrf_token %}
+                                                <button type="submit" class="flex items-center justify-center gap-1.5 py-2 px-2 rounded-md {% if user.is_active %}bg-red-500 text-white hover:bg-red-600{% else %}bg-green-500 text-white hover:bg-green-600{% endif %} transition-colors">
+                                                    <i class="fa-solid {% if user.is_active %}fa-toggle-off{% else %}fa-toggle-on{% endif %}"></i>
+                                                </button>
+                                            </form>
                                             {% endif %}
                                         </div>
                                     </div>
                                 </div>
-                                
-                                <div class="bg-gray-50 p-3 border-t border-gray-200">
-                                    <div class="grid grid-cols-3 gap-2 text-xs">
-                                        <a href="{% url 'detalle_usuario' user.id %}" class="flex items-center justify-center gap-1.5 py-2 px-2 bg-white border border-gray-300 rounded-md hover:bg-gray-100 transition-colors">
-                                            <i class="fa-solid fa-eye text-gray-600"></i> Ver
-                                        </a>
-                                        <a href="{% url 'editar_usuario' user.id %}" class="flex items-center justify-center gap-1.5 py-2 px-2 bg-white border border-gray-300 rounded-md hover:bg-gray-100 transition-colors">
-                                            <i class="fa-solid fa-pencil text-gray-600"></i> Editar
-                                        </a>
-                                        {% if not user.is_superuser %}
-                                        <form action="{% url 'toggle_user_active' user.id %}" method="post" class="contents">
-                                            {% csrf_token %}
-                                            <button type="submit" class="flex items-center justify-center gap-1.5 py-2 px-2 rounded-md {% if user.is_active %}bg-red-500 text-white hover:bg-red-600{% else %}bg-green-500 text-white hover:bg-green-600{% endif %} transition-colors">
-                                                <i class="fa-solid {% if user.is_active %}fa-toggle-off{% else %}fa-toggle-on{% endif %}"></i>
-                                            </button>
-                                        </form>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            </div>
-                        {% endfor %}
-                    </div>
-                {% else %}
-                    <div class="text-center py-12">
-                        <i class="fa-solid fa-user-slash text-4xl text-gray-300 mb-4"></i>
-                        <h3 class="text-lg font-semibold text-gray-800">No se Encontraron Usuarios</h3>
-                        <p class="text-gray-500 mt-1">Prueba con diferentes filtros o registra un nuevo usuario.</p>
-                    </div>
-                {% endif %}
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-12">
+                            <i class="fa-solid fa-user-slash text-4xl text-gray-300 mb-4"></i>
+                            <h3 class="text-lg font-semibold text-gray-800">No se Encontraron Usuarios</h3>
+                            <p class="text-gray-500 mt-1">Prueba con diferentes filtros o registra un nuevo usuario.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Back Link -->
+            <div class="mt-8">
+                <a href="{% url 'dashboard' %}" class="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors">
+                    <i class="fa-solid fa-arrow-left"></i>
+                    <span>Volver al Dashboard</span>
+                </a>
             </div>
         </div>
-
-        <!-- Back Link -->
-
+        <div id="dynamic-content" class="hidden"></div>
     </main>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const userListView = document.getElementById('user-list-view');
+    const dynamicContent = document.getElementById('dynamic-content');
+
+    function showListView() {
+        userListView.classList.remove('hidden');
+        dynamicContent.classList.add('hidden');
+        dynamicContent.innerHTML = '';
+        window.history.pushState({path: '{% url "lista_usuarios" %}'}, '', '{% url "lista_usuarios" %}');
+        attachMainPageListeners();
+    }
+
+    async function loadContent(url) {
+        try {
+            const response = await fetch(url, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+            const html = await response.text();
+            userListView.classList.add('hidden');
+            dynamicContent.innerHTML = html;
+            dynamicContent.classList.remove('hidden');
+            window.history.pushState({path: url}, '', url);
+            attachDynamicContentListeners();
+        } catch (error) {
+            console.error('Error al cargar el contenido:', error);
+        }
+    }
+
+    function attachMainPageListeners() {
+        document.getElementById('btn-crear-usuario').addEventListener('click', function(e) {
+            e.preventDefault();
+            loadContent(this.href);
+        });
+
+        document.querySelectorAll('.btn-detalle-usuario').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                loadContent(this.href);
+            });
+        });
+
+        document.querySelectorAll('.btn-editar-usuario').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                loadContent(this.href);
+            });
+        });
+    }
+
+    function attachDynamicContentListeners() {
+        const form = dynamicContent.querySelector('form');
+        if (form) {
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const formData = new FormData(form);
+                try {
+                    const response = await fetch(form.action, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRFToken': '{{ csrf_token }}'
+                        }
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        window.location.href = '{% url "lista_usuarios" %}';
+                    } else {
+                        dynamicContent.innerHTML = data.html;
+                        attachDynamicContentListeners();
+                    }
+                } catch (error) {
+                    console.error('Error al enviar el formulario:', error);
+                }
+            });
+        }
+        
+        dynamicContent.querySelectorAll('.back-link').forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                showListView();
+            });
+        });
+
+        dynamicContent.querySelectorAll('.btn-editar-usuario').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                loadContent(this.href);
+            });
+        });
+    }
+
+    window.addEventListener('popstate', function(event) {
+        if (event.state && event.state.path) {
+            if (event.state.path === '{% url "lista_usuarios" %}') {
+                showListView();
+            } else {
+                loadContent(event.state.path);
+            }
+        }
+    });
+
+    attachMainPageListeners();
+});
+</script>
 {% endblock %}
