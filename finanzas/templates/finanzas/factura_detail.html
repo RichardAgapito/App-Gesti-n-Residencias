@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/complejos.css' %}"> {# Reusing existing CSS for now #}
+    <style>
+        .invoice-box {
+            max-width: 800px;
+            margin: auto;
+            padding: 30px;
+            border: 1px solid #eee;
+            box-shadow: 0 0 10px rgba(0, 0, 0, .15);
+            font-size: 16px;
+            line-height: 24px;
+            font-family: 'Helvetica Neue', 'Helvetica', Helvetica, Arial, sans-serif;
+            color: #555;
+        }
+        .invoice-box table {
+            width: 100%;
+            line-height: inherit;
+            text-align: left;
+        }
+        .invoice-box table td {
+            padding: 5px;
+            vertical-align: top;
+        }
+        .invoice-box table tr.top table td {
+            padding-bottom: 20px;
+        }
+        .invoice-box table tr.top table td.title {
+            font-size: 45px;
+            line-height: 45px;
+            color: #333;
+        }
+        .invoice-box table tr.information table td {
+            padding-bottom: 40px;
+        }
+        .invoice-box table tr.heading td {
+            background: #eee;
+            border-bottom: 1px solid #ddd;
+            font-weight: bold;
+        }
+        .invoice-box table tr.details td {
+            padding-bottom: 20px;
+        }
+        .invoice-box table tr.item td{
+            border-bottom: 1px solid #eee;
+        }
+        .invoice-box table tr.item.last td {
+            border-bottom: none;
+        }
+        .invoice-box table tr.total td:nth-child(2) {
+            border-top: 2px solid #eee;
+            font-weight: bold;
+        }
+        .text-right {
+            text-align: right;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="complejos-container">
+    <div class="invoice-box">
+        <table>
+            <tr class="top">
+                <td colspan="2">
+                    <table>
+                        <tr>
+                            <td class="title">
+                                FACTURA
+                            </td>
+                            <td class="text-right">
+                                Nº Factura: {{ factura.numero_factura }}<br>
+                                Fecha Emisión: {{ factura.fecha_emision }}<br>
+                                Fecha Vencimiento: {{ factura.fecha_vencimiento }}
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+            
+            <tr class="information">
+                <td colspan="2">
+                    <table>
+                        <tr>
+                            <td>
+                                <strong>Propiedad:</strong><br>
+                                {{ factura.propiedad.numero_identificador }}<br>
+                                {{ factura.propiedad.complejo.nombre }}
+                            </td>
+                            <td class="text-right">
+                                <strong>Residente:</strong><br>
+                                {{ factura.propiedad.personas_asociadas.first.persona.persona.nombres }} {{ factura.propiedad.personas_asociadas.first.persona.persona.apellidos }}<br>
+                                {{ factura.propiedad.personas_asociadas.first.persona.email }}
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+            
+            <tr class="heading">
+                <td>Descripción</td>
+                <td class="text-right">Monto</td>
+            </tr>
+            
+            {% for detalle in factura.detalles.all %}
+            <tr class="item">
+                <td>{{ detalle.descripcion }}</td>
+                <td class="text-right">${{ detalle.monto }}</td>
+            </tr>
+            {% endfor %}
+            
+            <tr class="total">
+                <td></td>
+                <td class="text-right">
+                   <strong>Total: ${{ factura.monto_total }}</strong>
+                </td>
+            </tr>
+        </table>
+        <hr>
+        <p><strong>Observaciones:</strong> {{ factura.observaciones|default:"Sin observaciones." }}</p>
+    </div>
+    <a href="{% url 'lista_facturas' %}" class="back-link" style="display: block; text-align: center; margin-top: 20px;">← Volver a la Lista de Facturas</a>
+</div>
+{% endblock %}

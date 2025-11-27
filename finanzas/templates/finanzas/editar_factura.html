@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Editar Factura{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/crear_complejo.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <h2><i class="fa-solid fa-file-invoice"></i> Editar Factura</h2>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+
+        <hr>
+        <h3>Detalles de la Factura</h3>
+        {{ detalles.management_form }}
+        <div id="detalle-formset">
+            {% for form in detalles %}
+                <div class="detalle-form">
+                    {{ form.as_p }}
+                </div>
+            {% endfor %}
+        </div>
+        <button type="button" id="add-detalle-form">Añadir Detalle</button>
+        <hr>
+
+        <button type="submit" class="btn-submit">Actualizar Factura</button>
+    </form>
+    <a href="{% url 'lista_facturas' %}" class="back-link">Cancelar y Volver a la Lista</a>
+</div>
+
+<script>
+document.getElementById('add-detalle-form').addEventListener('click', function() {
+    var formset = document.getElementById('detalle-formset');
+    var totalForms = document.getElementById('id_detalles-TOTAL_FORMS');
+    var formIndex = totalForms.value;
+    
+    var newForm = formset.children[0].cloneNode(true);
+    var formRegex = new RegExp('detalles-0-', 'g');
+    newForm.innerHTML = newForm.innerHTML.replace(formRegex, 'detalles-' + formIndex + '-');
+    formset.appendChild(newForm);
+    
+    totalForms.value = parseInt(formIndex) + 1;
+});
+</script>
+{% endblock %}

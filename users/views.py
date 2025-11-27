@@ -3,10 +3,11 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.views.decorators.http import require_POST
 from django.db.models import Q
 from django.contrib import messages
+from django.views.generic import TemplateView # Added
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin # Added
 from .forms import CustomUserCreationForm, EditarUsuarioForm
 from .models import CustomUser
 from avisos.models import Aviso
-from django.db.models import Q
 from complejos.models import Complejo
 from complejos.models import PropiedadPersona
 
@@ -24,6 +25,12 @@ def dashboard(request):
             'total_usuarios': total_usuarios,
             'total_complejos': total_complejos,
             'visitas_hoy': visitas_hoy,
+        }
+        return render(request, 'users/dashboard.html', context)
+    
+    elif request.user.rol == 'GERENTE':
+        context = {
+            'complejo': request.user.complejo_asignado,
         }
         return render(request, 'users/dashboard.html', context)
     
@@ -50,6 +57,9 @@ def dashboard(request):
 
 def es_admin(user):
     return user.is_authenticated and user.rol == CustomUser.Rol.ADMIN
+
+def es_residente(user): # Added
+    return user.is_authenticated and user.rol == CustomUser.Rol.RESIDENTE # Added
 
 @user_passes_test(es_admin, login_url='/')
 def crear_usuario_view(request):
@@ -129,3 +139,18 @@ def toggle_user_active(request, user_id):
         user.is_active = not user.is_active
         user.save()
     return redirect('lista_usuarios')
+
+class ContratoResidenteView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+    template_name = 'users/ver_contrato_residente.html'
+
+    def test_func(self):
+        return es_residente(self.request.user)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user = self.request.user
+        # Get the active contract for the logged-in resident
+        contrato_activo = PropiedadPersona.objects.filter(persona=user, estado='activo').first()
+        
+        context['contrato_activo'] = contrato_activo
+        return context

@@ -1,8 +1,24 @@
 <div class="sidebar">
-    <h2><i class="fa-solid fa-house-user"></i> Panel Residente</h2>
+    {% if request.user.rol == 'GERENTE' %}
+        <h2><i class="fa-solid fa-user-tie"></i> Panel Gerente</h2>
+    {% else %}
+        <h2><i class="fa-solid fa-house-user"></i> Panel Residente</h2>
+    {% endif %}
+    
     <a href="{% url 'dashboard' %}"><i class="fa-solid fa-table-columns"></i> Dashboard</a>
-    <a href="{% url 'crear_reserva' %}"><i class="fa-solid fa-calendar-plus"></i> Reservar Amenidad</a>
-    <a href="{% url 'mis_reservas' %}"><i class="fa-solid fa-calendar-check"></i> Mis Reservas</a>
-    <a href="{% url 'mis_preautorizaciones' %}"><i class="fa-solid fa-id-card-clip"></i> Pre-Autorizaciones</a>
+
+    {% if request.user.rol == 'GERENTE' %}
+        <a href="{% url 'lista_facturas' %}"><i class="fa-solid fa-file-invoice"></i> Gestionar Facturas</a>
+        <a href="{% url 'reporte_cobranza' %}"><i class="fa-solid fa-chart-line"></i> Reporte de Cobranza</a>
+    {% endif %}
+
+    {% if request.user.rol == 'RESIDENTE' %}
+        <a href="{% url 'crear_reserva' %}"><i class="fa-solid fa-calendar-plus"></i> Reservar Amenidad</a>
+        <a href="{% url 'mis_reservas' %}"><i class="fa-solid fa-calendar-check"></i> Mis Reservas</a>
+        <a href="{% url 'mis_preautorizaciones' %}"><i class="fa-solid fa-id-card-clip"></i> Pre-Autorizaciones</a>
+        <a href="{% url 'mis_facturas' %}"><i class="fa-solid fa-file-invoice-dollar"></i> Mis Facturas</a>
+        <a href="{% url 'ver_contrato_residente' %}"><i class="fa-solid fa-file-contract"></i> Mi Contrato</a>
+    {% endif %}
+
     <a href="{% url 'avisos:lista_avisos' %}"><i class="fa-solid fa-bullhorn"></i> Ver Avisos</a>
 </div>

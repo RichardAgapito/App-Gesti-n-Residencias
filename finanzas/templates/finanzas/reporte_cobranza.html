@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/complejos.css' %}"> {# Reusing existing CSS for now #}
+{% endblock %}
+
+{% block content %}
+<div class="complejos-container">
+    <div class="list-header">
+        <h1><i class="fa-solid fa-chart-line"></i> Reporte de Cobranza</h1>
+    </div>
+    <hr>
+
+    <main class="results-content">
+        <p><strong>Total Recaudado:</strong> ${{ total_recaudado }}</p>
+        {% if recaudos %}
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Nº Factura</th>
+                            <th>Propiedad</th>
+                            <th>Fecha Pago</th>
+                            <th>Monto Pagado</th>
+                            <th>Método Pago</th>
+                            <th>Referencia</th>
+                            <th>Registrado por</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for recaudo in recaudos %}
+                            <tr>
+                                <td>{{ recaudo.factura.numero_factura }}</td>
+                                <td>{{ recaudo.factura.propiedad }}</td>
+                                <td>{{ recaudo.fecha_pago }}</td>
+                                <td>${{ recaudo.monto_pagado }}</td>
+                                <td>{{ recaudo.metodo_pago }}</td>
+                                <td>{{ recaudo.referencia|default:"N/A" }}</td>
+                                <td>{{ recaudo.usuario_registro|default:"N/A" }}</td>
+                                <td>
+                                    <a href="{% url 'ver_recibo' recaudo.id %}" class="btn btn-info btn-sm" target="_blank">
+                                        <i class="fa-solid fa-receipt"></i> Ver Recibo
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="no-results-message">No se encontraron registros de cobranza.</p>
+        {% endif %}
+    </main>
+    <a href="{% url 'dashboard' %}" class="back-link">← Volver al Dashboard</a>
+</div>
+{% endblock %}

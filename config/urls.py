@@ -9,6 +9,7 @@ urlpatterns = [
     path('admin_dashboard/', include('complejos.urls')),
     path('visitas/', include('visitas.urls')),
     path('avisos/', include('avisos.urls')),
+    path('finanzas/', include('finanzas.urls')),
 ]
 
 if settings.DEBUG:

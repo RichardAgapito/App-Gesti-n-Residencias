@@ -1,0 +1,51 @@
+from django.urls import path
+from .views import (
+    PlanCuotaListView,
+    PlanCuotaCreateView,
+    PlanCuotaUpdateView,
+    ConceptoCobroListView,
+    ConceptoCobroCreateView,
+    ConceptoCobroUpdateView,
+    MetodoPagoListView,
+    MetodoPagoCreateView,
+    MetodoPagoUpdateView,
+    FacturaListView,
+    FacturaCreateView,
+    FacturaUpdateView,
+    FacturaDetailView, # Added
+    MisFacturasView,
+    RecaudoCreateView,
+    ReporteCobranzaView,
+    GenerateInvoicesView, # Added
+    ReciboPagoView, # Added
+    get_conceptos_plan, # Added
+)
+
+urlpatterns = [
+    # URLs para Admin
+    path('planes/', PlanCuotaListView.as_view(), name='lista_planes_cuota'),
+    path('planes/crear/', PlanCuotaCreateView.as_view(), name='crear_plan_cuota'),
+    path('planes/<int:pk>/editar/', PlanCuotaUpdateView.as_view(), name='editar_plan_cuota'),
+
+    path('conceptos/', ConceptoCobroListView.as_view(), name='lista_conceptos_cobro'),
+    path('conceptos/crear/', ConceptoCobroCreateView.as_view(), name='crear_concepto_cobro'),
+    path('conceptos/<int:pk>/editar/', ConceptoCobroUpdateView.as_view(), name='editar_concepto_cobro'),
+
+    path('metodos-pago/', MetodoPagoListView.as_view(), name='lista_metodos_pago'),
+    path('metodos-pago/crear/', MetodoPagoCreateView.as_view(), name='crear_metodo_pago'),
+    path('metodos-pago/<int:pk>/editar/', MetodoPagoUpdateView.as_view(), name='editar_metodo_pago'),
+
+    # URLs para Gerente
+    path('facturas/', FacturaListView.as_view(), name='lista_facturas'),
+    path('facturas/crear/', FacturaCreateView.as_view(), name='crear_factura'),
+    path('facturas/<int:pk>/', FacturaDetailView.as_view(), name='detalle_factura'), # Added
+    path('facturas/<int:pk>/editar/', FacturaUpdateView.as_view(), name='editar_factura'),
+    path('facturas/<int:factura_pk>/registrar-pago/', RecaudoCreateView.as_view(), name='registrar_pago'),
+    path('reporte-cobranza/', ReporteCobranzaView.as_view(), name='reporte_cobranza'),
+    path('facturas/generar-automatico/', GenerateInvoicesView.as_view(), name='generar_facturas_automatico'), # Added
+    path('recibo/<int:pk>/', ReciboPagoView.as_view(), name='ver_recibo'), # Added
+    path('ajax/get-conceptos-plan/', get_conceptos_plan, name='get_conceptos_plan'), # Added
+
+    # URLs para Residente
+    path('mis-facturas/', MisFacturasView.as_view(), name='mis_facturas'),
+]

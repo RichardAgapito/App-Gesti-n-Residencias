@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Editar Concepto de Cobro{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/crear_complejo.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <h2><i class="fa-solid fa-tags"></i> Editar Concepto de Cobro</h2>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn-submit">Actualizar Concepto</button>
+    </form>
+    <a href="{% url 'lista_conceptos_cobro' %}" class="back-link">Cancelar y Volver a la Lista</a>
+</div>
+{% endblock %}

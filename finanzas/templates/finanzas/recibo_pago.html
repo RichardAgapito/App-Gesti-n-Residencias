@@ -1,0 +1,142 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recibo de Pago #{{ recaudo.id }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            color: #333;
+        }
+        .receipt-container {
+            width: 80mm; /* Standard receipt width, adjust as needed */
+            margin: 0 auto;
+            padding: 10mm;
+            border: 1px solid #ccc;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            background-color: #fff;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            margin: 0;
+            color: #007bff;
+        }
+        .header p {
+            margin: 5px 0;
+            font-size: 0.9em;
+        }
+        .section {
+            margin-bottom: 15px;
+            border-top: 1px dashed #ccc;
+            padding-top: 10px;
+        }
+        .section h2 {
+            font-size: 1.1em;
+            margin-top: 0;
+            margin-bottom: 10px;
+            color: #555;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+        .info-row strong {
+            width: 40%;
+        }
+        .info-row span {
+            width: 55%;
+            text-align: right;
+        }
+        .total {
+            border-top: 1px solid #333;
+            padding-top: 10px;
+            margin-top: 20px;
+            text-align: right;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            font-size: 0.8em;
+            color: #777;
+        }
+        @media print {
+            body {
+                margin: 0;
+            }
+            .receipt-container {
+                box-shadow: none;
+                border: none;
+            }
+            .no-print {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="receipt-container">
+        <div class="header">
+            <h1>Recibo de Pago</h1>
+            <p><strong>Proyecto Gestión Residencias</strong></p>
+            <p>Fecha de Emisión: {{ recaudo.fecha_pago|date:"d/m/Y" }}</p>
+        </div>
+
+        <div class="section">
+            <h2>Detalles del Recibo</h2>
+            <div class="info-row">
+                <strong>Número de Recibo:</strong> <span>#{{ recaudo.id }}</span>
+            </div>
+            <div class="info-row">
+                <strong>Referencia de Pago:</strong> <span>{{ recaudo.referencia|default:"N/A" }}</span>
+            </div>
+            <div class="info-row">
+                <strong>Método de Pago:</strong> <span>{{ recaudo.metodo_pago.nombre }} ({{ recaudo.metodo_pago.get_tipo_display }})</span>
+            </div>
+            <div class="info-row">
+                <strong>Registrado por:</strong> <span>{{ recaudo.usuario_registro.persona.nombres }} {{ recaudo.usuario_registro.persona.apellidos }}</span>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Detalles de la Factura</h2>
+            <div class="info-row">
+                <strong>Nº Factura:</strong> <span>{{ recaudo.factura.numero_factura }}</span>
+            </div>
+            <div class="info-row">
+                <strong>Propiedad:</strong> <span>{{ recaudo.factura.propiedad }}</span>
+            </div>
+            <div class="info-row">
+                <strong>Fecha Emisión Factura:</strong> <span>{{ recaudo.factura.fecha_emision|date:"d/m/Y" }}</span>
+            </div>
+            <div class="info-row">
+                <strong>Monto Total Factura:</strong> <span>${{ recaudo.factura.monto_total }}</span>
+            </div>
+            <div class="info-row">
+                <strong>Estado de Factura:</strong> <span>{{ recaudo.factura.get_estado_display }}</span>
+            </div>
+        </div>
+
+        <div class="total">
+            Monto Pagado: ${{ recaudo.monto_pagado }}
+        </div>
+
+        <div class="footer">
+            <p>¡Gracias por su pago!</p>
+            <p>Si tiene alguna pregunta, por favor contáctenos.</p>
+        </div>
+        <div class="no-print" style="text-align: center; margin-top: 20px;">
+            <button onclick="window.print()" style="padding: 10px 20px; background-color: #007bff; color: white; border: none; cursor: pointer; border-radius: 5px;">Imprimir Recibo</button>
+            <a href="{% url 'lista_facturas' %}" style="padding: 10px 20px; background-color: #6c757d; color: white; text-decoration: none; border-radius: 5px; margin-left: 10px;">Volver a Facturas</a>
+        </div>
+    </div>
+</body>
+</html>

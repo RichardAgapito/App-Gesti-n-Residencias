@@ -11,4 +11,5 @@ urlpatterns = [
     path('usuarios/<int:user_id>/', views.detalle_usuario_view, name='detalle_usuario'),
     path('usuarios/<int:user_id>/editar/', views.editar_usuario_view, name='editar_usuario'),
     path('usuarios/<int:user_id>/toggle-active/', views.toggle_user_active, name='toggle_user_active'),
+    path('contrato/', views.ContratoResidenteView.as_view(), name='ver_contrato_residente'),
 ]

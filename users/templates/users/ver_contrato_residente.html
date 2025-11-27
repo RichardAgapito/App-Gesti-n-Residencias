@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/complejos.css' %}"> {# Reusing existing CSS for now #}
+{% endblock %}
+
+{% block content %}
+<div class="complejos-container">
+    <div class="list-header">
+        <h1><i class="fa-solid fa-file-contract"></i> Mi Contrato Activo</h1>
+    </div>
+    <hr>
+
+    <main class="results-content">
+        {% if contrato_activo %}
+            <div class="complejo-card"> {# Reusing card style for display #}
+                <h3>Detalles de la Propiedad</h3>
+                <p><strong>Número Identificador:</strong> {{ contrato_activo.propiedad.numero_identificador }}</p>
+                <p><strong>Tipo de Propiedad:</strong> {{ contrato_activo.propiedad.get_tipo_display }}</p>
+                <p><strong>Área:</strong> {{ contrato_activo.propiedad.area }} m²</p>
+                <p><strong>Complejo:</strong> {{ contrato_activo.propiedad.complejo.nombre }}</p>
+                
+                <hr>
+
+                <h3>Detalles del Contrato</h3>
+                <p><strong>Tipo de Relación:</strong> {{ contrato_activo.get_tipo_relacion_display }}</p>
+                <p><strong>Fecha de Inicio:</strong> {{ contrato_activo.fecha_inicio }}</p>
+                <p><strong>Fecha de Finalización:</strong> {% if contrato_activo.fecha_fin %}{{ contrato_activo.fecha_fin }}{% else %}Indefinido{% endif %}</p>
+                <p><strong>Estado:</strong> {{ contrato_activo.get_estado_display }}</p>
+                {% if contrato_activo.es_principal %}
+                    <p><strong>Es Responsable Principal</strong></p>
+                {% endif %}
+                {% if contrato_activo.porcentaje_propiedad %}
+                    <p><strong>Porcentaje de Propiedad:</strong> {{ contrato_activo.porcentaje_propiedad }}%</p>
+                {% endif %}
+
+            </div>
+        {% else %}
+            <p class="no-results-message">No tienes un contrato activo registrado.</p>
+        {% endif %}
+    </main>
+    <a href="{% url 'dashboard' %}" class="back-link">← Volver al Dashboard</a>
+</div>
+{% endblock %}

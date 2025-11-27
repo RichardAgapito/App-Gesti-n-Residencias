@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Editar Método de Pago{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/crear_complejo.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <h2><i class="fa-solid fa-credit-card"></i> Editar Método de Pago</h2>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn-submit">Actualizar Método</button>
+    </form>
+    <a href="{% url 'lista_metodos_pago' %}" class="back-link">Cancelar y Volver a la Lista</a>
+</div>
+{% endblock %}

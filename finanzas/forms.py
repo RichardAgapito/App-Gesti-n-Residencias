@@ -1,0 +1,162 @@
+from django import forms
+from django.forms import inlineformset_factory
+from django.core.exceptions import ValidationError # Added
+from django.utils import timezone # Added
+from .models import PlanCuota, Factura, DetalleFactura, ConceptoCobro, MetodoPago, Recaudo
+from complejos.models import Complejo # Import Complejo
+
+class PlanCuotaForm(forms.ModelForm):
+    class Meta:
+        model = PlanCuota
+        fields = ['nombre', 'descripcion', 'frecuencia', 'activo', 'complejo']
+        widgets = {
+            'nombre': forms.TextInput(attrs={'class': 'form-control'}),
+            'descripcion': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'frecuencia': forms.Select(attrs={'class': 'form-control'}),
+            'activo': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'complejo': forms.Select(attrs={'class': 'form-control'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        if user:
+            if user.rol == 'GERENTE':
+                if user.complejo_asignado:
+                    self.fields['complejo'].queryset = Complejo.objects.filter(id=user.complejo_asignado.id)
+                    self.fields['complejo'].initial = user.complejo_asignado
+                    self.fields['complejo'].widget.attrs['readonly'] = 'readonly'
+                    self.fields['complejo'].widget.attrs['style'] = 'pointer-events: none;' # Visual cue
+                else: # Gerente without assigned complejo should not see this or get an error
+                    self.fields['complejo'].widget = forms.HiddenInput()
+                    self.fields['complejo'].required = False
+            elif user.rol == 'ADMIN':
+                self.fields['complejo'].queryset = Complejo.objects.all()
+            else: # Other roles should not see this form, but for safety
+                self.fields['complejo'].widget = forms.HiddenInput()
+                self.fields['complejo'].required = False
+
+class ConceptoCobroForm(forms.ModelForm):
+    class Meta:
+        model = ConceptoCobro
+        fields = ['nombre', 'descripcion', 'tipo', 'obligatorio', 'complejo'] # Added complejo
+        widgets = {
+            'nombre': forms.TextInput(attrs={'class': 'form-control'}),
+            'descripcion': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'tipo': forms.Select(attrs={'class': 'form-control'}),
+            'obligatorio': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'complejo': forms.Select(attrs={'class': 'form-control'}), # Added complejo widget
+        }
+
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        if user:
+            if user.rol == 'GERENTE':
+                if user.complejo_asignado:
+                    self.fields['complejo'].queryset = Complejo.objects.filter(id=user.complejo_asignado.id)
+                    self.fields['complejo'].initial = user.complejo_asignado
+                    self.fields['complejo'].widget.attrs['readonly'] = 'readonly'
+                    self.fields['complejo'].widget.attrs['style'] = 'pointer-events: none;'
+                else:
+                    self.fields['complejo'].widget = forms.HiddenInput()
+                    self.fields['complejo'].required = False
+            elif user.rol == 'ADMIN':
+                self.fields['complejo'].queryset = Complejo.objects.all()
+            else:
+                self.fields['complejo'].widget = forms.HiddenInput()
+                self.fields['complejo'].required = False
+
+class MetodoPagoForm(forms.ModelForm):
+    class Meta:
+        model = MetodoPago
+        fields = '__all__'
+        widgets = {
+            'nombre': forms.TextInput(attrs={'class': 'form-control'}),
+            'tipo': forms.Select(attrs={'class': 'form-control'}),
+            'cuenta_banco': forms.TextInput(attrs={'class': 'form-control'}),
+            'activo': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'comision': forms.NumberInput(attrs={'class': 'form-control'}),
+        }
+
+class FacturaForm(forms.ModelForm):
+    class Meta:
+        model = Factura
+        fields = ['propiedad', 'plan_cuota', 'fecha_vencimiento', 'monto_total', 'estado', 'observaciones']
+        widgets = {
+            'propiedad': forms.Select(attrs={'class': 'form-control'}),
+            'plan_cuota': forms.Select(attrs={'class': 'form-control'}),
+            'fecha_vencimiento': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'monto_total': forms.NumberInput(attrs={'class': 'form-control'}),
+            'estado': forms.Select(attrs={'class': 'form-control'}),
+            'observaciones': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        if user and user.rol == 'GERENTE':
+            self.fields['propiedad'].queryset = self.fields['propiedad'].queryset.filter(complejo=user.complejo_asignado)
+
+class DetalleFacturaForm(forms.ModelForm):
+    class Meta:
+        model = DetalleFactura
+        fields = ['concepto_cobro', 'monto', 'descripcion']
+        widgets = {
+            'concepto_cobro': forms.Select(attrs={'class': 'form-control'}),
+            'monto': forms.NumberInput(attrs={'class': 'form-control'}),
+            'descripcion': forms.TextInput(attrs={'class': 'form-control'}),
+        }
+
+DetalleFacturaFormSet = inlineformset_factory(
+    Factura,
+    DetalleFactura,
+    form=DetalleFacturaForm,
+    extra=1,
+    can_delete=True,
+    can_delete_extra=True
+)
+
+class RecaudoForm(forms.ModelForm):
+    class Meta:
+        model = Recaudo
+        fields = ['fecha_pago', 'monto_pagado', 'metodo_pago', 'referencia', 'observaciones']
+        widgets = {
+            'fecha_pago': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'monto_pagado': forms.NumberInput(attrs={'class': 'form-control'}),
+            'metodo_pago': forms.Select(attrs={'class': 'form-control'}),
+            'referencia': forms.TextInput(attrs={'class': 'form-control'}),
+            'observaciones': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+        }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        monto_pagado = cleaned_data.get('monto_pagado')
+        fecha_pago = cleaned_data.get('fecha_pago')
+        factura = self.instance.factura if self.instance else self.initial.get('factura') # Get factura from instance or initial data
+        metodo_pago = cleaned_data.get('metodo_pago')
+        referencia = cleaned_data.get('referencia')
+
+        if monto_pagado is not None and monto_pagado <= 0:
+            self.add_error('monto_pagado', 'El monto pagado debe ser mayor que cero.')
+
+        if fecha_pago and fecha_pago > timezone.localdate():
+            self.add_error('fecha_pago', 'La fecha de pago no puede ser futura.')
+
+        if factura:
+            if factura.estado not in ['PENDIENTE', 'VENCIDA']:
+                self.add_error(None, f'No se puede registrar un pago para una factura en estado {factura.get_estado_display()}.')
+            
+            # Check for duplicate payments for the same invoice, amount, method, and reference within a reasonable timeframe (e.g., same day)
+            # This is a basic check. A more robust solution might involve a unique_together constraint on the model
+            # or a more complex deduplication logic.
+            if Recaudo.objects.filter(
+                factura=factura,
+                monto_pagado=monto_pagado,
+                metodo_pago=metodo_pago,
+                referencia=referencia,
+                fecha_pago=fecha_pago # Strict check, might need to be more flexible
+            ).exclude(pk=self.instance.pk if self.instance else None).exists():
+                self.add_error(None, 'Ya existe un pago con los mismos detalles para esta factura.')
+
+        return cleaned_data

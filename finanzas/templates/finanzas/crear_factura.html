@@ -1,0 +1,192 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/crear_complejo.css' %}"> {# Reusing existing CSS for now #}
+    <style>
+        .formset-container {
+            border: 1px solid #ccc;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+        .formset-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .formset-row {
+            display: flex;
+            gap: 15px;
+            align-items: flex-end;
+            margin-bottom: 10px;
+        }
+        .formset-row .form-group {
+            flex: 1;
+            margin-bottom: 0;
+        }
+        .delete-row {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .add-row {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <h2><i class="fa-solid fa-file-invoice-dollar"></i> {{ titulo|default:"Crear Factura" }}</h2>
+    <form method="post">
+        {% csrf_token %}
+        
+        {# Main Factura Form Fields #}
+        {% for field in form %}
+            <div class="form-group">
+                {{ field.label_tag }}
+                {{ field }}
+                {% if field.help_text %}
+                    <small class="form-text text-muted">{{ field.help_text }}</small>
+                {% endif %}
+                {% for error in field.errors %}
+                    <div class="alert alert-danger">{{ error }}</div>
+                {% endfor %}
+            </div>
+        {% endfor %}
+
+        {# DetalleFactura Formset #}
+        <div class="formset-container">
+            <div class="formset-header">
+                <h3>Detalles de Factura</h3>
+                <button type="button" class="add-row">Añadir Detalle</button>
+            </div>
+            
+            {{ detalles.management_form }}
+            <div id="formset-area">
+                {% for formset_form in detalles %}
+                    <div class="formset-row">
+                        {% for field in formset_form %}
+                            <div class="form-group">
+                                {{ field.label_tag }}
+                                {{ field }}
+                                {% if field.help_text %}
+                                    <small class="form-text text-muted">{{ field.help_text }}</small>
+                                {% endif %}
+                                {% for error in field.errors %}
+                                    <div class="alert alert-danger">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        {% endfor %}
+                        {% if detalles.can_delete %}
+                            <button type="button" class="delete-row">Eliminar</button>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <button type="submit" class="btn-submit">Guardar Factura</button>
+    </form>
+    <a href="{% url 'lista_facturas' %}" class="back-link">Cancelar y Volver a la Lista</a>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const planCuotaSelect = document.getElementById('id_plan_cuota');
+        const formsetArea = document.getElementById('formset-area');
+        const totalForms = document.getElementById('id_detalles-TOTAL_FORMS');
+        const montoTotalInput = document.getElementById('id_monto_total');
+        const addRowButton = document.querySelector('.add-row');
+
+        planCuotaSelect.addEventListener('change', function() {
+            const planId = this.value;
+            if (!planId) {
+                clearFormset();
+                return;
+            }
+
+            fetch(`{% url 'get_conceptos_plan' %}?plan_id=${planId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.conceptos) {
+                        populateFormset(data.conceptos);
+                    }
+                })
+                .catch(error => console.error('Error fetching conceptos:', error));
+        });
+
+        function clearFormset() {
+            formsetArea.innerHTML = '';
+            totalForms.value = 0;
+            montoTotalInput.value = '0.00';
+        }
+
+        function populateFormset(conceptos) {
+            clearFormset();
+            let totalMonto = 0;
+
+            conceptos.forEach((concepto, index) => {
+                const newRow = createFormsetRow(index, concepto);
+                formsetArea.insertAdjacentHTML('beforeend', newRow);
+                totalMonto += parseFloat(concepto.monto);
+            });
+
+            totalForms.value = conceptos.length;
+            montoTotalInput.value = totalMonto.toFixed(2);
+        }
+
+        function createFormsetRow(index, concepto) {
+            let rowHtml = `
+                <div class="formset-row">
+                    <input type="hidden" name="detalles-${index}-id" id="id_detalles-${index}-id">
+                    <input type="hidden" name="detalles-${index}-factura" id="id_detalles-${index}-factura">
+
+                    <div class="form-group">
+                        <label for="id_detalles-${index}-concepto_cobro">Concepto de cobro:</label>
+                        <select name="detalles-${index}-concepto_cobro" id="id_detalles-${index}-concepto_cobro" class="form-control">
+                            <option value="${concepto.id}" selected>${concepto.nombre}</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="id_detalles-${index}-monto">Monto:</label>
+                        <input type="number" name="detalles-${index}-monto" value="${concepto.monto}" step="0.01" class="form-control" readonly id="id_detalles-${index}-monto">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="id_detalles-${index}-descripcion">Descripción:</label>
+                        <input type="text" name="detalles-${index}-descripcion" value="${concepto.nombre}" class="form-control" id="id_detalles-${index}-descripcion">
+                    </div>
+                    
+                    <div class="form-group">
+                        <div class="form-check">
+                            <input type="checkbox" name="detalles-${index}-DELETE" id="id_detalles-${index}-DELETE" class="form-check-input">
+                            <label class="form-check-label" for="id_detalles-${index}-DELETE">Eliminar</label>
+                        </div>
+                    </div>
+                </div>
+            `;
+            return rowHtml;
+        }
+
+        addRowButton.addEventListener('click', function() {
+            const index = parseInt(totalForms.value);
+            const newForm = createFormsetRow(index, { id: '', nombre: '---------', monto: '0.00' });
+            formsetArea.insertAdjacentHTML('beforeend', newForm);
+            totalForms.value = index + 1;
+        });
+    });
+</script>
+{% endblock %}

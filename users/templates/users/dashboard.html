@@ -7,6 +7,8 @@
 {% block extra_css %}
     {% if request.user.rol == 'ADMIN' %}
         <link rel="stylesheet" href="{% static 'css/admin_dashboard.css' %}">
+    {% elif request.user.rol == 'GERENTE' %}
+        <link rel="stylesheet" href="{% static 'css/admin_dashboard.css' %}">
     {% else %}
         <link rel="stylesheet" href="{% static 'css/resident_dashboard.css' %}">
     {% endif %}
@@ -105,6 +107,24 @@
         </section>
         <!-- (FIN) SECCIÓN DE ACCIONES RÁPIDAS -->
 
+
+    </div>
+</div>
+{% elif request.user.rol == 'GERENTE' %}
+<div class="dashboard-container">
+
+    {% include 'includes/admin_sidebar.html' %}
+
+    <div class="main-content">
+        <header>
+            <h1>Bienvenido, Gerente {{ request.user.persona.nombres|default:request.user.email }}</h1>
+            <form method="post" action="{% url 'logout' %}">
+                {% csrf_token %}
+                <button type="submit"><i class="fa-solid fa-right-from-bracket"></i> Cerrar Sesión</button>
+            </form>
+        </header>
+
+        <h2>Complejo: {{ complejo.nombre }}</h2>
 
     </div>
 </div>

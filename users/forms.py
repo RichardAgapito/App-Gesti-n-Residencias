@@ -139,12 +139,11 @@ class CustomUserCreationForm(forms.ModelForm):
         if Persona.objects.filter(numero_documento=numero_documento).exists():
             self.add_error('numero_documento', 'Ya existe una persona con este número de documento.')
 
-        if rol == CustomUser.Rol.GUARDIA:
+        if rol in [CustomUser.Rol.GUARDIA, CustomUser.Rol.GERENTE]:
             if not complejo_asignado:
-                self.add_error('complejo_asignado', 'Este campo es obligatorio para los guardias.')
-            else:
-
-
+                self.add_error('complejo_asignado', f'Este campo es obligatorio para el rol {rol}.')
+            
+            if rol == CustomUser.Rol.GUARDIA:
                 existing_guards = CustomUser.objects.filter(
                     rol=CustomUser.Rol.GUARDIA,
                     complejo_asignado=complejo_asignado
@@ -154,6 +153,17 @@ class CustomUserCreationForm(forms.ModelForm):
 
                 if existing_guards.exists():
                     self.add_error('complejo_asignado', 'Este complejo ya tiene un guardia asignado.')
+            
+            if rol == CustomUser.Rol.GERENTE:
+                existing_manager = CustomUser.objects.filter(
+                    rol=CustomUser.Rol.GERENTE,
+                    complejo_asignado=complejo_asignado
+                )
+                if self.instance and self.instance.pk:
+                    existing_manager = existing_manager.exclude(pk=self.instance.pk)
+                
+                if existing_manager.exists():
+                    self.add_error('complejo_asignado', 'Este complejo ya tiene un gerente asignado.')
 
 
         if fecha_nacimiento:

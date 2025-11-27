@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/complejos.css' %}"> {# Reusing existing CSS for now #}
+{% endblock %}
+
+{% block content %}
+<div class="complejos-container">
+    <div class="list-header">
+        <h1><i class="fa-solid fa-list-check"></i> Gestión de Conceptos de Cobro</h1>
+        <a href="{% url 'crear_concepto_cobro' %}" class="btn btn-primary">
+            <i class="fa-solid fa-plus"></i> Crear Nuevo Concepto de Cobro
+        </a>
+    </div>
+    <hr>
+
+    <main class="results-content">
+        {% if conceptos %}
+            <div class="list-group">
+                {% for concepto in conceptos %}
+                    <div class="list-group-item">
+                        <h4>{{ concepto.nombre }}</h4>
+                        <p><strong>Tipo:</strong> {{ concepto.get_tipo_display }}</p>
+                        <p><strong>Porcentaje de Variación:</strong> {{ concepto.porcentaje_variacion|default:"N/A" }}%</p>
+                        <p><strong>Obligatorio:</strong> {% if concepto.obligatorio %}Sí{% else %}No{% endif %}</p>
+                        <div class="action-links">
+                            <a href="{% url 'editar_concepto_cobro' concepto.id %}" class="btn btn-warning">
+                                <i class="fa-solid fa-pencil"></i> Editar
+                            </a>
+                            {# TODO: Add delete functionality later #}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="no-results-message">No se encontraron conceptos de cobro.</p>
+        {% endif %}
+    </main>
+    <a href="{% url 'dashboard' %}" class="back-link">← Volver al Dashboard</a>
+</div>
+{% endblock %}

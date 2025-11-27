@@ -51,6 +51,7 @@ class CustomUserManager(BaseUserManager):
 class CustomUser(AbstractBaseUser, PermissionsMixin):
     class Rol(models.TextChoices):
         ADMIN = 'ADMIN', 'Administrador'
+        GERENTE = 'GERENTE', 'Gerente'
         RESIDENTE = 'RESIDENTE', 'Residente'
         GUARDIA = 'GUARDIA', 'Guardia'
 

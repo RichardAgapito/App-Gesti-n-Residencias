@@ -1,0 +1,42 @@
+from django.contrib import admin
+from .models import PlanCuota, ConceptoCobro, PlanConceptoCobro, Factura, DetalleFactura, MetodoPago, Recaudo
+
+class PlanConceptoCobroInline(admin.TabularInline):
+    model = PlanConceptoCobro
+    extra = 1
+
+@admin.register(PlanCuota)
+class PlanCuotaAdmin(admin.ModelAdmin):
+    inlines = (PlanConceptoCobroInline,)
+    list_display = ('nombre', 'complejo', 'frecuencia', 'activo')
+    list_filter = ('complejo', 'activo', 'frecuencia')
+    search_fields = ('nombre',)
+
+@admin.register(ConceptoCobro)
+class ConceptoCobroAdmin(admin.ModelAdmin):
+    list_display = ('nombre', 'complejo', 'tipo', 'obligatorio')
+    list_filter = ('complejo', 'tipo', 'obligatorio')
+    search_fields = ('nombre',)
+
+class DetalleFacturaInline(admin.TabularInline):
+    model = DetalleFactura
+    extra = 1
+
+@admin.register(Factura)
+class FacturaAdmin(admin.ModelAdmin):
+    inlines = (DetalleFacturaInline,)
+    list_display = ('numero_factura', 'propiedad', 'plan_cuota', 'fecha_emision', 'fecha_vencimiento', 'monto_total', 'estado')
+    list_filter = ('estado', 'propiedad__complejo', 'fecha_emision')
+    search_fields = ('numero_factura', 'propiedad__numero_identificador')
+    readonly_fields = ('numero_factura',)
+
+@admin.register(MetodoPago)
+class MetodoPagoAdmin(admin.ModelAdmin):
+    list_display = ('nombre', 'tipo', 'activo')
+    list_filter = ('tipo', 'activo')
+
+@admin.register(Recaudo)
+class RecaudoAdmin(admin.ModelAdmin):
+    list_display = ('factura', 'fecha_pago', 'monto_pagado', 'metodo_pago')
+    list_filter = ('metodo_pago', 'fecha_pago', 'factura__propiedad__complejo')
+    search_fields = ('factura__numero_factura', 'referencia')

@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/crear_complejo.css' %}"> {# Reusing existing CSS for now #}
+{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <h2><i class="fa-solid fa-money-bill-transfer"></i> Registrar Pago para Factura #{{ factura.numero_factura }}</h2>
+    <p><strong>Monto Total Factura:</strong> ${{ factura.monto_total }}</p>
+    <p><strong>Estado Actual:</strong> {{ factura.get_estado_display }}</p>
+    <hr>
+    <form method="post">
+        {% csrf_token %}
+        {% for field in form %}
+            <div class="form-group">
+                {{ field.label_tag }}
+                {{ field }}
+                {% if field.help_text %}
+                    <small class="form-text text-muted">{{ field.help_text }}</small>
+                {% endif %}
+                {% for error in field.errors %}
+                    <div class="alert alert-danger">{{ error }}</div>
+                {% endfor %}
+            </div>
+        {% endfor %}
+        <button type="submit" class="btn-submit">Registrar Pago</button>
+    </form>
+    <a href="{% url 'lista_facturas' %}" class="back-link">Cancelar y Volver a la Lista de Facturas</a>
+</div>
+{% endblock %}

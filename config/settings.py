@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'complejos.apps.ComplejosConfig',
     'visitas.apps.VisitasConfig',
     'avisos.apps.AvisosConfig',
+    'finanzas.apps.FinanzasConfig',
 ]
 
 MIDDLEWARE = [
