@@ -3,13 +3,15 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.views.decorators.http import require_POST
 from django.db.models import Q
 from django.contrib import messages
-from django.views.generic import TemplateView # Added
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin # Added
+from django.views.generic import TemplateView
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from .forms import CustomUserCreationForm, EditarUsuarioForm
 from .models import CustomUser
 from avisos.models import Aviso
 from complejos.models import Complejo
 from complejos.models import PropiedadPersona
+from django.http import JsonResponse
+from django.template.loader import render_to_string
 
 @login_required
 def dashboard(request):
@@ -103,20 +105,27 @@ def dashboard(request):
 def es_admin(user):
     return user.is_authenticated and user.rol == CustomUser.Rol.ADMIN
 
-def es_residente(user): # Added
-    return user.is_authenticated and user.rol == CustomUser.Rol.RESIDENTE # Added
+def es_residente(user):
+    return user.is_authenticated and user.rol == CustomUser.Rol.RESIDENTE
 
 @user_passes_test(es_admin, login_url='/')
 def crear_usuario_view(request):
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
     if request.method == 'POST':
         form = CustomUserCreationForm(request.POST)
         if form.is_valid():
             form.save()
-            return redirect('/')
+            if is_ajax:
+                return JsonResponse({'success': True})
+            return redirect('lista_usuarios')
+        elif is_ajax:
+            html = render_to_string('users/partials/crear_usuario_partial.html', {'form': form}, request=request)
+            return JsonResponse({'success': False, 'html': html})
     else:
         form = CustomUserCreationForm()
 
-    return render(request, 'users/crear_usuario.html', {'form': form})
+    template = 'users/partials/crear_usuario_partial.html' if is_ajax else 'users/crear_usuario.html'
+    return render(request, template, {'form': form})
 
 @user_passes_test(es_admin, login_url='/')
 def lista_usuarios_view(request):
@@ -149,15 +158,16 @@ def lista_usuarios_view(request):
 @user_passes_test(es_admin, login_url='/')
 def detalle_usuario_view(request, user_id):
     user = get_object_or_404(CustomUser, id=user_id)
-    context = {
-        'user': user
-    }
-    return render(request, 'users/detalle_usuario.html', context)
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+    context = {'user': user}
+    template = 'users/partials/detalle_usuario_partial.html' if is_ajax else 'users/detalle_usuario.html'
+    return render(request, template, context)
 
 @user_passes_test(es_admin, login_url='/')
 def editar_usuario_view(request, user_id):
     user = get_object_or_404(CustomUser, id=user_id)
     persona = user.persona
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
 
     if request.method == 'POST':
         form = EditarUsuarioForm(request.POST, instance=persona, user=user)
@@ -166,15 +176,18 @@ def editar_usuario_view(request, user_id):
             user.is_active = form.cleaned_data['is_active']
             persona.save()
             user.save()
+            if is_ajax:
+                return JsonResponse({'success': True})
             return redirect('detalle_usuario', user_id=user.id)
+        elif is_ajax:
+            html = render_to_string('users/partials/editar_usuario_partial.html', {'form': form, 'user': user}, request=request)
+            return JsonResponse({'success': False, 'html': html})
     else:
         form = EditarUsuarioForm(instance=persona, user=user)
 
-    context = {
-        'form': form,
-        'user': user
-    }
-    return render(request, 'users/editar_usuario.html', context)
+    context = {'form': form, 'user': user}
+    template = 'users/partials/editar_usuario_partial.html' if is_ajax else 'users/editar_usuario.html'
+    return render(request, template, context)
 
 @user_passes_test(es_admin, login_url='/')
 @require_POST

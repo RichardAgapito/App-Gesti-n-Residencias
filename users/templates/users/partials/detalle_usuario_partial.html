@@ -1,0 +1,67 @@
+<div class="bg-white rounded-xl shadow-lg border border-gray-200 p-8 max-w-4xl mx-auto">
+    <div class="mb-8 flex items-start justify-between">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-800 flex items-center gap-4">
+                <i class="fa-solid fa-user-circle text-blue-600"></i>
+                <span>Perfil de Usuario</span>
+            </h1>
+            <p class="text-gray-500 mt-1">Información detallada del usuario y su estado en el sistema.</p>
+        </div>
+        <button class="back-link flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors">
+            <i class="fa-solid fa-times text-gray-600"></i>
+        </button>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div class="md:col-span-1 flex flex-col items-center text-center">
+            <div class="w-32 h-32 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-5xl mb-4 border-4 border-white shadow-md">
+                {{ user.persona.nombres|default:"U"|first }}
+            </div>
+            <h2 class="text-2xl font-bold text-gray-800">{{ user.persona.nombres }} {{ user.persona.apellidos }}</h2>
+            <p class="text-sm text-gray-500 -mt-0.5">{{ user.email }}</p>
+            <div class="mt-4">
+                {% if user.is_active %}
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 shadow-sm">
+                        <i class="fa-solid fa-check-circle mr-2"></i>Activo
+                    </span>
+                {% else %}
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800 shadow-sm">
+                        <i class="fa-solid fa-times-circle mr-2"></i>Inactivo
+                    </span>
+                {% endif %}
+            </div>
+        </div>
+        <div class="md:col-span-2 bg-gray-50 rounded-lg p-6 space-y-5">
+            <div class="pb-3 border-b border-gray-200">
+                <p class="text-xs text-gray-500 uppercase font-semibold">Rol en el sistema</p>
+                <p class="text-md font-medium text-gray-800">{{ user.get_rol_display }}</p>
+            </div>
+             {% if user.rol == 'GUARDIA' and user.complejo_asignado %}
+                <div class="pb-3 border-b border-gray-200">
+                    <p class="text-xs text-gray-500 uppercase font-semibold">Complejo Asignado</p>
+                    <p class="text-md font-medium text-gray-800">{{ user.complejo_asignado.nombre }}</p>
+                </div>
+            {% endif %}
+            <div class="pb-3 border-b border-gray-200">
+                <p class="text-xs text-gray-500 uppercase font-semibold">Documento</p>
+                <p class="text-md font-medium text-gray-800">{{ user.persona.get_tipo_documento_display }} - {{ user.persona.numero_documento }}</p>
+            </div>
+            <div class="pb-3 border-b border-gray-200">
+                <p class="text-xs text-gray-500 uppercase font-semibold">Teléfono</p>
+                <p class="text-md font-medium text-gray-800">{{ user.persona.telefono }}</p>
+            </div>
+            <div>
+                <p class="text-xs text-gray-500 uppercase font-semibold">Fecha de Nacimiento</p>
+                <p class="text-md font-medium text-gray-800">{{ user.persona.fecha_nacimiento }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-8 pt-6 border-t border-gray-200 flex justify-end gap-4">
+        <button class="back-link px-8 py-2.5 text-sm font-semibold text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-all">Volver</button>
+        <a href="{% url 'editar_usuario' user.id %}" class="btn-editar-usuario flex items-center gap-2 px-8 py-2.5 text-sm font-semibold text-white bg-yellow-500 rounded-lg hover:bg-yellow-600 shadow-sm hover:shadow-md transition-all">
+            <i class="fa-solid fa-pencil"></i>
+            <span>Editar Usuario</span>
+        </a>
+    </div>
+</div>
