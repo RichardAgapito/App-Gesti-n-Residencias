@@ -25,16 +25,16 @@
             <span class="font-medium">Gestionar Complejos</span>
         </a>
 
-        <a href="{% url 'admin_reservas' %}" 
-           class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {% if 'reserva' in request.resolver_match.url_name %}bg-blue-50 text-blue-600{% else %}text-gray-700 hover:bg-gray-50{% endif %}">
-            <i class="fa-solid fa-calendar-days w-5 text-center"></i>
-            <span class="font-medium">Gestionar Reservas</span>
-        </a>
-
         <a href="{% url 'gestionar_amenidades' %}" 
            class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {% if 'amenidad' in request.resolver_match.url_name %}bg-blue-50 text-blue-600{% else %}text-gray-700 hover:bg-gray-50{% endif %}">
             <i class="fa-solid fa-star w-5 text-center"></i>
             <span class="font-medium">Gestionar Amenidades</span>
+        </a>
+
+        <a href="{% url 'admin_reservas' %}" 
+           class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {% if 'reserva' in request.resolver_match.url_name %}bg-blue-50 text-blue-600{% else %}text-gray-700 hover:bg-gray-50{% endif %}">
+            <i class="fa-solid fa-calendar-days w-5 text-center"></i>
+            <span class="font-medium">Gestionar Reservas</span>
         </a>
 
         <!-- Finanzas Accordion -->

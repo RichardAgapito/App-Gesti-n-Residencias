@@ -5,36 +5,73 @@
 {% block global_styles %}{% endblock %}
 
 {% block extra_css %}
-    <link rel="stylesheet" href="{% static 'css/users.css' %}" />
+    <script src="https://cdn.tailwindcss.com"></script>
 {% endblock %}
 
 {% block content %}
-<div class="user-form-container">
-    <h1><i class="fa-solid fa-user-plus"></i> Crear Nuevo Usuario</h1>
-    <form method="post" class="user-form">
-        {% csrf_token %}
-        {% if form.non_field_errors %}
-            <div class="errorlist">
-                {% for error in form.non_field_errors %}
-                    <li>{{ error }}</li>
-                {% endfor %}
-            </div>
-        {% endif %}
+<div class="min-h-screen bg-gray-50 p-8">
+    <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-8 max-w-6xl mx-auto">
+        <div class="mb-8 flex items-center justify-between">
+            <h1 class="text-3xl font-bold text-gray-800 flex items-center gap-4">
+                <i class="fa-solid fa-user-plus text-blue-600"></i>
+                <span>Registrar Nuevo Usuario</span>
+            </h1>
+            <a href="{% url 'dashboard' %}" class="flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors">
+                <i class="fa-solid fa-times text-gray-600"></i>
+            </a>
+        </div>
 
-        {% for field in form %}
-            <div class="form-group" id="container-{{ field.id_for_label }}">
-                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-                {{ field }}
-                {% for error in field.errors %}
-                    <div class="errorlist">
-                        <li>{{ error }}</li>
-                    </div>
-                {% endfor %}
+        <form method="post" class="user-form space-y-8">
+            {% csrf_token %}
+            {% if form.non_field_errors %}
+                <div class="bg-red-50 border-l-4 border-red-400 text-red-700 p-4 rounded-r-lg" role="alert">
+                    {% for error in form.non_field_errors %}
+                        <p class="font-bold">Error</p>
+                        <p>{{ error }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <div>
+                <p class="text-lg font-semibold text-gray-700 border-b pb-2 mb-6">Información Personal</p>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-6">
+                    {% for field in form %}
+                        {% if forloop.counter <= 6 %}
+                            <div class="form-group" id="container-{{ field.id_for_label }}">
+                                <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-600 mb-2">{{ field.label }}</label>
+                                {{ field }}
+                                {% for error in field.errors %}
+                                    <div class="text-red-500 text-xs mt-1">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
             </div>
-        {% endfor %}
-        <button type="submit" class="btn-submit">Crear Usuario</button>
-    </form>
-    <a href="{% url 'dashboard' %}" class="back-link">← Volver al Dashboard</a>
+            
+            <div class="pt-6">
+                <p class="text-lg font-semibold text-gray-700 border-b pb-2 mb-6">Credenciales y Rol</p>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-6">
+                    {% for field in form %}
+                        {% if forloop.counter > 6 %}
+                            <div class="form-group" id="container-{{ field.id_for_label }}">
+                                <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-600 mb-2">{{ field.label }}</label>
+                                {{ field }}
+                                {% for error in field.errors %}
+                                    <div class="text-red-500 text-xs mt-1">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <div class="flex justify-end gap-4 pt-6 border-t mt-8">
+                <a href="{% url 'dashboard' %}" class="px-8 py-2.5 text-sm font-semibold text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-all flex items-center justify-center">Cancelar</a>
+                <button type="submit" class="px-8 py-2.5 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 shadow-sm hover:shadow-md transition-all">Crear Usuario</button>
+            </div>
+        </form>
+    </div>
 </div>
 {% endblock %}
 
