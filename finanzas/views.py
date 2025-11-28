@@ -337,7 +337,7 @@ class FacturaUpdateView(LoginRequiredMixin, GerenteRequiredMixin, UpdateView):
 
                 # Recalculate total from saved details for security
                 total = sum(d.monto for d in self.object.detalles.all() if not d.get('_delete', False))
-                self.object.monto_total = total
+
                 self.object.save() # Save again with correct total
             else:
                 return self.form_invalid(form)
@@ -376,12 +376,6 @@ class RecaudoCreateView(LoginRequiredMixin, GerenteRequiredMixin, CreateView):
         recaudo.usuario_registro = self.request.user
         recaudo.save()
 
-        # Actualizar estado de la factura si el pago es completo
-        total_pagado = sum(r.monto_pagado for r in factura.recaudos.all())
-        if total_pagado >= factura.monto_total:
-            factura.estado = 'PAGADA'
-            factura.save()
-        
         return super().form_valid(form)
 
 class ReporteCobranzaView(LoginRequiredMixin, GerenteRequiredMixin, ListView):

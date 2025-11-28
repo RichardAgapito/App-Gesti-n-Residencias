@@ -114,8 +114,6 @@ class FacturaForm(forms.ModelForm):
             'propiedad': forms.Select(attrs={'class': 'form-control'}),
             'plan_cuota': forms.Select(attrs={'class': 'form-control'}),
             'fecha_vencimiento': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
-            'monto_total': forms.NumberInput(attrs={'class': 'form-control'}),
-            'estado': forms.Select(attrs={'class': 'form-control'}),
             'observaciones': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
         }
 
