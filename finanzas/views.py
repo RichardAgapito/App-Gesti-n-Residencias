@@ -2,7 +2,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, View, TemplateView, DetailView
 from .models import PlanCuota, ConceptoCobro, MetodoPago, Factura, Recaudo
-from .forms import PlanCuotaForm, ConceptoCobroForm, MetodoPagoForm, FacturaForm, DetalleFacturaFormSet, RecaudoForm
+from .forms import PlanCuotaForm, ConceptoCobroForm, MetodoPagoForm, FacturaForm, DetalleFacturaFormSet, RecaudoForm, PlanConceptoCobroFormSet
 from django.db import transaction, models
 from django.shortcuts import get_object_or_404, redirect, reverse
 from django.contrib import messages
