@@ -1,280 +1,163 @@
-{% extends 'base_dashboard.html' %}
+{% extends 'base.html' %}
 {% load static %}
 
 {% block extra_css %}
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        .availability-container { max-width: 100%; margin: 1rem auto; padding: 1.5rem; background-color: #fff; border-radius: 8px; box-shadow: 0 6px 20px rgba(0,0,0,0.08); }
-        .availability-header h2 { color: #2c3e50; margin-bottom: 0.5rem; }
-        .availability-header p { font-size: 1.1rem; color: #7f8c8d; margin-bottom: 1.5rem; }
-        .calendar { width: 100%; border-collapse: collapse; margin-bottom: 1.5rem; }
-        .calendar th { text-align: center; padding: 0.8rem; background-color: #f8f9fa; color: #34495e; font-weight: 600; }
-        .calendar td { text-align: center; padding: 0.5rem; border: 1px solid #f1f3f5; height: 80px; vertical-align: top; position: relative; cursor: pointer; transition: background-color 0.2s; }
-        .calendar td:hover:not(.disabled) { background-color: #eef5ff; }
-        .calendar td.today .day-number { background-color: #e9ecef; border-radius: 50%; }
-        .calendar td.disabled { color: #ced4da; cursor: not-allowed; background-color: #f8f9fa; }
-        .calendar td.selected .day-number { background-color: #3498db; color: white; border-radius: 50%; }
-        .calendar .day-number { font-size: 1rem; font-weight: 500; width: 32px; height: 32px; line-height: 32px; display: inline-block; }
-        .calendar td.fully-booked .day-number { text-decoration: line-through; color: #e74c3c; }
-        .calendar-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
-        .calendar-nav button { background: #fff; border: 1px solid #dee2e6; padding: 0.5rem 1rem; cursor: pointer; border-radius: 5px; }
-        .calendar-nav h2 { margin: 0; font-size: 1.5rem; color: #2c3e50; }
-        #time-slots-display h3 { color: #2c3e50; margin-bottom: 1.5rem; }
-        .time-slots-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
-        .time-slot { padding: 12px; border: 1px solid #dee2e6; border-radius: 6px; text-align: center; cursor: pointer; transition: all 0.2s ease-in-out; font-weight: 500; }
-        .time-slot.available:hover { background-color: #eef5ff; border-color: #a5d8ff; }
-        .time-slot.selected { background-color: #e74c3c; color: white; border-color: #c0392b; }
-        .time-slot.in-range { background-color: #fadbd8; border-color: #f1948a; }
-        .time-slot.booked { background-color: #f8f9fa; color: #adb5bd; cursor: not-allowed; text-decoration: line-through; }
-        #form-container { margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid #f1f3f5; }
-        #form-container .form-summary { background-color: #f8f9fa; padding: 1rem; border-radius: 5px; margin-bottom: 1rem; }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
     </style>
 {% endblock %}
 
 {% block content %}
-<div class="availability-container">
-    <div class="availability-header">
-        <h2><i class="fas fa-ban"></i> Bloquear Horario para {{ amenidad.nombre }}</h2>
-        <p>Selecciona un día y luego haz clic en una hora de inicio y una de fin para crear un bloqueo.</p>
-    </div>
+<div class="min-h-screen bg-gray-50 flex font-sans">
+    {% include 'includes/admin_sidebar.html' %}
 
-    <div class="calendar-nav">
-        <button id="prev-month">&laquo; Anterior</button>
-        <h2 id="current-month-year"></h2>
-        <button id="next-month">Siguiente &raquo;</button>
-    </div>
-    <div id="calendar-container"></div>
-
-    <div id="time-slots-display" style="display:none;">
-        <h3>Horarios para <span id="selected-date-display"></span></h3>
-        <div class="time-slots-grid" id="slots-grid"></div>
-    </div>
-
-    <div id="form-container" style="display:none;">
-        <div class="form-summary">
-            <strong>Inicio del Bloqueo:</strong> <span id="summary-start-time">-</span><br>
-            <strong>Fin del Bloqueo:</strong> <span id="summary-end-time">-</span>
+    <main class="flex-1 lg:ml-64 p-8 h-screen overflow-y-auto custom-scrollbar">
+        <!-- Header -->
+        <div class="mb-8 flex items-center justify-between">
+            <div>
+                <a href="{% url 'gestionar_amenidades' %}" class="text-gray-400 hover:text-gray-600 transition-colors mb-2 inline-flex items-center gap-1 text-sm font-medium">
+                    <i class="fa-solid fa-arrow-left"></i> Volver a Amenidades
+                </a>
+                <h1 class="text-3xl font-bold text-gray-900 flex items-center gap-3">
+                    <span class="w-10 h-10 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-ban"></i>
+                    </span>
+                    Bloquear Horario: {{ amenidad.nombre }}
+                </h1>
+                <p class="text-gray-500 mt-1 ml-14">Gestiona los periodos de mantenimiento o indisponibilidad</p>
+            </div>
         </div>
-        <form method="post">
-            {% csrf_token %}
-            {% if form.errors %}
-                <div class="alert alert-danger">
-                    <strong>Error:</strong>
-                    <ul>
-                    {% for field, error_list in form.errors.items %}
-                        {% for error in error_list %}
-                            <li>{{ error }}</li>
+
+        <div class="grid grid-cols-1 xl:grid-cols-12 gap-8">
+            <!-- Formulario (Columna Izquierda - 4/12) -->
+            <div class="xl:col-span-4">
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden sticky top-6">
+                    <div class="p-6 border-b border-gray-100 bg-gray-50">
+                        <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2">
+                            <i class="fa-solid fa-plus-circle text-orange-500"></i> Nuevo Bloqueo
+                        </h3>
+                    </div>
+                    
+                    <form method="post" class="p-6 space-y-5">
+                        {% csrf_token %}
+                        
+                        {% if form.non_field_errors %}
+                            <div class="p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-r text-sm">
+                                {{ form.non_field_errors }}
+                            </div>
+                        {% endif %}
+
+                        {% for field in form %}
+                            <div>
+                                <label for="{{ field.id_for_label }}" class="block text-xs font-bold text-gray-700 uppercase mb-2">{{ field.label }}</label>
+                                <div class="relative">
+                                    {{ field }}
+                                </div>
+                                {% if field.errors %}
+                                    <p class="mt-1 text-xs text-red-600">{{ field.errors.0 }}</p>
+                                {% endif %}
+                            </div>
                         {% endfor %}
-                    {% endfor %}
-                    </ul>
+
+                        <button type="submit" class="w-full py-3 bg-orange-600 text-white font-bold rounded-xl hover:bg-orange-700 transition-all shadow-lg shadow-orange-200 flex items-center justify-center gap-2 transform hover:-translate-y-0.5">
+                            <i class="fa-solid fa-lock"></i> Bloquear Horario
+                        </button>
+                    </form>
                 </div>
-            {% endif %}
-            {{ form.as_p }}
-            <button type="submit" class="btn btn-danger">Confirmar Bloqueo</button>
-            <button type="button" id="clear-selection" class="btn btn-secondary">Limpiar Selección</button>
-        </form>
-    </div>
-     <a href="{% url 'gestionar_amenidades' %}" class="btn btn-link mt-3">Cancelar</a>
+            </div>
+
+            <!-- Lista de Bloqueos (Columna Derecha - 8/12) -->
+            <div class="xl:col-span-8">
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div class="p-6 border-b border-gray-100 flex justify-between items-center">
+                        <h3 class="text-lg font-bold text-gray-900">Bloqueos Activos y Futuros</h3>
+                        <span class="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-bold">
+                            {{ reservas|length }} Registros
+                        </span>
+                    </div>
+
+                    {% if reservas %}
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-gray-50 border-b border-gray-100 text-xs uppercase text-gray-500 font-semibold">
+                                        <th class="px-6 py-4">Motivo / Estado</th>
+                                        <th class="px-6 py-4">Inicio</th>
+                                        <th class="px-6 py-4">Fin</th>
+                                        <th class="px-6 py-4 text-right">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100">
+                                    {% for reserva in reservas %}
+                                        <tr class="hover:bg-gray-50 transition-colors">
+                                            <td class="px-6 py-4">
+                                                <div class="flex items-center gap-3">
+                                                    <div class="w-8 h-8 rounded-lg bg-red-100 text-red-600 flex items-center justify-center">
+                                                        <i class="fa-solid fa-lock"></i>
+                                                    </div>
+                                                    <div>
+                                                        <p class="font-bold text-gray-900 text-sm">Mantenimiento</p>
+                                                        <span class="text-xs px-2 py-0.5 rounded bg-red-100 text-red-700 font-medium">Bloqueado</span>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="px-6 py-4 text-sm text-gray-600">
+                                                <div class="flex flex-col">
+                                                    <span class="font-medium text-gray-900">{{ reserva.fecha_inicio|date:"d M Y" }}</span>
+                                                    <span>{{ reserva.fecha_inicio|time:"H:i" }}</span>
+                                                </div>
+                                            </td>
+                                            <td class="px-6 py-4 text-sm text-gray-600">
+                                                <div class="flex flex-col">
+                                                    <span class="font-medium text-gray-900">{{ reserva.fecha_fin|date:"d M Y" }}</span>
+                                                    <span>{{ reserva.fecha_fin|time:"H:i" }}</span>
+                                                </div>
+                                            </td>
+                                            <td class="px-6 py-4 text-right">
+                                                <a href="{% url 'unblock_horario' reserva.id %}" class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-red-400 hover:bg-red-50 hover:text-red-600 transition-colors" title="Desbloquear">
+                                                    <i class="fa-solid fa-trash-can"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="p-12 text-center">
+                            <div class="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <i class="fa-regular fa-calendar-check text-green-500 text-2xl"></i>
+                            </div>
+                            <h4 class="text-gray-900 font-medium mb-1">No hay bloqueos activos</h4>
+                            <p class="text-gray-500 text-sm">La amenidad está disponible en todos sus horarios habituales.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </main>
 </div>
-{% endblock %}
 
-{% block extra_js %}
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // --- ELEMENTOS DEL DOM ---
-    const calendarContainer = document.getElementById('calendar-container');
-    const currentMonthYearDisplay = document.getElementById('current-month-year');
-    const prevMonthBtn = document.getElementById('prev-month');
-    const nextMonthBtn = document.getElementById('next-month');
-    const timeSlotsDisplay = document.getElementById('time-slots-display');
-    const slotsGrid = document.getElementById('slots-grid');
-    const selectedDateDisplay = document.getElementById('selected-date-display');
-    const formContainer = document.getElementById('form-container');
-    const fechaInicioInput = document.querySelector('[name=fecha_inicio]');
-    const fechaFinInput = document.querySelector('[name=fecha_fin]');
-    const summaryStartTime = document.getElementById('summary-start-time');
-    const summaryEndTime = document.getElementById('summary-end-time');
-    const clearSelectionBtn = document.getElementById('clear-selection');
-
-    // Ocultar el formulario de Django
-    fechaInicioInput.parentElement.style.display = 'none';
-    fechaFinInput.parentElement.style.display = 'none';
-
-    // --- ESTADO ---
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    let currentMonth = today.getMonth();
-    let currentYear = today.getFullYear();
-    let selectionStart = null;
-
-    const bookedDates = [
-        {% for reserva in reservas %}
-        {
-            start: new Date('{{ reserva.fecha_inicio|date:"Y-m-d\TH:i:s" }}'),
-            end: new Date('{{ reserva.fecha_fin|date:"Y-m-d\TH:i:s" }}')
-        },
-        {% endfor %}
-    ];
-
-    const startHour = {{ amenidad.hora_inicio.hour }};
-    const endHour = {{ amenidad.hora_fin.hour }};
-    const interval = 60;
-
-    // --- HELPERS ---
-    function toLocalISOString(date) {
-        const pad = (num) => num.toString().padStart(2, '0');
-        return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+<style>
+    /* Custom styles for form inputs */
+    input[type="text"], input[type="datetime-local"], textarea, select {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border-radius: 0.75rem;
+        border: 1px solid #e5e7eb;
+        background-color: #f9fafb;
+        font-size: 0.875rem;
+        transition: all 0.2s;
     }
-
-    // --- LÓGICA DE RENDERIZADO ---
-    function renderCalendar() {
-        // (Implementación similar a la vista de residente, se omite por brevedad pero debe estar aquí)
-        // ... Esta función dibuja el calendario de días ...
-        calendarContainer.innerHTML = '';
-        const table = document.createElement('table');
-        table.classList.add('calendar');
-        currentMonthYearDisplay.textContent = new Date(currentYear, currentMonth).toLocaleString('es-ES', { month: 'long', year: 'numeric' });
-        const header = table.createTHead();
-        const weekRow = header.insertRow();
-        ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].forEach(day => {
-            const cell = weekRow.insertCell();
-            cell.textContent = day;
-        });
-        const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();
-        const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-        let date = 1;
-        for (let i = 0; i < 6; i++) {
-            const row = table.insertRow();
-            for (let j = 0; j < 7; j++) {
-                const cell = row.insertCell();
-                if (i === 0 && j < firstDayOfMonth || date > daysInMonth) {
-                    cell.classList.add('disabled');
-                } else {
-                    const currentDate = new Date(currentYear, currentMonth, date);
-                    currentDate.setHours(0, 0, 0, 0);
-                    const dayNumber = document.createElement('div');
-                    dayNumber.classList.add('day-number');
-                    dayNumber.textContent = date;
-                    cell.appendChild(dayNumber);
-                    if (currentDate < today) cell.classList.add('disabled');
-                    else {
-                        cell.addEventListener('click', () => {
-                            document.querySelectorAll('.calendar td.selected').forEach(c => c.classList.remove('selected'));
-                            cell.classList.add('selected');
-                            displayTimeSlots(currentDate);
-                        });
-                    }
-                    date++;
-                }
-            }
-        }
-        calendarContainer.appendChild(table);
+    input:focus, textarea:focus, select:focus {
+        outline: none;
+        border-color: #f97316; /* Orange-500 */
+        background-color: #ffffff;
+        box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.1);
     }
-
-    function displayTimeSlots(selectedDate) {
-        slotsGrid.innerHTML = '';
-        timeSlotsDisplay.style.display = 'block';
-        selectedDateDisplay.textContent = selectedDate.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
-        
-        for (let hour = startHour; hour < endHour; hour++) {
-            const slotStart = new Date(selectedDate);
-            slotStart.setHours(hour, 0, 0, 0);
-            const slotEnd = new Date(slotStart.getTime() + interval * 60000);
-
-            const timeSlotDiv = document.createElement('div');
-            timeSlotDiv.classList.add('time-slot');
-            timeSlotDiv.textContent = `${String(hour).padStart(2, '0')}:00`;
-            timeSlotDiv.dataset.slotStart = slotStart.toISOString();
-
-            let isBooked = bookedDates.some(res => slotStart < res.end && slotEnd > res.start);
-
-            if (isBooked) {
-                timeSlotDiv.classList.add('booked');
-            } else {
-                timeSlotDiv.classList.add('available');
-                timeSlotDiv.addEventListener('click', handleSlotClick);
-            }
-            slotsGrid.appendChild(timeSlotDiv);
-        }
-        updateSlotSelection();
-    }
-
-    function handleSlotClick(event) {
-        const clickedSlot = event.currentTarget;
-        const clickedSlotStart = new Date(clickedSlot.dataset.slotStart);
-
-        if (!selectionStart) {
-            // Iniciar selección
-            selectionStart = clickedSlotStart;
-        } else {
-            // Finalizar selección
-            const selectionEnd = new Date(clickedSlotStart.getTime() + interval * 60000);
-            if (selectionEnd > selectionStart) {
-                fechaInicioInput.value = toLocalISOString(selectionStart).slice(0, 16);
-                fechaFinInput.value = toLocalISOString(selectionEnd).slice(0, 16);
-                formContainer.style.display = 'block';
-            } else { // Si eligen un final antes del inicio, se reinicia
-                selectionStart = clickedSlotStart;
-                fechaInicioInput.value = '';
-                fechaFinInput.value = '';
-                formContainer.style.display = 'none';
-            }
-        }
-        updateSlotSelection();
-    }
-
-    function updateSlotSelection() {
-        const allSlots = document.querySelectorAll('.time-slot.available');
-        let selectionEnd = fechaFinInput.value ? new Date(fechaFinInput.value) : null;
-
-        allSlots.forEach(slot => {
-            const slotStart = new Date(slot.dataset.slotStart);
-            slot.classList.remove('selected', 'in-range');
-
-            if (selectionStart && slotStart.getTime() === selectionStart.getTime()) {
-                slot.classList.add('selected');
-                summaryStartTime.textContent = selectionStart.toLocaleString('es-ES', { dateStyle: 'medium', timeStyle: 'short' });
-            }
-            if (selectionEnd) {
-                const slotEnd = new Date(slotStart.getTime() + interval * 60000);
-                if (slotStart >= selectionStart && slotEnd <= selectionEnd) {
-                    slot.classList.add('in-range');
-                }
-                if (slotEnd.getTime() === selectionEnd.getTime()) {
-                    slot.classList.add('selected');
-                    summaryEndTime.textContent = selectionEnd.toLocaleString('es-ES', { dateStyle: 'medium', timeStyle: 'short' });
-                }
-            }
-        });
-    }
-    
-    function clearSelection() {
-        selectionStart = null;
-        fechaInicioInput.value = '';
-        fechaFinInput.value = '';
-        formContainer.style.display = 'none';
-        summaryStartTime.textContent = '-';
-        summaryEndTime.textContent = '-';
-        updateSlotSelection();
-    }
-
-    // --- EVENT LISTENERS ---
-    prevMonthBtn.addEventListener('click', () => {
-        currentMonth--;
-        if (currentMonth < 0) { currentMonth = 11; currentYear--; }
-        renderCalendar();
-    });
-
-    nextMonthBtn.addEventListener('click', () => {
-        currentMonth++;
-        if (currentMonth > 11) { currentMonth = 0; currentYear++; }
-        renderCalendar();
-    });
-    
-    clearSelectionBtn.addEventListener('click', clearSelection);
-
-    // --- INICIALIZACIÓN ---
-    renderCalendar();
-});
-</script>
+</style>
 {% endblock %}

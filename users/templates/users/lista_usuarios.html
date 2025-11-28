@@ -14,7 +14,7 @@
     
     {% include 'includes/admin_sidebar.html' %}
 
-    <main class="flex-1 lg:ml-64 p-8 overflow-y-auto">
+    <main class="flex-1 lg:ml-64 p-8 h-screen overflow-y-auto">
         <div id="user-list-view">
             <div class="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
@@ -31,9 +31,9 @@
             </div>
 
             <!-- Content Container -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div class="p-6">
                 <!-- Filters Section -->
-                <div class="mb-6 pb-6 border-b border-gray-200">
+                <div class="mb-6 pb-6">
                     <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
                         <i class="fa-solid fa-filter text-blue-500"></i>
                         Filtros de Búsqueda
@@ -139,14 +139,6 @@
                         </div>
                     {% endif %}
                 </div>
-            </div>
-
-            <!-- Back Link -->
-            <div class="mt-8">
-                <a href="{% url 'dashboard' %}" class="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors">
-                    <i class="fa-solid fa-arrow-left"></i>
-                    <span>Volver al Dashboard</span>
-                </a>
             </div>
         </div>
         <div id="dynamic-content" class="hidden"></div>

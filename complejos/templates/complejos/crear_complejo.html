@@ -5,39 +5,220 @@
 {% block global_styles %}{% endblock %}
 
 {% block extra_css %}
-    <link rel="stylesheet" href="{% static 'css/crear_complejo.css' %}">
+    <script src="https://cdn.tailwindcss.com"></script>
 {% endblock %}
 
 {% block content %}
-<div class="form-container">
-    <h2><i class="fa-solid fa-building-circle-check"></i> Registrar Nuevo Complejo</h2>
-    <form method="post">
-        {% csrf_token %}
-        {% for field in form %}
-            <div class="form-group">
-                {{ field.label_tag }}
-                {% if field.name == 'amenidades' %}
-                    <div class="amenidades-container">
-                        {% for choice in field %}
-                            <div class="amenidad-choice">
-                                {{ choice.tag }}
-                                <label for="{{ choice.id_for_label }}">{{ choice.choice_label }}</label>
-                            </div>
-                        {% endfor %}
-                    </div>
-                {% else %}
-                    {{ field }}
-                {% endif %}
-                {% if field.help_text %}
-                    <small class="form-text text-muted">{{ field.help_text }}</small>
-                {% endif %}
-                {% for error in field.errors %}
-                    <div class="alert alert-danger">{{ error }}</div>
-                {% endfor %}
+<div class="min-h-screen bg-gray-50 flex font-sans">
+    
+    {% include 'includes/admin_sidebar.html' %}
+
+    <main class="flex-1 lg:ml-64 p-8 h-screen overflow-y-auto">
+        <div class="max-w-4xl mx-auto">
+            <!-- Header -->
+            <div class="mb-8">
+                <a href="{% url 'lista_complejos' %}" class="inline-flex items-center text-gray-500 hover:text-blue-600 mb-4 transition-colors">
+                    <i class="fa-solid fa-arrow-left mr-2"></i> Volver a la lista
+                </a>
+                <h1 class="text-3xl font-bold text-gray-900">Registrar Nuevo Complejo</h1>
+                <p class="text-gray-500 mt-1">Ingresa la información para dar de alta un nuevo complejo residencial.</p>
             </div>
-        {% endfor %}
-        <button type="submit" class="btn-submit">Guardar Complejo</button>
-    </form>
-    <a href="{% url 'lista_complejos' %}" class="back-link">Cancelar y Volver a la Lista</a>
+
+            <!-- Form Card -->
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+                <div class="h-2 bg-gradient-to-r from-blue-500 to-indigo-600"></div>
+                
+                <form method="post" class="p-8">
+                    {% csrf_token %}
+                    
+                    {% if form.non_field_errors %}
+                        <div class="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-r">
+                            {{ form.non_field_errors }}
+                        </div>
+                    {% endif %}
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                        <!-- Nombre -->
+                        <div class="col-span-2 md:col-span-1">
+                            <label for="{{ form.nombre.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Nombre del Complejo</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                                    <i class="fa-regular fa-building"></i>
+                                </div>
+                                {{ form.nombre }}
+                            </div>
+                            {% if form.nombre.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ form.nombre.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+
+                        <!-- Tipo -->
+                        <div class="col-span-2 md:col-span-1">
+                            <label for="{{ form.tipo.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Tipo de Complejo</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                                    <i class="fa-solid fa-layer-group"></i>
+                                </div>
+                                {{ form.tipo }}
+                            </div>
+                            {% if form.tipo.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ form.tipo.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+
+                        <!-- Dirección -->
+                        <div class="col-span-2">
+                            <label for="{{ form.calle.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Dirección (Calle y Número)</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                                    <i class="fa-solid fa-map-pin"></i>
+                                </div>
+                                {{ form.calle }}
+                            </div>
+                            {% if form.calle.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ form.calle.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+
+                        <!-- Ciudad -->
+                        <div class="col-span-2 md:col-span-1">
+                            <label for="{{ form.ciudad.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Ciudad</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                                    <i class="fa-solid fa-city"></i>
+                                </div>
+                                {{ form.ciudad }}
+                            </div>
+                            {% if form.ciudad.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ form.ciudad.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+
+                        <!-- Código Postal -->
+                        <div class="col-span-2 md:col-span-1">
+                            <label for="{{ form.codigo_postal.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Código Postal</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                                    <i class="fa-solid fa-envelope"></i>
+                                </div>
+                                {{ form.codigo_postal }}
+                            </div>
+                            {% if form.codigo_postal.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ form.codigo_postal.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+
+                        <!-- Total Unidades -->
+                        <div class="col-span-2 md:col-span-1">
+                            <label for="{{ form.numero_total_unidades.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Total de Unidades</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                                    <i class="fa-solid fa-hashtag"></i>
+                                </div>
+                                {{ form.numero_total_unidades }}
+                            </div>
+                            {% if form.numero_total_unidades.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ form.numero_total_unidades.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+
+                        <!-- Estado -->
+                        <div class="col-span-2 md:col-span-1">
+                            <label for="{{ form.estado.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Estado</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                                    <i class="fa-solid fa-toggle-on"></i>
+                                </div>
+                                {{ form.estado }}
+                            </div>
+                            {% if form.estado.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ form.estado.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+
+                        <!-- Administrador -->
+                        <div class="col-span-2 md:col-span-1">
+                            <label for="{{ form.administrador_responsable.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Administrador Responsable</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                                    <i class="fa-solid fa-user-tie"></i>
+                                </div>
+                                {{ form.administrador_responsable }}
+                            </div>
+                            {% if form.administrador_responsable.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ form.administrador_responsable.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+
+                        <!-- Teléfono -->
+                        <div class="col-span-2 md:col-span-1">
+                            <label for="{{ form.telefono_contacto.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Teléfono de Contacto</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                                    <i class="fa-solid fa-phone"></i>
+                                </div>
+                                {{ form.telefono_contacto }}
+                            </div>
+                            {% if form.telefono_contacto.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ form.telefono_contacto.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+
+                        <!-- Amenidades -->
+                        <div class="col-span-2 mt-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-3">Amenidades Disponibles</label>
+                            <div class="grid grid-cols-2 md:grid-cols-3 gap-3 bg-gray-50 p-4 rounded-xl border border-gray-100">
+                                {% for checkbox in form.amenidades %}
+                                    <div class="flex items-center p-2 rounded-lg hover:bg-white hover:shadow-sm transition-all">
+                                        {{ checkbox.tag }}
+                                        <label for="{{ checkbox.id_for_label }}" class="ml-2 text-sm text-gray-700 cursor-pointer w-full">{{ checkbox.choice_label }}</label>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            {% if form.amenidades.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ form.amenidades.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="mt-8 flex items-center justify-end gap-4 pt-6 border-t border-gray-100">
+                        <a href="{% url 'lista_complejos' %}" class="px-6 py-2.5 text-gray-700 font-medium hover:bg-gray-100 rounded-xl transition-colors">
+                            Cancelar
+                        </a>
+                        <button type="submit" class="px-8 py-2.5 bg-blue-600 text-white font-semibold rounded-xl shadow-lg shadow-blue-200 hover:bg-blue-700 hover:shadow-blue-300 transition-all transform hover:-translate-y-0.5">
+                            Guardar Complejo
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
 </div>
+
+<style>
+    /* Custom styles for form inputs to match Tailwind */
+    input[type="text"], input[type="number"], select {
+        width: 100%;
+        padding-left: 2.5rem; /* Space for icon */
+        padding-right: 1rem;
+        padding-top: 0.625rem;
+        padding-bottom: 0.625rem;
+        border-radius: 0.75rem;
+        border: 1px solid #e5e7eb;
+        background-color: #f9fafb;
+        font-size: 0.875rem;
+        transition: all 0.2s;
+    }
+    input[type="text"]:focus, input[type="number"]:focus, select:focus {
+        outline: none;
+        border-color: #3b82f6;
+        background-color: #ffffff;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+    /* Checkbox styles */
+    input[type="checkbox"]:focus {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5);
+    }
+</style>
 {% endblock %}

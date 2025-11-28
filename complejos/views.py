@@ -106,23 +106,41 @@ def unblock_horario_view(request, reserva_id):
 
 @user_passes_test(es_admin, login_url='/')
 def lista_complejos(request):
+    from django.db.models import Count, Q
+    
     query = request.GET.get('q')
     tipo = request.GET.get('tipo')
     estado = request.GET.get('estado')
 
-    complejos = Complejo.objects.all()
+    # 1. Obtener QuerySet con anotaciones
+    complejos_qs = Complejo.objects.annotate(
+        total_amenidades=Count('amenidades', distinct=True),
+        unidades_ocupadas=Count('propiedades', filter=Q(propiedades__estado_ocupacion='ocupado'), distinct=True)
+    )
 
+    # 2. Convertir a lista para poder agregar atributos dinámicos (porcentaje)
+    complejos_list = list(complejos_qs)
+
+    # 3. Calcular porcentajes en los objetos de la lista
+    for c in complejos_list:
+        if c.numero_total_unidades > 0:
+            c.porcentaje_ocupacion = int((c.unidades_ocupadas / c.numero_total_unidades) * 100)
+        else:
+            c.porcentaje_ocupacion = 0
+
+    # 4. Filtrar sobre la lista (Python filtering)
     if query:
-        complejos = complejos.filter(nombre__icontains=query)
+        query_lower = query.lower()
+        complejos_list = [c for c in complejos_list if query_lower in c.nombre.lower() or query_lower in c.calle.lower() or (c.administrador_responsable and query_lower in c.administrador_responsable.lower())]
     
     if tipo:
-        complejos = complejos.filter(tipo=tipo)
+        complejos_list = [c for c in complejos_list if c.tipo == tipo]
 
     if estado:
-        complejos = complejos.filter(estado=estado)
+        complejos_list = [c for c in complejos_list if c.estado == estado]
 
     context = {
-        'complejos': complejos,
+        'complejos': complejos_list,
         'tipo_choices': Complejo.TIPO_CHOICES,
         'estado_choices': Complejo.ESTADO_CHOICES,
         'current_tipo': tipo,
@@ -250,6 +268,9 @@ def editar_complejo(request, complejo_id):
         form = ComplejoForm(request.POST, instance=complejo)
         if form.is_valid():
             form.save()
+            next_url = request.POST.get('next')
+            if next_url:
+                return redirect(next_url)
             return redirect('detalle_complejo', complejo_id=complejo.id)
     else:
         form = ComplejoForm(instance=complejo)
@@ -416,7 +437,6 @@ def crear_reserva_view(request):
     if request.method == 'POST':
         if not has_active_contract:
             return redirect('crear_reserva') 
-
         pass
 
     context = {

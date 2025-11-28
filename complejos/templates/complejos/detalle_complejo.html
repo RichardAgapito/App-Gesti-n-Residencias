@@ -5,100 +5,232 @@
 {% block global_styles %}{% endblock %}
 
 {% block extra_css %}
-    <link rel="stylesheet" href="{% static 'css/complejos.css' %}">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom scrollbar for sidebar if needed */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #9ca3af;
+        }
+    </style>
 {% endblock %}
 
 {% block content %}
-<div class="complejos-container">
-    <div class="list-header">
-        <h1><i class="fa-solid fa-building-user"></i> Detalles de: {{ complejo.nombre }}</h1>
-        <div>
-            <a href="{% url 'editar_complejo' complejo.id %}" class="btn btn-warning">
-                <i class="fa-solid fa-pencil"></i> Editar Complejo
-            </a>
-            <a href="{% url 'crear_propiedad' complejo.id %}" class="btn btn-primary">
-                <i class="fa-solid fa-plus"></i> Registrar Nueva Propiedad
-            </a>
-        </div>
-    </div>
-    <hr>
+<div class="min-h-screen bg-gray-50 flex font-sans">
+    
+    {% include 'includes/admin_sidebar.html' %}
 
-    <div class="list-layout-container">
-        <aside class="filter-sidebar">
-            <h3><i class="fa-solid fa-info-circle"></i> Información General</h3>
-            <div class="complejo-details">
-                <p><strong>Dirección:</strong> {{ complejo.calle }}, {{ complejo.ciudad }}, {{ complejo.codigo_postal }}</p>
-                <p><strong>Tipo:</strong> {{ complejo.get_tipo_display }}</p>
-                <p><strong>Unidades:</strong> {{ complejo.numero_total_unidades }}</p>
-                <p><strong>Administrador:</strong> {{ complejo.administrador_responsable }}</p>
-                <p><strong>Teléfono:</strong> {{ complejo.telefono_contacto }}</p>
-                <p><strong>Estado:</strong> <span class="status-{% if complejo.estado == 'activo' %}active{% else %}inactive{% endif %}">{{ complejo.get_estado_display }}</span></p>
-                <p><strong>Amenidades:</strong></p>
-                <ul>
-                    {% for amenidad in complejo.amenidades.all %}
-                        <li>{{ amenidad.nombre }}</li>
-                    {% empty %}
-                        <li>No hay amenidades registradas.</li>
-                    {% endfor %}
-                </ul>
+    <main class="flex-1 lg:ml-64 p-8 h-screen overflow-y-auto custom-scrollbar">
+        <!-- Header & Actions -->
+        <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-6 mb-8">
+            <div>
+                <div class="flex items-center gap-3 mb-2">
+                    <a href="{% url 'lista_complejos' %}" class="w-8 h-8 flex items-center justify-center rounded-full bg-white border border-gray-200 text-gray-500 hover:text-blue-600 hover:border-blue-200 transition-all">
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </a>
+                    <h1 class="text-3xl font-bold text-gray-900">{{ complejo.nombre }}</h1>
+                    {% if complejo.estado == 'activo' %}
+                        <span class="px-3 py-1 bg-green-100 text-green-700 text-xs font-bold uppercase tracking-wider rounded-full">Activo</span>
+                    {% else %}
+                        <span class="px-3 py-1 bg-gray-100 text-gray-600 text-xs font-bold uppercase tracking-wider rounded-full">Inactivo</span>
+                    {% endif %}
+                </div>
+                <p class="text-gray-500 flex items-center gap-2 ml-11">
+                    <i class="fa-solid fa-location-dot text-gray-400"></i>
+                    {{ complejo.calle }}, {{ complejo.ciudad }}, {{ complejo.codigo_postal }}
+                </p>
             </div>
-            <hr>
-            <h3><i class="fa-solid fa-filter"></i> Filtros de Propiedades</h3>
-            <form method="get" action="{% url 'detalle_complejo' complejo.id %}" class="filters-form-vertical">
-                <div class="form-group">
-                    <label for="q">Buscar por ID</label>
-                    <input type="search" id="q" name="q" value="{{ query|default:'' }}">
-                </div>
-                <div class="form-group">
-                    <label for="estado">Estado de Ocupación</label>
-                    <select id="estado" name="estado">
-                        <option value="">Todos los estados</option>
-                        {% for value, name in estado_choices %}
-                            <option value="{{ value }}" {% if current_estado == value %}selected{% endif %}>{{ name }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="habitaciones">Habitaciones</label>
-                    <input type="number" id="habitaciones" name="habitaciones" value="{{ current_habitaciones|default:'' }}">
-                </div>
-                <div class="form-group">
-                    <label for="banos">Baños</label>
-                    <input type="number" id="banos" name="banos" value="{{ current_banos|default:'' }}">
-                </div>
-                <button type="submit">Aplicar Filtros</button>
-            </form>
-        </aside>
+            
+            <div class="flex flex-wrap gap-3 ml-11 xl:ml-0">
+                <a href="{% url 'editar_complejo' complejo.id %}?next={% url 'detalle_complejo' complejo.id %}" class="px-5 py-2.5 bg-white border border-gray-200 text-gray-700 font-medium rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm flex items-center gap-2">
+                    <i class="fa-solid fa-pen text-gray-400"></i> Editar Complejo
+                </a>
+                <a href="{% url 'crear_propiedad' complejo.id %}" class="px-5 py-2.5 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 transition-all shadow-md shadow-blue-200 flex items-center gap-2">
+                    <i class="fa-solid fa-plus"></i> Nueva Propiedad
+                </a>
+            </div>
+        </div>
 
-        <main class="results-content">
-            <h3><i class="fa-solid fa-door-closed"></i> Propiedades en este Complejo</h3>
-            <a href="{% url 'crear_propiedades_multiples' complejo.id %}" class="btn btn-secondary mb-3">
-                <i class="fa-solid fa-plus-circle"></i> Registro Múltiple de Propiedades
-            </a>
-            {% if propiedades %}
-                <div class="complejo-grid">
-                    {% for propiedad in propiedades %}
-                        <div class="complejo-card">
-                            <h4>{{ propiedad.numero_identificador }}</h4>
-                            <p><strong>Tipo:</strong> {{ propiedad.get_tipo_display }}</p>
-                            <p><strong>Área:</strong> {{ propiedad.area }} m²</p>
-                            <p><strong>Habitaciones:</strong> {{ propiedad.numero_habitaciones }}</p>
-                            <p><strong>Baños:</strong> {{ propiedad.numero_banos }}</p>
-                            <p><strong>Piso/Nivel:</strong> {{ propiedad.piso_nivel }}</p>
-                            <p><strong>Estado:</strong> {{ propiedad.get_estado_ocupacion_display }}</p>
-                            <div class="action-links">
-                                <a href="{% url 'detalle_propiedad' propiedad.id %}" class="btn btn-info">
-                                    <i class="fa-solid fa-eye"></i> Ver Detalles
-                                </a>
+        <div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
+            <!-- Sidebar: Info & Filters -->
+            <div class="space-y-6">
+                <!-- Info Card -->
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+                    <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-circle-info text-blue-500"></i> Información General
+                    </h3>
+                    <div class="space-y-4">
+                        <div class="flex items-start gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 shrink-0">
+                                <i class="fa-solid fa-building"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-500 uppercase font-semibold">Tipo</p>
+                                <p class="text-gray-900 font-medium">{{ complejo.get_tipo_display }}</p>
                             </div>
                         </div>
-                    {% endfor %}
+                        <div class="flex items-start gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600 shrink-0">
+                                <i class="fa-solid fa-hashtag"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-500 uppercase font-semibold">Total Unidades</p>
+                                <p class="text-gray-900 font-medium">{{ complejo.numero_total_unidades }}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center text-purple-600 shrink-0">
+                                <i class="fa-solid fa-user-shield"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-500 uppercase font-semibold">Administrador</p>
+                                <p class="text-gray-900 font-medium">{{ complejo.administrador_responsable }}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center text-green-600 shrink-0">
+                                <i class="fa-solid fa-phone"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-500 uppercase font-semibold">Contacto</p>
+                                <p class="text-gray-900 font-medium">{{ complejo.telefono_contacto }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 pt-6 border-t border-gray-100">
+                        <h4 class="text-sm font-bold text-gray-900 mb-3">Amenidades</h4>
+                        <div class="flex flex-wrap gap-2">
+                            {% for amenidad in complejo.amenidades.all %}
+                                <span class="px-2.5 py-1 bg-gray-50 text-gray-600 text-xs font-medium rounded-lg border border-gray-200 flex items-center gap-1.5">
+                                    <i class="fa-solid fa-star text-yellow-400 text-[10px]"></i>
+                                    {{ amenidad.nombre }}
+                                </span>
+                            {% empty %}
+                                <span class="text-sm text-gray-400 italic">No hay amenidades registradas.</span>
+                            {% endfor %}
+                        </div>
+                    </div>
                 </div>
-            {% else %}
-                <p class="no-results-message">No hay propiedades registradas para este complejo todavía.</p>
-            {% endif %}
-        </main>
-    </div>
-    <a href="{% url 'lista_complejos' %}" class="back-link">← Volver a la lista de Complejos</a>
+
+                <!-- Filters Card -->
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 sticky top-6">
+                    <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-filter text-blue-500"></i> Filtrar Propiedades
+                    </h3>
+                    <form method="get" action="{% url 'detalle_complejo' complejo.id %}" class="space-y-4">
+                        <div>
+                            <label for="q" class="block text-xs font-bold text-gray-700 uppercase mb-2">Buscar por ID</label>
+                            <input type="search" id="q" name="q" value="{{ query|default:'' }}" placeholder="Ej: A-101" 
+                                class="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-700 placeholder-gray-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition-all shadow-sm">
+                        </div>
+                        <div>
+                            <label for="estado" class="block text-xs font-bold text-gray-700 uppercase mb-2">Estado</label>
+                            <select id="estado" name="estado" class="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-700 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition-all shadow-sm appearance-none">
+                                <option value="">Todos los estados</option>
+                                {% for value, name in estado_choices %}
+                                    <option value="{{ value }}" {% if current_estado == value %}selected{% endif %}>{{ name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label for="habitaciones" class="block text-xs font-bold text-gray-700 uppercase mb-2">Habitaciones</label>
+                                <input type="number" id="habitaciones" name="habitaciones" value="{{ current_habitaciones|default:'' }}" placeholder="Ej: 2"
+                                    class="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-700 placeholder-gray-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition-all shadow-sm">
+                            </div>
+                            <div>
+                                <label for="banos" class="block text-xs font-bold text-gray-700 uppercase mb-2">Baños</label>
+                                <input type="number" id="banos" name="banos" value="{{ current_banos|default:'' }}" placeholder="Ej: 1"
+                                    class="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-700 placeholder-gray-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition-all shadow-sm">
+                            </div>
+                        </div>
+                        <button type="submit" class="w-full py-2.5 bg-gray-900 text-white font-medium rounded-xl hover:bg-gray-800 transition-colors shadow-sm">
+                            Aplicar Filtros
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Main Content: Properties -->
+            <div class="xl:col-span-2">
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 min-h-[600px]">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2">
+                            <i class="fa-solid fa-door-closed text-blue-500"></i> Propiedades
+                            <span class="bg-gray-100 text-gray-600 text-xs font-bold px-2.5 py-0.5 rounded-full">{{ propiedades|length }}</span>
+                        </h3>
+                    </div>
+
+                    {% if propiedades %}
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {% for propiedad in propiedades %}
+                                <div class="group relative bg-white rounded-xl border border-gray-200 p-4 hover:shadow-md hover:border-blue-200 transition-all duration-200">
+                                    <div class="flex justify-between items-start mb-3">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-10 h-10 rounded-lg bg-gray-50 text-gray-400 flex items-center justify-center group-hover:bg-blue-50 group-hover:text-blue-600 transition-colors">
+                                                <i class="fa-solid fa-house"></i>
+                                            </div>
+                                            <div>
+                                                <h4 class="font-bold text-gray-900">{{ propiedad.numero_identificador }}</h4>
+                                                <p class="text-xs text-gray-500">{{ propiedad.get_tipo_display }}</p>
+                                            </div>
+                                        </div>
+                                        {% if propiedad.estado_ocupacion == 'ocupado' %}
+                                            <span class="w-2.5 h-2.5 rounded-full bg-red-500 ring-4 ring-red-50" title="Ocupado"></span>
+                                        {% elif propiedad.estado_ocupacion == 'disponible' %}
+                                            <span class="w-2.5 h-2.5 rounded-full bg-green-500 ring-4 ring-green-50" title="Disponible"></span>
+                                        {% else %}
+                                            <span class="w-2.5 h-2.5 rounded-full bg-gray-400 ring-4 ring-gray-50" title="{{ propiedad.get_estado_ocupacion_display }}"></span>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div class="grid grid-cols-2 gap-y-2 text-sm text-gray-600 mb-4">
+                                        <div class="flex items-center gap-2">
+                                            <i class="fa-solid fa-ruler-combined text-gray-400 text-xs"></i>
+                                            <span>{{ propiedad.area }} m²</span>
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            <i class="fa-solid fa-layer-group text-gray-400 text-xs"></i>
+                                            <span>Piso {{ propiedad.piso_nivel }}</span>
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            <i class="fa-solid fa-bed text-gray-400 text-xs"></i>
+                                            <span>{{ propiedad.numero_habitaciones }} Hab</span>
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            <i class="fa-solid fa-bath text-gray-400 text-xs"></i>
+                                            <span>{{ propiedad.numero_banos }} Baños</span>
+                                        </div>
+                                    </div>
+
+                                    <a href="{% url 'detalle_propiedad' propiedad.id %}" class="block w-full py-2 text-center text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
+                                        Ver Detalles
+                                    </a>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="flex flex-col items-center justify-center py-16 text-center">
+                            <div class="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+                                <i class="fa-solid fa-folder-open text-gray-300 text-2xl"></i>
+                            </div>
+                            <h4 class="text-gray-900 font-medium mb-1">No se encontraron propiedades</h4>
+                            <p class="text-gray-500 text-sm max-w-xs">No hay propiedades que coincidan con los filtros o aún no se han registrado.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </main>
 </div>
 {% endblock %}

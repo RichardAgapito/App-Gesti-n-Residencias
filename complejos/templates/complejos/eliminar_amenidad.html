@@ -1,13 +1,45 @@
 {% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+    <script src="https://cdn.tailwindcss.com"></script>
+{% endblock %}
 
 {% block content %}
-<div class="container">
-    <h2>Eliminar Amenidad</h2>
-    <p>¿Estás seguro de que quieres eliminar la amenidad "{{ amenidad.nombre }}"?</p>
-    <form method="post">
-        {% csrf_token %}
-        <button type="submit" class="btn btn-danger">Eliminar</button>
-        <a href="{% url 'gestionar_amenidades' %}" class="btn btn-secondary">Cancelar</a>
-    </form>
+<div class="min-h-screen bg-gray-50 flex font-sans">
+    {% include 'includes/admin_sidebar.html' %}
+
+    <main class="flex-1 lg:ml-64 p-8 flex items-center justify-center">
+        <div class="max-w-md w-full">
+            <div class="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden text-center">
+                <div class="p-8">
+                    <div class="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <i class="fa-solid fa-triangle-exclamation text-red-500 text-3xl"></i>
+                    </div>
+                    
+                    <h2 class="text-2xl font-bold text-gray-900 mb-2">¿Eliminar Amenidad?</h2>
+                    <p class="text-gray-500 mb-8">
+                        Estás a punto de eliminar <strong class="text-gray-900">"{{ amenidad.nombre }}"</strong>.
+                        <br>Esta acción es permanente y no se puede deshacer.
+                    </p>
+
+                    <form method="post" class="flex flex-col gap-3">
+                        {% csrf_token %}
+                        <button type="submit" class="w-full py-3 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 transition-all shadow-lg shadow-red-200 flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-trash-can"></i> Sí, Eliminar
+                        </button>
+                        <a href="{% url 'gestionar_amenidades' %}" class="w-full py-3 bg-white text-gray-700 font-bold rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors">
+                            Cancelar
+                        </a>
+                    </form>
+                </div>
+                <div class="bg-gray-50 px-6 py-4 border-t border-gray-100">
+                    <p class="text-xs text-gray-400">
+                        <i class="fa-solid fa-info-circle mr-1"></i> Las reservas asociadas también podrían verse afectadas.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </main>
 </div>
 {% endblock %}
