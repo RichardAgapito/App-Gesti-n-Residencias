@@ -61,9 +61,41 @@ class Factura(models.Model):
     plan_cuota = models.ForeignKey(PlanCuota, on_delete=models.SET_NULL, null=True, blank=True)
     fecha_emision = models.DateField(auto_now_add=True)
     fecha_vencimiento = models.DateField()
-    monto_total = models.DecimalField(max_digits=10, decimal_places=2)
     estado = models.CharField(max_length=15, choices=Estado.choices, default=Estado.PENDIENTE)
     observaciones = models.TextField(blank=True, null=True)
+
+    @property
+    def total_calculado(self):
+        return sum(detalle.monto for detalle in self.detalles.all())
+
+    @property
+    def monto_pagado_total(self):
+        return sum(recaudo.monto_pagado for recaudo in self.recaudos.all())
+
+    @property
+    def esta_pagada(self):
+        return self.monto_pagado_total >= self.total_calculado
+    
+    def _update_factura_estado(self):
+        # Evitar modificar estados terminales
+        if self.estado in [self.Estado.CANCELADA, self.Estado.ANULADA]:
+            return
+        
+        # Lógica para actualizar el estado
+        if self.monto_pagado_total >= self.total_calculado and self.total_calculado > 0:
+            if self.estado != self.Estado.PAGADA:
+                self.estado = self.Estado.PAGADA
+                self.save(update_fields=['estado'])
+        elif self.estado == self.Estado.PAGADA:
+            # Si estaba PAGADA pero ya no lo está (ej. se eliminó un recaudo), vuelve a PENDIENTE
+            self.estado = self.Estado.PENDIENTE
+            self.save(update_fields=['estado'])
+        elif self.estado not in [self.Estado.PENDIENTE, self.Estado.VENCIDA]:
+            # Si no está pagada y no está en un estado terminal, asegúrate de que sea PENDIENTE
+            self.estado = self.Estado.PENDIENTE
+            self.save(update_fields=['estado'])
+
+
 
     def __str__(self):
         return f"Factura {self.numero_factura} - {self.propiedad}"
@@ -86,10 +118,9 @@ class DetalleFactura(models.Model):
     factura = models.ForeignKey(Factura, on_delete=models.CASCADE, related_name='detalles')
     concepto_cobro = models.ForeignKey(ConceptoCobro, on_delete=models.PROTECT)
     monto = models.DecimalField(max_digits=10, decimal_places=2)
-    descripcion = models.CharField(max_length=255)
 
     def __str__(self):
-        return f"{self.descripcion} - {self.monto}"
+        return f"{self.concepto_cobro.nombre} - {self.monto}"
 
 class MetodoPago(models.Model):
     class Tipo(models.TextChoices):
@@ -118,3 +149,12 @@ class Recaudo(models.Model):
 
     def __str__(self):
         return f"Recaudo de {self.monto_pagado} para {self.factura.numero_factura}"
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        self.factura._update_factura_estado() # Update the factura's status
+
+    def delete(self, *args, **kwargs):
+        factura_to_update = self.factura
+        super().delete(*args, **kwargs)
+        factura_to_update._update_factura_estado() # Update the factura's status after deletion

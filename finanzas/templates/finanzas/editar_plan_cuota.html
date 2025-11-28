@@ -1,20 +1,150 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}{{ titulo }}{% endblock %}
-
 {% block extra_css %}
     <link rel="stylesheet" href="{% static 'css/crear_complejo.css' %}">
+    <style>
+        .formset-container {
+            border: 1px solid #ccc;
+            padding: 15px;
+            margin-top: 20px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+        .formset-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .form-row-container {
+            display: flex;
+            gap: 1rem;
+            align-items: flex-end;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #eee;
+            margin-bottom: 1rem;
+        }
+        .form-row-container .form-group {
+            flex: 1;
+            margin-bottom: 0;
+        }
+        .delete-btn {
+            height: fit-content;
+            margin-bottom: 0.5rem;
+        }
+    </style>
 {% endblock %}
 
 {% block content %}
 <div class="form-container">
-    <h2><i class="fa-solid fa-file-invoice-dollar"></i> {{ titulo }}</h2>
+    <h2><i class="fa-solid fa-file-invoice-dollar"></i> Editar Plan de Cuota</h2>
+    
     <form method="post">
         {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit" class="btn-submit">Actualizar Plan</button>
+
+        {% if form.non_field_errors or conceptos_formset.non_form_errors %}
+            <div class="alert alert-danger">
+                {{ form.non_field_errors }}
+                {{ conceptos_formset.non_form_errors }}
+            </div>
+        {% endif %}
+
+        {# === MAIN PLAN CUOTA FORM === #}
+        <div class="main-form">
+            {{ form.as_p }}
+        </div>
+
+        {# === CONCEPTOS FORMSET === #}
+        <div class="formset-container">
+            <div class="formset-header">
+                <h3>Conceptos del Plan</h3>
+                <button type="button" id="add-form" class="btn btn-success">Añadir Concepto</button>
+            </div>
+            
+            {{ conceptos_formset.management_form }}
+            
+            <div id="formset-forms">
+                {% for formset_form in conceptos_formset.forms %}
+                    <div class="form-row-container">
+                        {% for field in formset_form %}
+                            <div class="form-group">
+                                {{ field.label_tag }}
+                                {{ field }}
+                                {{ field.errors }}
+                            </div>
+                        {% endfor %}
+                         {% if formset_form.instance.pk %}
+                            <div class="form-group">
+                                <label for="id_{{ formset_form.prefix }}-DELETE">Eliminar</label>
+                                {{ formset_form.DELETE }}
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        {# This is the template for new forms #}
+        <template id="empty-form-template">
+            <div class="form-row-container">
+                {% for field in conceptos_formset.empty_form %}
+                <div class="form-group">
+                    {{ field.label_tag }}
+                    {{ field }}
+                    {{ field.errors }}
+                </div>
+                {% endfor %}
+                <button type="button" class="btn btn-danger delete-btn">Eliminar</button>
+            </div>
+        </template>
+
+        <button type="submit" class="btn-submit">Guardar Cambios</button>
+        <a href="{% url 'lista_planes_cuota' %}" class="back-link">Cancelar y Volver</a>
     </form>
-    <a href="{% url 'lista_planes_cuota' %}" class="back-link">Cancelar y Volver a la Lista</a>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const addButton = document.getElementById('add-form');
+    const formsetContainer = document.getElementById('formset-forms');
+    const emptyFormTemplate = document.getElementById('empty-form-template').innerHTML;
+    // The prefix for the formset is the related_name of the foreign key in the parent model, 
+    // which defaults to '<model_name>_set'. In our case, PlanConceptoCobro links to PlanCuota
+    // so Django might default to 'planconceptocobro_set'. Let's find the input by its name pattern.
+    const totalFormsInput = document.querySelector('input[name$="-TOTAL_FORMS"]');
+    
+    addButton.addEventListener('click', function() {
+        const formNum = parseInt(totalFormsInput.value);
+        // We get the prefix from the total forms input name
+        const prefix = totalFormsInput.name.replace('-TOTAL_FORMS', '');
+        
+        const newFormHtml = emptyFormTemplate.replace(/__prefix__/g, formNum).replace(new RegExp(prefix + '-', 'g'), prefix + '-' + formNum + '-');
+
+        const newFormElement = document.createElement('div');
+        newFormElement.innerHTML = newFormHtml;
+        formsetContainer.appendChild(newFormElement.firstElementChild);
+        
+        totalFormsInput.value = formNum + 1;
+    });
+
+    formsetContainer.addEventListener('click', function(e) {
+        if (e.target && e.target.classList.contains('delete-btn')) {
+            const row = e.target.closest('.form-row-container');
+            const deleteCheckbox = row.querySelector('input[type="checkbox"][name$="-DELETE"]');
+            if (deleteCheckbox) {
+                // This is an existing form. Check the box and hide the row.
+                deleteCheckbox.checked = true;
+                row.style.display = 'none';
+            } else {
+                // This is a new form that hasn't been saved. Just remove it from the DOM.
+                row.remove();
+                // Decrement total forms count because we are removing a new, unsaved form.
+                totalFormsInput.value = parseInt(totalFormsInput.value) - 1;
+            }
+        }
+    });
+});
+</script>
 {% endblock %}

@@ -2,7 +2,7 @@ from django import forms
 from django.forms import inlineformset_factory
 from django.core.exceptions import ValidationError # Added
 from django.utils import timezone # Added
-from .models import PlanCuota, Factura, DetalleFactura, ConceptoCobro, MetodoPago, Recaudo
+from .models import PlanCuota, Factura, DetalleFactura, ConceptoCobro, MetodoPago, Recaudo, PlanConceptoCobro
 from complejos.models import Complejo # Import Complejo
 
 class PlanCuotaForm(forms.ModelForm):
@@ -35,6 +35,33 @@ class PlanCuotaForm(forms.ModelForm):
             else: # Other roles should not see this form, but for safety
                 self.fields['complejo'].widget = forms.HiddenInput()
                 self.fields['complejo'].required = False
+
+class PlanConceptoCobroForm(forms.ModelForm):
+    class Meta:
+        model = PlanConceptoCobro
+        fields = ['concepto_cobro', 'monto', 'orden']
+        widgets = {
+            'concepto_cobro': forms.Select(attrs={'class': 'form-control'}),
+            'monto': forms.NumberInput(attrs={'class': 'form-control'}),
+            'orden': forms.NumberInput(attrs={'class': 'form-control'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        complejo = kwargs.pop('complejo', None)
+        super().__init__(*args, **kwargs)
+        if complejo:
+            self.fields['concepto_cobro'].queryset = ConceptoCobro.objects.filter(complejo=complejo)
+        else:
+            self.fields['concepto_cobro'].queryset = ConceptoCobro.objects.none()
+
+PlanConceptoCobroFormSet = inlineformset_factory(
+    PlanCuota,
+    PlanConceptoCobro,
+    form=PlanConceptoCobroForm,
+    extra=1,
+    can_delete=True,
+    can_delete_extra=True
+)
 
 class ConceptoCobroForm(forms.ModelForm):
     class Meta:
@@ -82,7 +109,7 @@ class MetodoPagoForm(forms.ModelForm):
 class FacturaForm(forms.ModelForm):
     class Meta:
         model = Factura
-        fields = ['propiedad', 'plan_cuota', 'fecha_vencimiento', 'monto_total', 'estado', 'observaciones']
+        fields = ['propiedad', 'plan_cuota', 'fecha_vencimiento', 'observaciones']
         widgets = {
             'propiedad': forms.Select(attrs={'class': 'form-control'}),
             'plan_cuota': forms.Select(attrs={'class': 'form-control'}),
@@ -95,13 +122,19 @@ class FacturaForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
+        
+        # Filtrar el queryset de propiedades basado en el rol del usuario
         if user and user.rol == 'GERENTE':
             self.fields['propiedad'].queryset = self.fields['propiedad'].queryset.filter(complejo=user.complejo_asignado)
+            
+        # Hacer el plan de cuota opcional
+        self.fields['plan_cuota'].required = False
+        self.fields['plan_cuota'].label = "Plan de Cuota (Opcional, para autocompletar)"
 
 class DetalleFacturaForm(forms.ModelForm):
     class Meta:
         model = DetalleFactura
-        fields = ['concepto_cobro', 'monto', 'descripcion']
+        fields = ['concepto_cobro', 'monto']
         widgets = {
             'concepto_cobro': forms.Select(attrs={'class': 'form-control'}),
             'monto': forms.NumberInput(attrs={'class': 'form-control'}),

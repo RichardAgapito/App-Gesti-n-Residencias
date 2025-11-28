@@ -2,11 +2,12 @@
 {% load static %}
 
 {% block extra_css %}
-    <link rel="stylesheet" href="{% static 'css/crear_complejo.css' %}"> {# Reusing existing CSS for now #}
+    <link rel="stylesheet" href="{% static 'css/crear_complejo.css' %}">
     <style>
         .formset-container {
             border: 1px solid #ccc;
             padding: 15px;
+            margin-top: 20px;
             margin-bottom: 20px;
             border-radius: 5px;
             background-color: #f9f9f9;
@@ -17,176 +18,148 @@
             align-items: center;
             margin-bottom: 15px;
         }
-        .formset-row {
+        .form-row-container {
             display: flex;
-            gap: 15px;
+            gap: 1rem;
             align-items: flex-end;
-            margin-bottom: 10px;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #eee;
+            margin-bottom: 1rem;
         }
-        .formset-row .form-group {
+        .form-row-container .form-group {
             flex: 1;
             margin-bottom: 0;
         }
-        .delete-row {
-            background-color: #dc3545;
-            color: white;
-            border: none;
-            padding: 8px 12px;
-            border-radius: 4px;
-            cursor: pointer;
+        .delete-btn {
+            height: fit-content;
+            margin-bottom: 0.5rem; /* Align with form-control padding */
         }
-        .add-row {
-            background-color: #28a745;
-            color: white;
-            border: none;
-            padding: 8px 12px;
-            border-radius: 4px;
-            cursor: pointer;
+        .empty-form {
+            display: none;
         }
     </style>
 {% endblock %}
 
 {% block content %}
 <div class="form-container">
-    <h2><i class="fa-solid fa-file-invoice-dollar"></i> {{ titulo|default:"Crear Factura" }}</h2>
+    <h2><i class="fa-solid fa-file-invoice-dollar"></i> Crear Factura Manual</h2>
+    
     <form method="post">
         {% csrf_token %}
-        
-        {# Main Factura Form Fields #}
-        {% for field in form %}
-            <div class="form-group">
-                {{ field.label_tag }}
-                {{ field }}
-                {% if field.help_text %}
-                    <small class="form-text text-muted">{{ field.help_text }}</small>
-                {% endif %}
-                {% for error in field.errors %}
-                    <div class="alert alert-danger">{{ error }}</div>
-                {% endfor %}
-            </div>
-        {% endfor %}
 
-        {# DetalleFactura Formset #}
+        {% if form.non_field_errors or detalles.non_form_errors %}
+            <div class="alert alert-danger">
+                {{ form.non_field_errors }}
+                {{ detalles.non_form_errors }}
+            </div>
+        {% endif %}
+
+        {# === MAIN FACTURA FORM === #}
+        <div class="main-form">
+            {{ form.propiedad.label_tag }}
+            {{ form.propiedad }}
+            {{ form.propiedad.errors }}
+
+            {{ form.fecha_vencimiento.label_tag }}
+            {{ form.fecha_vencimiento }}
+            {{ form.fecha_vencimiento.errors }}
+            
+            {{ form.plan_cuota.label_tag }}
+            {{ form.plan_cuota }}
+            {{ form.plan_cuota.errors }}
+            
+            {{ form.observaciones.label_tag }}
+            {{ form.observaciones }}
+            {{ form.observaciones.errors }}
+        </div>
+
+        {# === DETALLES FORMSET === #}
         <div class="formset-container">
             <div class="formset-header">
-                <h3>Detalles de Factura</h3>
-                <button type="button" class="add-row">Añadir Detalle</button>
+                <h3>Detalles de la Factura</h3>
+                <button type="button" id="add-form" class="btn btn-success">Añadir Concepto</button>
             </div>
             
             {{ detalles.management_form }}
-            <div id="formset-area">
-                {% for formset_form in detalles %}
-                    <div class="formset-row">
-                        {% for field in formset_form %}
+            
+            <div id="formset-forms">
+                {% for formset_form in detalles.forms %}
+                    <div class="form-row-container">
+                        <div class="form-group">
+                            {{ formset_form.concepto_cobro.label_tag }}
+                            {{ formset_form.concepto_cobro }}
+                            {{ formset_form.concepto_cobro.errors }}
+                        </div>
+                        <div class="form-group">
+                            {{ formset_form.monto.label_tag }}
+                            {{ formset_form.monto }}
+                            {{ formset_form.monto.errors }}
+                        </div>
+                        {% if formset_form.instance.pk and detalles.can_delete %}
                             <div class="form-group">
-                                {{ field.label_tag }}
-                                {{ field }}
-                                {% if field.help_text %}
-                                    <small class="form-text text-muted">{{ field.help_text }}</small>
-                                {% endif %}
-                                {% for error in field.errors %}
-                                    <div class="alert alert-danger">{{ error }}</div>
-                                {% endfor %}
+                                {{ formset_form.DELETE.label_tag }}
+                                {{ formset_form.DELETE }}
                             </div>
-                        {% endfor %}
-                        {% if detalles.can_delete %}
-                            <button type="button" class="delete-row">Eliminar</button>
                         {% endif %}
                     </div>
                 {% endfor %}
             </div>
         </div>
 
+        {# This is the template for new forms #}
+        <template id="empty-form-template">
+            <div class="form-row-container">
+                <div class="form-group">
+                    {{ detalles.empty_form.concepto_cobro.label_tag }}
+                    {{ detalles.empty_form.concepto_cobro }}
+                </div>
+                <div class="form-group">
+                    {{ detalles.empty_form.monto.label_tag }}
+                    {{ detalles.empty_form.monto }}
+                </div>
+                <button type="button" class="btn btn-danger delete-btn">Eliminar</button>
+            </div>
+        </template>
+
         <button type="submit" class="btn-submit">Guardar Factura</button>
+        <a href="{% url 'lista_facturas' %}" class="back-link">Cancelar y Volver</a>
     </form>
-    <a href="{% url 'lista_facturas' %}" class="back-link">Cancelar y Volver a la Lista</a>
 </div>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const planCuotaSelect = document.getElementById('id_plan_cuota');
-        const formsetArea = document.getElementById('formset-area');
-        const totalForms = document.getElementById('id_detalles-TOTAL_FORMS');
-        const montoTotalInput = document.getElementById('id_monto_total');
-        const addRowButton = document.querySelector('.add-row');
-
-        planCuotaSelect.addEventListener('change', function() {
-            const planId = this.value;
-            if (!planId) {
-                clearFormset();
-                return;
-            }
-
-            fetch(`{% url 'get_conceptos_plan' %}?plan_id=${planId}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.conceptos) {
-                        populateFormset(data.conceptos);
-                    }
-                })
-                .catch(error => console.error('Error fetching conceptos:', error));
-        });
-
-        function clearFormset() {
-            formsetArea.innerHTML = '';
-            totalForms.value = 0;
-            montoTotalInput.value = '0.00';
-        }
-
-        function populateFormset(conceptos) {
-            clearFormset();
-            let totalMonto = 0;
-
-            conceptos.forEach((concepto, index) => {
-                const newRow = createFormsetRow(index, concepto);
-                formsetArea.insertAdjacentHTML('beforeend', newRow);
-                totalMonto += parseFloat(concepto.monto);
-            });
-
-            totalForms.value = conceptos.length;
-            montoTotalInput.value = totalMonto.toFixed(2);
-        }
-
-        function createFormsetRow(index, concepto) {
-            let rowHtml = `
-                <div class="formset-row">
-                    <input type="hidden" name="detalles-${index}-id" id="id_detalles-${index}-id">
-                    <input type="hidden" name="detalles-${index}-factura" id="id_detalles-${index}-factura">
-
-                    <div class="form-group">
-                        <label for="id_detalles-${index}-concepto_cobro">Concepto de cobro:</label>
-                        <select name="detalles-${index}-concepto_cobro" id="id_detalles-${index}-concepto_cobro" class="form-control">
-                            <option value="${concepto.id}" selected>${concepto.nombre}</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="id_detalles-${index}-monto">Monto:</label>
-                        <input type="number" name="detalles-${index}-monto" value="${concepto.monto}" step="0.01" class="form-control" readonly id="id_detalles-${index}-monto">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="id_detalles-${index}-descripcion">Descripción:</label>
-                        <input type="text" name="detalles-${index}-descripcion" value="${concepto.nombre}" class="form-control" id="id_detalles-${index}-descripcion">
-                    </div>
-                    
-                    <div class="form-group">
-                        <div class="form-check">
-                            <input type="checkbox" name="detalles-${index}-DELETE" id="id_detalles-${index}-DELETE" class="form-check-input">
-                            <label class="form-check-label" for="id_detalles-${index}-DELETE">Eliminar</label>
-                        </div>
-                    </div>
-                </div>
-            `;
-            return rowHtml;
-        }
-
-        addRowButton.addEventListener('click', function() {
-            const index = parseInt(totalForms.value);
-            const newForm = createFormsetRow(index, { id: '', nombre: '---------', monto: '0.00' });
-            formsetArea.insertAdjacentHTML('beforeend', newForm);
-            totalForms.value = index + 1;
-        });
+document.addEventListener('DOMContentLoaded', function() {
+    const addButton = document.getElementById('add-form');
+    const formsetContainer = document.getElementById('formset-forms');
+    const emptyFormTemplate = document.getElementById('empty-form-template').innerHTML;
+    const totalFormsInput = document.querySelector('input[name="detalles-TOTAL_FORMS"]');
+    
+    addButton.addEventListener('click', function() {
+        const formNum = parseInt(totalFormsInput.value);
+        const newFormHtml = emptyFormTemplate.replace(/__prefix__/g, formNum);
+        
+        const newFormElement = document.createElement('div');
+        newFormElement.innerHTML = newFormHtml;
+        formsetContainer.appendChild(newFormElement.firstChild);
+        
+        totalFormsInput.value = formNum + 1;
     });
+
+    formsetContainer.addEventListener('click', function(e) {
+        if (e.target && e.target.classList.contains('delete-btn')) {
+            const row = e.target.closest('.form-row-container');
+            // Find the DELETE checkbox if it exists (for existing forms)
+            const deleteCheckbox = row.querySelector('input[type="checkbox"][name$="-DELETE"]');
+            if (deleteCheckbox) {
+                deleteCheckbox.checked = true;
+                row.style.display = 'none'; // Hide the form
+            } else {
+                // This is a new form that hasn't been saved, so just remove it
+                row.remove();
+                // Decrement total forms count as we are removing a new form
+                totalFormsInput.value = parseInt(totalFormsInput.value) - 1;
+            }
+        }
+    });
+});
 </script>
 {% endblock %}

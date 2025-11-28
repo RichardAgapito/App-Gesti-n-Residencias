@@ -64,11 +64,50 @@ class PlanCuotaCreateView(LoginRequiredMixin, CreateView):
         kwargs = super().get_form_kwargs()
         kwargs['user'] = self.request.user
         return kwargs
-    
-    def form_valid(self, form):
-        if self.request.user.rol == 'GERENTE' and self.request.user.complejo_asignado:
-            form.instance.complejo = self.request.user.complejo_asignado
-        return super().form_valid(form)
+
+    def get_context_data(self, **kwargs):
+        data = super().get_context_data(**kwargs)
+        if self.request.POST:
+            data['conceptos_formset'] = PlanConceptoCobroFormSet(self.request.POST, form_kwargs={'complejo': self._get_complejo()})
+        else:
+            data['conceptos_formset'] = PlanConceptoCobroFormSet(form_kwargs={'complejo': self._get_complejo()})
+        return data
+
+    def post(self, request, *args, **kwargs):
+        self.object = None
+        form = self.get_form()
+        conceptos_formset = PlanConceptoCobroFormSet(request.POST, form_kwargs={'complejo': self._get_complejo()})
+
+        if form.is_valid() and conceptos_formset.is_valid():
+            return self.form_valid(form, conceptos_formset)
+        else:
+            return self.form_invalid(form, conceptos_formset)
+
+    def form_valid(self, form, conceptos_formset):
+        with transaction.atomic():
+            if self.request.user.rol == 'GERENTE' and self.request.user.complejo_asignado:
+                form.instance.complejo = self.request.user.complejo_asignado
+            
+            self.object = form.save()
+            conceptos_formset.instance = self.object
+            conceptos_formset.save()
+
+        messages.success(self.request, "Plan de cuota creado exitosamente.")
+        return redirect(self.get_success_url())
+
+    def form_invalid(self, form, conceptos_formset):
+        context = self.get_context_data(form=form, conceptos_formset=conceptos_formset)
+        return self.render_to_response(context)
+
+    def _get_complejo(self):
+        """Helper para determinar el complejo basado en el usuario o el formulario."""
+        if self.request.user.rol == 'GERENTE':
+            return self.request.user.complejo_asignado
+        if self.request.POST:
+            complejo_id = self.request.POST.get('complejo')
+            if complejo_id:
+                return get_object_or_404(Complejo, id=complejo_id)
+        return None
 
 class PlanCuotaUpdateView(LoginRequiredMixin, UpdateView):
     model = PlanCuota
@@ -85,7 +124,38 @@ class PlanCuotaUpdateView(LoginRequiredMixin, UpdateView):
         kwargs = super().get_form_kwargs()
         kwargs['user'] = self.request.user
         return kwargs
-    
+
+    def get_context_data(self, **kwargs):
+        data = super().get_context_data(**kwargs)
+        if self.request.POST:
+            data['conceptos_formset'] = PlanConceptoCobroFormSet(self.request.POST, instance=self.object, form_kwargs={'complejo': self.object.complejo})
+        else:
+            data['conceptos_formset'] = PlanConceptoCobroFormSet(instance=self.object, form_kwargs={'complejo': self.object.complejo})
+        return data
+
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        form = self.get_form()
+        conceptos_formset = PlanConceptoCobroFormSet(request.POST, instance=self.object, form_kwargs={'complejo': self.object.complejo})
+
+        if form.is_valid() and conceptos_formset.is_valid():
+            return self.form_valid(form, conceptos_formset)
+        else:
+            return self.form_invalid(form, conceptos_formset)
+
+    def form_valid(self, form, conceptos_formset):
+        with transaction.atomic():
+            self.object = form.save()
+            conceptos_formset.instance = self.object
+            conceptos_formset.save()
+
+        messages.success(self.request, "Plan de cuota actualizado exitosamente.")
+        return redirect(self.get_success_url())
+
+    def form_invalid(self, form, conceptos_formset):
+        context = self.get_context_data(form=form, conceptos_formset=conceptos_formset)
+        return self.render_to_response(context)
+        
     def get_queryset(self):
         user = self.request.user
         if user.rol == 'ADMIN':
@@ -199,28 +269,43 @@ class FacturaCreateView(LoginRequiredMixin, GerenteRequiredMixin, CreateView):
         kwargs['user'] = self.request.user
         return kwargs
 
-    def form_valid(self, form):
-        context = self.get_context_data()
-        detalles = context['detalles']
-        with transaction.atomic():
-            form.instance.usuario_creador = self.request.user # Assuming you have a field to track who creates it
-            self.object = form.save(commit=False) # Don't save factura yet
-            
-            if detalles.is_valid():
-                detalles.instance = self.object
-                # Save factura first to get an ID for the details
-                self.object.save()
-                detalles.save()
-                
-                # Recalculate total from saved details for security
-                total = sum(d.monto for d in self.object.detalles.all())
-                self.object.monto_total = total
-                self.object.save() # Save again with correct total
-            else:
-                # Formset is not valid, render the form again with errors
-                return self.form_invalid(form)
+    def get_context_data(self, **kwargs):
+        data = super().get_context_data(**kwargs)
+        if self.request.POST:
+            data['detalles'] = DetalleFacturaFormSet(self.request.POST)
+        else:
+            data['detalles'] = DetalleFacturaFormSet()
+        return data
 
-        return super(FacturaCreateView, self).form_valid(form)
+    def post(self, request, *args, **kwargs):
+        self.object = None
+        form = self.get_form()
+        detalles_formset = DetalleFacturaFormSet(request.POST)
+
+        if form.is_valid() and detalles_formset.is_valid():
+            return self.form_valid(form, detalles_formset)
+        else:
+            return self.form_invalid(form, detalles_formset)
+
+    def form_valid(self, form, detalles_formset):
+        with transaction.atomic():
+            # Guardar la factura principal
+            factura = form.save(commit=False)
+            # Asignar el usuario creador si tienes ese campo
+            # factura.usuario_creador = self.request.user 
+            factura.save()
+
+            # Asociar y guardar los detalles
+            detalles_formset.instance = factura
+            detalles_formset.save()
+
+        messages.success(self.request, "Factura creada exitosamente.")
+        return redirect(self.get_success_url())
+
+    def form_invalid(self, form, detalles_formset):
+        # Pasar los formularios con errores de vuelta a la plantilla
+        context = self.get_context_data(form=form, detalles=detalles_formset)
+        return self.render_to_response(context)
 
 class FacturaUpdateView(LoginRequiredMixin, GerenteRequiredMixin, UpdateView):
     model = Factura

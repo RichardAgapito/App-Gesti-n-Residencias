@@ -25,7 +25,7 @@ class DetalleFacturaInline(admin.TabularInline):
 @admin.register(Factura)
 class FacturaAdmin(admin.ModelAdmin):
     inlines = (DetalleFacturaInline,)
-    list_display = ('numero_factura', 'propiedad', 'plan_cuota', 'fecha_emision', 'fecha_vencimiento', 'monto_total', 'estado')
+    list_display = ('numero_factura', 'propiedad', 'fecha_emision', 'fecha_vencimiento', 'total_calculado', 'monto_pagado_total', 'estado', 'esta_pagada')
     list_filter = ('estado', 'propiedad__complejo', 'fecha_emision')
     search_fields = ('numero_factura', 'propiedad__numero_identificador')
     readonly_fields = ('numero_factura',)

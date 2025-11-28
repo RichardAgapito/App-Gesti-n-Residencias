@@ -2,28 +2,133 @@
 {% load static %}
 
 {% block extra_css %}
-    <link rel="stylesheet" href="{% static 'css/crear_complejo.css' %}"> {# Reusing existing CSS for now #}
+    <link rel="stylesheet" href="{% static 'css/crear_complejo.css' %}">
+    <style>
+        .formset-container {
+            border: 1px solid #ccc;
+            padding: 15px;
+            margin-top: 20px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+        .formset-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .form-row-container {
+            display: flex;
+            gap: 1rem;
+            align-items: flex-end;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #eee;
+            margin-bottom: 1rem;
+        }
+        .form-row-container .form-group {
+            flex: 1;
+            margin-bottom: 0;
+        }
+        .delete-btn {
+            height: fit-content;
+            margin-bottom: 0.5rem;
+        }
+    </style>
 {% endblock %}
 
 {% block content %}
 <div class="form-container">
-    <h2><i class="fa-solid fa-file-invoice-dollar"></i> {{ titulo }}</h2>
+    <h2><i class="fa-solid fa-file-invoice-dollar"></i> Crear Plan de Cuota</h2>
+    
     <form method="post">
         {% csrf_token %}
-        {% for field in form %}
-            <div class="form-group">
-                {{ field.label_tag }}
-                {{ field }}
-                {% if field.help_text %}
-                    <small class="form-text text-muted">{{ field.help_text }}</small>
-                {% endif %}
-                {% for error in field.errors %}
-                    <div class="alert alert-danger">{{ error }}</div>
+
+        {% if form.non_field_errors or conceptos_formset.non_form_errors %}
+            <div class="alert alert-danger">
+                {{ form.non_field_errors }}
+                {{ conceptos_formset.non_form_errors }}
+            </div>
+        {% endif %}
+
+        {# === MAIN PLAN CUOTA FORM === #}
+        <div class="main-form">
+            {{ form.as_p }}
+        </div>
+
+        {# === CONCEPTOS FORMSET === #}
+        <div class="formset-container">
+            <div class="formset-header">
+                <h3>Conceptos del Plan</h3>
+                <button type="button" id="add-form" class="btn btn-success">Añadir Concepto</button>
+            </div>
+            
+            {{ conceptos_formset.management_form }}
+            
+            <div id="formset-forms">
+                {% for formset_form in conceptos_formset.forms %}
+                    <div class="form-row-container">
+                        {% for field in formset_form %}
+                            <div class="form-group">
+                                {{ field.label_tag }}
+                                {{ field }}
+                                {{ field.errors }}
+                            </div>
+                        {% endfor %}
+                    </div>
                 {% endfor %}
             </div>
-        {% endfor %}
+        </div>
+
+        {# This is the template for new forms #}
+        <template id="empty-form-template">
+            <div class="form-row-container">
+                {% for field in conceptos_formset.empty_form %}
+                <div class="form-group">
+                    {{ field.label_tag }}
+                    {{ field }}
+                    {{ field.errors }}
+                </div>
+                {% endfor %}
+                <button type="button" class="btn btn-danger delete-btn">Eliminar</button>
+            </div>
+        </template>
+
         <button type="submit" class="btn-submit">Guardar Plan de Cuota</button>
+        <a href="{% url 'lista_planes_cuota' %}" class="back-link">Cancelar y Volver</a>
     </form>
-    <a href="{% url 'lista_planes_cuota' %}" class="back-link">Cancelar y Volver a la Lista</a>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const addButton = document.getElementById('add-form');
+    const formsetContainer = document.getElementById('formset-forms');
+    const emptyFormTemplate = document.getElementById('empty-form-template').innerHTML;
+    const totalFormsInput = document.querySelector('input[name="planconceptocobro_set-TOTAL_FORMS"]');
+    
+    addButton.addEventListener('click', function() {
+        const formNum = parseInt(totalFormsInput.value);
+        const newFormHtml = emptyFormTemplate.replace(/__prefix__/g, formNum);
+        
+        const newFormElement = document.createElement('div');
+        newFormElement.innerHTML = newFormHtml;
+        formsetContainer.appendChild(newFormElement.firstChild);
+        
+        totalFormsInput.value = formNum + 1;
+    });
+
+    formsetContainer.addEventListener('click', function(e) {
+        if (e.target && e.target.classList.contains('delete-btn')) {
+            const row = e.target.closest('.form-row-container');
+            // For new forms that are not saved yet, we can just remove them.
+            // For existing forms, Django's formset handles deletion via a checkbox.
+            // This simplified script just removes the row from the DOM.
+            // For a production app, you would handle the DELETE checkbox.
+            row.remove();
+            // Note: This simplified removal doesn't decrement totalFormsInput for existing forms,
+            // which is fine as Django handles it via the POST data.
+        }
+    });
+});
+</script>
 {% endblock %}
