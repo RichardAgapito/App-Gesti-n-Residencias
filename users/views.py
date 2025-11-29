@@ -12,6 +12,7 @@ from complejos.models import Complejo
 from complejos.models import PropiedadPersona
 from django.http import JsonResponse
 from django.template.loader import render_to_string
+from finanzas.models import Factura
 
 @login_required
 def dashboard(request):

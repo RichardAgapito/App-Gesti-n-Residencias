@@ -1,5 +1,8 @@
 from django.contrib import admin
-from .models import PlanCuota, ConceptoCobro, PlanConceptoCobro, Factura, DetalleFactura, MetodoPago, Recaudo
+from .models import (
+    PlanCuota, ConceptoCobro, Factura, DetalleFactura, MetodoPago, Recaudo, 
+    PlanConceptoCobro, ConfiguracionFinanciera, ContratoFinanciero,PropiedadPersona
+)
 
 class PlanConceptoCobroInline(admin.TabularInline):
     model = PlanConceptoCobro
@@ -40,3 +43,22 @@ class RecaudoAdmin(admin.ModelAdmin):
     list_display = ('factura', 'fecha_pago', 'monto_pagado', 'metodo_pago')
     list_filter = ('metodo_pago', 'fecha_pago', 'factura__propiedad__complejo')
     search_fields = ('factura__numero_factura', 'referencia')
+
+@admin.register(ConfiguracionFinanciera)
+class ConfiguracionFinancieraAdmin(admin.ModelAdmin):
+    list_display = ('complejo', 'dia_corte', 'tasa_interes_mora_diaria')
+
+
+@admin.register(ContratoFinanciero)
+class ContratoFinancieroAdmin(admin.ModelAdmin):
+    list_display = ('propiedad_persona', 'tipo', 'monto_cuota', 'estado', 'cuotas_facturadas')
+    list_filter = ('tipo', 'estado')
+    search_fields = ('propiedad_persona__persona__email', 'propiedad_persona__persona__nombres')
+    
+    # --- AGREGAR ESTO ---
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == "propiedad_persona":
+            # Filtramos para que solo aparezcan los responsables principales activos
+            # Esto evita asignar deudas a co-propietarios o personas que ya se fueron
+            kwargs["queryset"] = PropiedadPersona.objects.filter(es_principal=True, estado='activo')
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
