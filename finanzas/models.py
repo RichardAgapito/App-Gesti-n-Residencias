@@ -1,6 +1,6 @@
 from django.db import models
 from django.conf import settings
-from complejos.models import Propiedad, Complejo, PropiedadPersona
+from complejos.models import Propiedad, Complejo, PropiedadPersona 
 from django.utils import timezone
 from datetime import datetime
 

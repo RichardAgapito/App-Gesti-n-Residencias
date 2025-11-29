@@ -482,3 +482,13 @@ def get_conceptos_plan(request):
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
 
+class MisFacturasView(LoginRequiredMixin, ResidenteRequiredMixin, ListView):
+    model = Factura
+    template_name = 'finanzas/mis_facturas.html'
+    context_object_name = 'facturas'
+
+    def get_queryset(self):
+        # Traemos las facturas con sus detalles pre-cargados para no matar la base de datos
+        return Factura.objects.filter(
+            propiedad__residentes=self.request.user
+        ).order_by('-fecha_emision').prefetch_related('detalles', 'detalles__concepto_cobro')

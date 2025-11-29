@@ -233,7 +233,75 @@
             {% endif %}
         </section>
         <!-- (FIN) SECCIÓN DE AVISOS RECIENTES -->
+        {% if tiene_propiedad %}
+            <section class="quick-actions" style="margin-top: 20px;">
+                <h2><i class="fa-solid fa-timeline"></i> Cronología de Pagos</h2>
 
+                {% if contrato_financiero %}
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #e9ecef;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                            <strong>{{ contrato_financiero.get_tipo_display }}</strong>
+                            <span>
+                                {{ contrato_financiero.cuotas_facturadas }} de {{ contrato_financiero.numero_cuotas_totales|default:"Indef." }} cuotas
+                            </span>
+                        </div>
+                        
+                        {% if contrato_financiero.numero_cuotas_totales %}
+                            <div style="width: 100%; background: #e0e0e0; border-radius: 10px; height: 10px;">
+                                <div style="background: #3498db; height: 10px; border-radius: 10px; width: calc(({{ contrato_financiero.cuotas_facturadas }} / {{ contrato_financiero.numero_cuotas_totales }}) * 100%);"></div>
+                            </div>
+                        {% endif %}
+                        
+                        <p style="margin-top: 10px; font-size: 0.9em; color: #666;">
+                            Monto establecido por cuota: <strong>${{ contrato_financiero.monto_cuota }}</strong>
+                        </p>
+                    </div>
+                {% endif %}
+
+                <div style="position: relative; padding-left: 20px; border-left: 2px solid #ddd;">
+                    {% for factura in timeline_facturas %}
+                        <div style="margin-bottom: 20px; position: relative;">
+                            <div style="
+                                position: absolute; 
+                                left: -26px; 
+                                top: 0; 
+                                width: 12px; 
+                                height: 12px; 
+                                border-radius: 50%; 
+                                background-color: {% if factura.estado == 'PAGADA' %}#2ecc71{% elif factura.estado == 'VENCIDA' %}#e74c3c{% else %}#f1c40f{% endif %};
+                                border: 2px solid white;
+                                box-shadow: 0 0 0 1px #ddd;">
+                            </div>
+
+                            <div style="background: white; border: 1px solid #eee; padding: 10px 15px; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <div>
+                                        <strong style="color: #2c3e50;">{{ factura.fecha_vencimiento|date:"d M Y" }}</strong>
+                                        <br>
+                                        <small style="color: #7f8c8d;">Factura #{{ factura.numero_factura }}</small>
+                                    </div>
+                                    <div style="text-align: right;">
+                                        <span style="font-weight: bold; font-size: 1.1em;">${{ factura.total_calculado|floatformat:2 }}</span>
+                                        <br>
+                                        <span style="
+                                            font-size: 0.75em; 
+                                            padding: 2px 6px; 
+                                            border-radius: 4px; 
+                                            background-color: {% if factura.estado == 'PAGADA' %}#e8f5e9; color: #2ecc71;{% elif factura.estado == 'VENCIDA' %}#fbe9e7; color: #e74c3c;{% else %}#fff3e0; color: #f39c12;{% endif %}
+                                        ">
+                                            {{ factura.get_estado_display }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% empty %}
+                        <p style="color: #999; font-style: italic;">No hay historial de pagos registrado.</p>
+                    {% endfor %}
+                </div>
+            </section>
+
+        {% endif %}
         <!-- (NUEVO) SECCIÓN DE ACCIONES RÁPIDAS -->
         <section class="quick-actions mt-4">
             <h2><i class="fa-solid fa-bolt"></i> Acciones Rápidas</h2>
