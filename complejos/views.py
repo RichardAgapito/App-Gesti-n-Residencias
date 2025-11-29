@@ -490,14 +490,36 @@ def ver_disponibilidad_view(request, amenidad_id):
     }
     return render(request, 'complejos/ver_disponibilidad.html', context)
 
-@user_passes_test(es_admin, login_url='/')
+def es_admin_o_gerente(user):
+    return user.is_authenticated and (user.rol == CustomUser.Rol.ADMIN or user.rol == CustomUser.Rol.GERENTE)
+
+@user_passes_test(es_admin_o_gerente, login_url='/')
 def admin_reservas_view(request):
     reservas = Reserva.objects.all().order_by('-fecha_inicio')
-
+    complejos = Complejo.objects.all()
+    amenidades = Amenidad.objects.all()
+    
+    # Role-based filtering
+    if request.user.rol == CustomUser.Rol.GERENTE:
+        if request.user.complejo_asignado:
+            # Filter by the new direct ForeignKey 'complejo'
+            # Note: This will only show reservations created AFTER this schema change or backfilled ones.
+            # Fallback to amenidad__complejo for older records if needed, but user requested this field for filtering.
+            # We use Q objects to support both new (direct FK) and old (via amenidad) if we wanted compatibility,
+            # but strictly following the request to use the new key:
+            reservas = reservas.filter(complejo=request.user.complejo_asignado)
+            
+            complejos = complejos.filter(id=request.user.complejo_asignado.id)
+            amenidades = amenidades.filter(complejo=request.user.complejo_asignado)
+        else:
+            # Manager without complex sees nothing
+            reservas = Reserva.objects.none()
+            complejos = Complejo.objects.none()
+            amenidades = Amenidad.objects.none()
 
     complejo_id = request.GET.get('complejo')
     if complejo_id:
-        reservas = reservas.filter(amenidad__complejo__id=complejo_id)
+        reservas = reservas.filter(complejo__id=complejo_id)
 
     amenidad_id = request.GET.get('amenidad')
     if amenidad_id:
@@ -509,63 +531,170 @@ def admin_reservas_view(request):
 
     context = {
         'reservas': reservas,
-        'complejos': Complejo.objects.all(),
-        'amenidades': Amenidad.objects.all(),
+        'complejos': complejos,
+        'amenidades': amenidades,
         'estados': Reserva.ESTADO_CHOICES,
     }
     return render(request, 'complejos/admin_reservas.html', context)
 
-@user_passes_test(es_admin, login_url='/')
+@user_passes_test(es_admin_o_gerente, login_url='/')
 def cancelar_reserva_view(request, reserva_id):
     reserva = get_object_or_404(Reserva, id=reserva_id)
+    
+    # Ensure Manager can only cancel their own complex's reservations
+    if request.user.rol == CustomUser.Rol.GERENTE:
+        # Use new complejo field if available, otherwise fallback to amenidad check or just enforce strict check
+        if not request.user.complejo_asignado:
+             return redirect('admin_reservas')
+        
+        # Check if reservation belongs to manager's complex (using new field or amenidad relation)
+        if reserva.complejo and reserva.complejo != request.user.complejo_asignado:
+             return redirect('admin_reservas')
+        elif not reserva.complejo and not reserva.amenidad.complejo_set.filter(id=request.user.complejo_asignado.id).exists():
+             return redirect('admin_reservas')
+            
     reserva.estado = 'cancelada'
     reserva.save()
     return redirect('admin_reservas')
 
-@user_passes_test(es_admin, login_url='/')
+@user_passes_test(es_admin_o_gerente, login_url='/')
 def admin_crear_reserva(request):
+    # Admins cannot create reservations
+    if request.user.rol == CustomUser.Rol.ADMIN:
+        return redirect('admin_reservas')
+        
+    # Managers without complex cannot create reservations
+    if request.user.rol == CustomUser.Rol.GERENTE and not request.user.complejo_asignado:
+        return redirect('admin_reservas')
+
     if request.method == 'POST':
         form = AdminReservaForm(request.POST)
+        # Filter queryset for validation if Manager
+        if request.user.rol == CustomUser.Rol.GERENTE:
+             # Use 'complejo' for queryset filtering
+             form.fields['amenidad'].queryset = Amenidad.objects.filter(complejo=request.user.complejo_asignado)
+             # Filter residents: only those with active property in the complex
+             form.fields['residente'].queryset = get_user_model().objects.filter(
+                propiedades_asociadas__propiedad__complejo=request.user.complejo_asignado,
+                propiedades_asociadas__estado='activo'
+             ).distinct()
+             
         if form.is_valid():
             reserva = form.save(commit=False)
+            # Double check for Manager
+            if request.user.rol == CustomUser.Rol.GERENTE:
+                # Use complejo_set for instance access
+                if not reserva.amenidad.complejo_set.filter(id=request.user.complejo_asignado.id).exists():
+                     return redirect('admin_reservas')
+                # Populate the new complejo field
+                reserva.complejo = request.user.complejo_asignado
+
             reserva.residente = form.cleaned_data['residente']
             reserva.save()
             return redirect('admin_reservas')
     else:
         form = AdminReservaForm()
+        # Filter queryset for display if Manager
+        if request.user.rol == CustomUser.Rol.GERENTE:
+             # Use 'complejo' for queryset filtering
+             form.fields['amenidad'].queryset = Amenidad.objects.filter(complejo=request.user.complejo_asignado)
+             # Filter residents: only those with active property in the complex
+             form.fields['residente'].queryset = get_user_model().objects.filter(
+                propiedades_asociadas__propiedad__complejo=request.user.complejo_asignado,
+                propiedades_asociadas__estado='activo'
+             ).distinct()
+
     context = {
         'form': form,
     }
     return render(request, 'complejos/admin_reserva_form.html', context)
 
-@user_passes_test(es_admin, login_url='/')
+@user_passes_test(es_admin_o_gerente, login_url='/')
 def admin_editar_reserva(request, reserva_id):
     reserva = get_object_or_404(Reserva, id=reserva_id)
+    
+    # Check permission for Manager
+    if request.user.rol == CustomUser.Rol.GERENTE:
+        if not request.user.complejo_asignado:
+             return redirect('admin_reservas')
+        
+        # Check permission using new field or fallback
+        if reserva.complejo and reserva.complejo != request.user.complejo_asignado:
+            return redirect('admin_reservas')
+        elif not reserva.complejo and not reserva.amenidad.complejo_set.filter(id=request.user.complejo_asignado.id).exists():
+            return redirect('admin_reservas')
+
     if request.method == 'POST':
         form = AdminReservaForm(request.POST, instance=reserva)
+        # Filter queryset for validation if Manager
+        if request.user.rol == CustomUser.Rol.GERENTE:
+             # Use 'complejo' for queryset filtering
+             form.fields['amenidad'].queryset = Amenidad.objects.filter(complejo=request.user.complejo_asignado)
+             form.fields['residente'].queryset = get_user_model().objects.filter(
+                propiedades_asociadas__propiedad__complejo=request.user.complejo_asignado,
+                propiedades_asociadas__estado='activo'
+             ).distinct()
+
         if form.is_valid():
             reserva = form.save(commit=False)
+            # Double check for Manager
+            if request.user.rol == CustomUser.Rol.GERENTE:
+                if not reserva.amenidad.complejo_set.filter(id=request.user.complejo_asignado.id).exists():
+                     return redirect('admin_reservas')
+                # Ensure complejo is set if it wasn't
+                if not reserva.complejo:
+                    reserva.complejo = request.user.complejo_asignado
+
             reserva.residente = form.cleaned_data['residente']
             reserva.save()
             return redirect('admin_reservas')
     else:
         form = AdminReservaForm(instance=reserva, initial={'residente': reserva.residente})
+        # Filter queryset for display if Manager
+        if request.user.rol == CustomUser.Rol.GERENTE:
+             # Use 'complejo' for queryset filtering
+             form.fields['amenidad'].queryset = Amenidad.objects.filter(complejo=request.user.complejo_asignado)
+             form.fields['residente'].queryset = get_user_model().objects.filter(
+                propiedades_asociadas__propiedad__complejo=request.user.complejo_asignado,
+                propiedades_asociadas__estado='activo'
+             ).distinct()
+
     context = {
         'form': form,
         'reserva': reserva,
     }
     return render(request, 'complejos/admin_reserva_form.html', context)
 
-@user_passes_test(es_admin, login_url='/')
+@user_passes_test(es_admin_o_gerente, login_url='/')
 def approve_reserva(request, reserva_id):
     reserva = get_object_or_404(Reserva, id=reserva_id)
+    
+    # Check permission for Manager
+    if request.user.rol == CustomUser.Rol.GERENTE:
+        if not request.user.complejo_asignado:
+             return redirect('admin_reservas')
+        if reserva.complejo and reserva.complejo != request.user.complejo_asignado:
+             return redirect('admin_reservas')
+        elif not reserva.complejo and not reserva.amenidad.complejo_set.filter(id=request.user.complejo_asignado.id).exists():
+             return redirect('admin_reservas')
+            
     reserva.estado = 'confirmada'
     reserva.save()
     return redirect('admin_reservas')
 
-@user_passes_test(es_admin, login_url='/')
+@user_passes_test(es_admin_o_gerente, login_url='/')
 def reject_reserva(request, reserva_id):
     reserva = get_object_or_404(Reserva, id=reserva_id)
+    
+    # Check permission for Manager
+    if request.user.rol == CustomUser.Rol.GERENTE:
+        if not request.user.complejo_asignado:
+             return redirect('admin_reservas')
+        if reserva.complejo and reserva.complejo != request.user.complejo_asignado:
+             return redirect('admin_reservas')
+        elif not reserva.complejo and not reserva.amenidad.complejo_set.filter(id=request.user.complejo_asignado.id).exists():
+             return redirect('admin_reservas')
+            
     reserva.estado = 'cancelada'
     reserva.save()
     return redirect('admin_reservas')

@@ -125,6 +125,7 @@ class Reserva(models.Model):
     )
 
     amenidad = models.ForeignKey(Amenidad, on_delete=models.CASCADE, related_name='reservas')
+    complejo = models.ForeignKey(Complejo, on_delete=models.CASCADE, related_name='reservas', null=True, blank=True)
     residente = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='reservas', null=True, blank=True)
     fecha_inicio = models.DateTimeField()
     fecha_fin = models.DateTimeField()
