@@ -18,7 +18,8 @@ from .views import (
     ReporteCobranzaView,
     GenerateInvoicesView, # Added
     ReciboPagoView, # Added
-    get_conceptos_plan, # Added
+    get_conceptos_plan,
+    UpdateFinancialStatusView, # Added
 )
 
 urlpatterns = [
@@ -48,4 +49,9 @@ urlpatterns = [
 
     # URLs para Residente
     path('mis-facturas/', MisFacturasView.as_view(), name='mis_facturas'),
+    
+    path('facturas/generar-automatico/', GenerateInvoicesView.as_view(), name='generar_facturas_automatico'),
+    
+    # NUEVA RUTA:
+    path('facturas/actualizar-estados/', UpdateFinancialStatusView.as_view(), name='actualizar_estados_financieros')
 ]

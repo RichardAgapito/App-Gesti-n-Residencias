@@ -7,6 +7,7 @@ from django.db import transaction, models
 from django.shortcuts import get_object_or_404, redirect, reverse
 from django.contrib import messages
 from django.core.management import call_command
+from django.core.management import call_command
 from io import StringIO
 
 class AdminRequiredMixin(UserPassesTestMixin):
@@ -492,3 +493,23 @@ class MisFacturasView(LoginRequiredMixin, ResidenteRequiredMixin, ListView):
         return Factura.objects.filter(
             propiedad__residentes=self.request.user
         ).order_by('-fecha_emision').prefetch_related('detalles', 'detalles__concepto_cobro')
+        
+class UpdateFinancialStatusView(LoginRequiredMixin, View):
+    def post(self, request, *args, **kwargs):
+        # Validación de permisos: Solo ADMIN o GERENTE
+        user = request.user
+        if not (user.rol == 'ADMIN' or (user.rol == 'GERENTE' and user.complejo_asignado)):
+            messages.error(request, 'No tienes permiso para actualizar estados financieros.')
+            return redirect(reverse('dashboard'))
+
+        output = StringIO()
+        try:
+            # Ejecutamos el comando que acabamos de crear
+            call_command('update_financial_status', stdout=output)
+            
+            messages.success(request, f'Actualización completada. Resultados: {output.getvalue()}')
+        except Exception as e:
+            messages.error(request, f'Error al actualizar estados: {e}')
+        
+        # Redirigimos a la misma lista de facturas para ver los cambios (ej. estados VENCIDA)
+        return redirect(reverse('lista_facturas'))

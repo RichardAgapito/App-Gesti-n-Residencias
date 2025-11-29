@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import user_passes_test, login_required
 from django.http import JsonResponse
 from .models import Complejo, Propiedad, PropiedadPersona, Amenidad, Reserva
+from finanzas.models import Factura, ConfiguracionFinanciera
 from .forms import (
     ComplejoForm, PropiedadForm, CrearPropiedadesMultiplesForm, EditarPropiedadForm, 
     PropiedadPersonaForm, GlobalContratoForm, ReservaForm, AmenidadForm, 
@@ -418,14 +419,34 @@ def crear_reserva_view(request):
     complejo = None
     amenidades = []
     has_active_contract = False
-
+    
+    # Variables nuevas para el bloqueo
+    usuario_bloqueado = False
+    mensaje_bloqueo = ""
 
     propiedad_persona = PropiedadPersona.objects.filter(persona=request.user, estado='activo').first()
 
     if propiedad_persona:
         has_active_contract = True
         complejo = propiedad_persona.propiedad.complejo
-        if complejo:
+        
+        # --- LÓGICA DE BLOQUEO FINANCIERO (NUEVA) ---
+        # 1. Buscamos la configuración del complejo
+        config_fin = getattr(complejo, 'configuracion_financiera', None)
+        
+        if config_fin and config_fin.bloquear_servicios_con_deuda:
+            # 2. Buscamos si tiene facturas VENCIDAS (Deuda exigible)
+            facturas_vencidas = Factura.objects.filter(
+                propiedad=propiedad_persona.propiedad,
+                estado='VENCIDA'
+            ).count()
+            
+            if facturas_vencidas > 0:
+                usuario_bloqueado = True
+                mensaje_bloqueo = f"Servicio restringido. Tienes {facturas_vencidas} factura(s) vencida(s). Por favor regulariza tu situación en Finanzas."
+        # ---------------------------------------------
+
+        if complejo and not usuario_bloqueado: # Solo cargamos amenidades si NO está bloqueado
             amenidades = complejo.amenidades.prefetch_related(
                 models.Prefetch(
                     'reservas',
@@ -434,15 +455,13 @@ def crear_reserva_view(request):
                 )
             ).all()
 
-    if request.method == 'POST':
-        if not has_active_contract:
-            return redirect('crear_reserva') 
-        pass
-
+    # (El resto de tu vista sigue igual, solo pasamos las nuevas variables al contexto)
     context = {
         'complejo': complejo,
         'amenidades': amenidades,
-        'has_active_contract': has_active_contract 
+        'has_active_contract': has_active_contract,
+        'usuario_bloqueado': usuario_bloqueado, # <--- Nuevo
+        'mensaje_bloqueo': mensaje_bloqueo      # <--- Nuevo
     }
     return render(request, 'complejos/crear_reserva.html', context)
 

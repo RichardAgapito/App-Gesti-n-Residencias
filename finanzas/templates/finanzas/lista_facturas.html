@@ -24,12 +24,21 @@
                 <a href="{% url 'crear_factura' %}" class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
                     <i class="fa-solid fa-plus"></i> Crear Nueva Factura
                 </a>
-                <form action="{% url 'generar_facturas_automatico' %}" method="post">
-                    {% csrf_token %}
-                    <button type="submit" class="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
-                        <i class="fa-solid fa-robot"></i> Generar Facturas Automáticas
-                    </button>
-                </form>
+                <div class="flex gap-2">
+                    <form action="{% url 'generar_facturas_automatico' %}" method="post">
+                        {% csrf_token %}
+                        <button type="submit" class="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors" title="Crea facturas del mes actual">
+                            <i class="fa-solid fa-robot"></i> Generar Facturas
+                        </button>
+                    </form>
+
+                    <form action="{% url 'actualizar_estados_financieros' %}" method="post">
+                        {% csrf_token %}
+                        <button type="submit" class="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors" title="Calcula moras y vence facturas antiguas">
+                            <i class="fa-solid fa-clock-rotate-left"></i> Actualizar Estados
+                        </button>
+                    </form>
+                </div>
             </div>
         </div>
 
