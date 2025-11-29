@@ -5,33 +5,128 @@
 {% block global_styles %}{% endblock %}
 
 {% block extra_css %}
-    <link rel="stylesheet" href="{% static 'css/users.css' %}">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+    body {
+        font-family: 'Inter', sans-serif;
+        /* Admin Sidebar Color Gradient */
+        background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+        min-height: 100vh;
+    }
+
+    .glass-card {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .animate-fade-in-up {
+        animation: fadeInUp 0.5s ease-out forwards;
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
 {% endblock %}
 
 {% block content %}
-<div class="user-form-container">
-    <h1><i class="fa-solid fa-right-to-bracket"></i> Iniciar Sesión</h1>
-    <form method="post" class="user-form">
-        {% csrf_token %}
-        {% if form.non_field_errors %}
-            <div class="errorlist">
-                {% for error in form.non_field_errors %}
-                    {{ error }}
-                {% endfor %}
+<div class="min-h-screen flex items-center justify-center p-4">
+    <div class="glass-card w-full max-w-md p-8 rounded-2xl shadow-2xl animate-fade-in-up">
+        <div class="text-center mb-8">
+            <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-50 text-[#3498db] mb-4">
+                <i class="fa-solid fa-user-shield text-3xl"></i>
             </div>
-        {% endif %}
-        {% for field in form %}
-            <div class="form-group">
-                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-                {{ field }}
-                {% for error in field.errors %}
-                    <div class="errorlist">
-                        {{ error }}
+            <h1 class="text-3xl font-bold text-[#2c3e50] tracking-tight">Bienvenido</h1>
+            <p class="text-gray-500 mt-2 text-sm">Ingresa tus credenciales para acceder</p>
+        </div>
+
+        <form method="post" class="space-y-6">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+            <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-md animate-pulse">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-exclamation-circle text-red-500"></i>
                     </div>
-                {% endfor %}
+                    <div class="ml-3">
+                        {% for error in form.non_field_errors %}
+                        <p class="text-sm text-red-700 font-medium">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                </div>
             </div>
-        {% endfor %}
-        <button type="submit" class="btn-submit">Entrar</button>
-    </form>
+            {% endif %}
+
+            {% for field in form %}
+            <div class="relative group">
+                <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-[#2c3e50] mb-1 ml-1">
+                    {{ field.label }}
+                </label>
+                <div class="relative">
+                    <div
+                        class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 group-focus-within:text-[#3498db] transition-colors duration-200">
+                        {% if 'username' in field.name %}
+                        <i class="fas fa-envelope"></i>
+                        {% elif 'password' in field.name %}
+                        <i class="fas fa-lock"></i>
+                        {% else %}
+                        <i class="fas fa-pen"></i>
+                        {% endif %}
+                    </div>
+                    {{ field }}
+                </div>
+                {% if field.errors %}
+                {% for error in field.errors %}
+                <p class="mt-1 text-xs text-red-600 ml-1">{{ error }}</p>
+                {% endfor %}
+                {% endif %}
+            </div>
+            {% endfor %}
+
+            <div class="pt-2">
+                <button type="submit"
+                    class="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-lg text-sm font-semibold text-white bg-[#3498db] hover:bg-[#2980b9] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#3498db] transform hover:scale-[1.02] transition-all duration-200">
+                    Iniciar Sesión
+                </button>
+            </div>
+        </form>
+
+        <div class="mt-6 text-center">
+            <p class="text-xs text-gray-300">
+                &copy; {% now "Y" %} Gestión Residencial. Todos los derechos reservados.
+            </p>
+        </div>
+    </div>
 </div>
+
+<script>
+    // Apply Tailwind classes to Django form fields
+    document.addEventListener('DOMContentLoaded', function () {
+        const inputs = document.querySelectorAll('input[type="text"], input[type="password"], input[type="email"], select');
+        inputs.forEach(input => {
+            // Remove default Django styles if any and add Tailwind
+            input.className = '';
+            input.classList.add(
+                'block', 'w-full', 'pl-10', 'pr-3', 'py-3',
+                'border', 'border-gray-200', 'rounded-xl',
+                'text-[#2c3e50]', 'placeholder-gray-400',
+                'focus:outline-none', 'focus:ring-2', 'focus:ring-[#3498db]', 'focus:border-transparent',
+                'bg-gray-50', 'focus:bg-white',
+                'transition-all', 'duration-200', 'sm:text-sm'
+            );
+        });
+    });
+</script>
 {% endblock %}
