@@ -85,10 +85,17 @@ class PlanCuotaCreateView(LoginRequiredMixin, CreateView):
 
     def form_valid(self, form, conceptos_formset):
         with transaction.atomic():
-            if self.request.user.rol == 'GERENTE' and self.request.user.complejo_asignado:
-                form.instance.complejo = self.request.user.complejo_asignado
+            # Crea el objeto en memoria sin guardarlo aún en la BD
+            self.object = form.save(commit=False)
             
-            self.object = form.save()
+            # Asigna el complejo para el Gerente
+            if self.request.user.rol == 'GERENTE' and self.request.user.complejo_asignado:
+                self.object.complejo = self.request.user.complejo_asignado
+            
+            # Ahora guarda el objeto principal
+            self.object.save()
+            
+            # Asocia el objeto principal con el formset y guarda
             conceptos_formset.instance = self.object
             conceptos_formset.save()
 
@@ -289,14 +296,14 @@ class FacturaCreateView(LoginRequiredMixin, GerenteRequiredMixin, CreateView):
 
     def form_valid(self, form, detalles_formset):
         with transaction.atomic():
-            # Guardar la factura principal
-            factura = form.save(commit=False)
+            # Guardar la factura principal y asignarla a self.object
+            self.object = form.save(commit=False)
             # Asignar el usuario creador si tienes ese campo
-            # factura.usuario_creador = self.request.user 
-            factura.save()
+            # self.object.usuario_creador = self.request.user 
+            self.object.save()
 
             # Asociar y guardar los detalles
-            detalles_formset.instance = factura
+            detalles_formset.instance = self.object
             detalles_formset.save()
 
         messages.success(self.request, "Factura creada exitosamente.")

@@ -34,7 +34,7 @@
                             <h4 class="text-lg font-semibold text-gray-900 mb-2">{{ plan.nombre }}</h4>
                             <div class="space-y-1 text-sm mb-4">
                                 <p><strong class="text-gray-700">Frecuencia:</strong> <span class="text-gray-600">{{ plan.get_frecuencia_display }}</span></p>
-                                <p><strong class="text-gray-700">Monto Base:</strong> <span class="text-gray-600 font-semibold">${{ plan.monto_base }}</span></p>
+                                <p><strong class="text-gray-700">Monto Total:</strong> <span class="text-gray-600 font-semibold">${{ plan.monto_total|floatformat:2 }}</span></p>
                                 <p>
                                     <strong class="text-gray-700">Activo:</strong> 
                                     {% if plan.activo %}

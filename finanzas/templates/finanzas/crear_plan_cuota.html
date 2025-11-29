@@ -68,13 +68,24 @@
             <div id="formset-forms">
                 {% for formset_form in conceptos_formset.forms %}
                     <div class="form-row-container">
-                        {% for field in formset_form %}
-                            <div class="form-group">
-                                {{ field.label_tag }}
-                                {{ field }}
-                                {{ field.errors }}
-                            </div>
-                        {% endfor %}
+                        {# --- Hidden fields required by the formset --- #}
+                        {{ formset_form.id }}
+                        {{ formset_form.plan_cuota }}
+                        {{ formset_form.orden }}
+                        {# The DELETE checkbox is required for deleting existing items, but we hide it as per instructions. #}
+                        {% if formset_form.DELETE %}<div style="display:none;">{{ formset_form.DELETE }}</div>{% endif %}
+
+                        {# --- Visible fields --- #}
+                        <div class="form-group">
+                            {{ formset_form.concepto_cobro.label_tag }}
+                            {{ formset_form.concepto_cobro }}
+                            {{ formset_form.concepto_cobro.errors }}
+                        </div>
+                        <div class="form-group">
+                            {{ formset_form.monto.label_tag }}
+                            {{ formset_form.monto }}
+                            {{ formset_form.monto.errors }}
+                        </div>
                     </div>
                 {% endfor %}
             </div>
@@ -83,13 +94,23 @@
         {# This is the template for new forms #}
         <template id="empty-form-template">
             <div class="form-row-container">
-                {% for field in conceptos_formset.empty_form %}
+                {# --- Hidden fields for the new form --- #}
+                {{ conceptos_formset.empty_form.id }}
+                {{ conceptos_formset.empty_form.plan_cuota }}
+                {{ conceptos_formset.empty_form.orden }}
+                {% if conceptos_formset.empty_form.DELETE %}<div style="display:none;">{{ conceptos_formset.empty_form.DELETE }}</div>{% endif %}
+                
+                {# --- Visible fields for the new form --- #}
                 <div class="form-group">
-                    {{ field.label_tag }}
-                    {{ field }}
-                    {{ field.errors }}
+                    {{ conceptos_formset.empty_form.concepto_cobro.label_tag }}
+                    {{ conceptos_formset.empty_form.concepto_cobro }}
+                    {{ conceptos_formset.empty_form.concepto_cobro.errors }}
                 </div>
-                {% endfor %}
+                <div class="form-group">
+                    {{ conceptos_formset.empty_form.monto.label_tag }}
+                    {{ conceptos_formset.empty_form.monto }}
+                    {{ conceptos_formset.empty_form.monto.errors }}
+                </div>
                 <button type="button" class="btn btn-danger delete-btn">Eliminar</button>
             </div>
         </template>

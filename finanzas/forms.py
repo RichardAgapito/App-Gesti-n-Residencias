@@ -25,8 +25,7 @@ class PlanCuotaForm(forms.ModelForm):
                 if user.complejo_asignado:
                     self.fields['complejo'].queryset = Complejo.objects.filter(id=user.complejo_asignado.id)
                     self.fields['complejo'].initial = user.complejo_asignado
-                    self.fields['complejo'].widget.attrs['readonly'] = 'readonly'
-                    self.fields['complejo'].widget.attrs['style'] = 'pointer-events: none;' # Visual cue
+                    self.fields['complejo'].widget = forms.HiddenInput()
                 else: # Gerente without assigned complejo should not see this or get an error
                     self.fields['complejo'].widget = forms.HiddenInput()
                     self.fields['complejo'].required = False
@@ -43,7 +42,7 @@ class PlanConceptoCobroForm(forms.ModelForm):
         widgets = {
             'concepto_cobro': forms.Select(attrs={'class': 'form-control'}),
             'monto': forms.NumberInput(attrs={'class': 'form-control'}),
-            'orden': forms.NumberInput(attrs={'class': 'form-control'}),
+            'orden': forms.HiddenInput(),
         }
 
     def __init__(self, *args, **kwargs):
@@ -83,8 +82,7 @@ class ConceptoCobroForm(forms.ModelForm):
                 if user.complejo_asignado:
                     self.fields['complejo'].queryset = Complejo.objects.filter(id=user.complejo_asignado.id)
                     self.fields['complejo'].initial = user.complejo_asignado
-                    self.fields['complejo'].widget.attrs['readonly'] = 'readonly'
-                    self.fields['complejo'].widget.attrs['style'] = 'pointer-events: none;'
+                    self.fields['complejo'].widget = forms.HiddenInput()
                 else:
                     self.fields['complejo'].widget = forms.HiddenInput()
                     self.fields['complejo'].required = False

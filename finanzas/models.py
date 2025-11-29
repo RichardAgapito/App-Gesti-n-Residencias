@@ -15,10 +15,14 @@ class PlanCuota(models.Model):
     frecuencia = models.CharField(max_length=1, choices=Frecuencia.choices, default=Frecuencia.MENSUAL)
     activo = models.BooleanField(default=True)
     complejo = models.ForeignKey(Complejo, on_delete=models.SET_NULL, null=True, blank=True, related_name='planes_cuota')
-    conceptos = models.ManyToManyField('ConceptoCobro', through='PlanConceptoCobro', related_name='planes_cuota')
-
     def __str__(self):
         return self.nombre
+
+    @property
+    def monto_total(self):
+        from django.db.models import Sum
+        total = self.planconceptocobro_set.aggregate(Sum('monto'))['monto__sum']
+        return total or 0
 
 class ConceptoCobro(models.Model):
     class Tipo(models.TextChoices):

@@ -58,7 +58,7 @@
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ factura.plan_cuota|default:"N/A" }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ factura.fecha_emision }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ factura.fecha_vencimiento }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">${{ factura.monto_total }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">${{ factura.total_calculado|floatformat:2 }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm">
                                         <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
                                             {% if factura.estado == 'PAGADA' %}bg-green-100 text-green-800
