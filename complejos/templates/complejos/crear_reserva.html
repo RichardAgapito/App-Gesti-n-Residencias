@@ -185,6 +185,30 @@
             {% endfor %}
         </div>
         {% endif %}
+
+        {% if not has_active_contract %}
+        <div class="content-locked-message">
+            <h3><i class="fa-solid fa-triangle-exclamation"></i> Funcionalidad Limitada</h3>
+            <p>No puedes reservar amenidades porque no tienes un contrato activo.</p>
+        </div>
+        {% endif %}
+
+        {% if usuario_bloqueado %}
+        <div class="content-locked-message" style="border-left: 5px solid #e74c3c; background-color: #fdf3f2; color: #c0392b; padding: 20px; margin-bottom: 20px; border-radius: 5px;">
+            <h3 style="margin-top: 0; color: #c0392b;">
+                <i class="fa-solid fa-hand-holding-dollar"></i> Acceso Restringido
+            </h3>
+            <p style="font-size: 1.1rem;">{{ mensaje_bloqueo }}</p>
+            <a href="{% url 'mis_facturas' %}" class="btn btn-primary" style="background-color: #e74c3c; border: none; margin-top: 10px; display: inline-block;">
+                Ir a Pagar
+            </a>
+        </div>
+        {% endif %}
+
+        {% if has_active_contract and not usuario_bloqueado %}
+            <div class="amenidad-grid">
+                </div>
+        {% endif %}
         
     </div>
 </div>

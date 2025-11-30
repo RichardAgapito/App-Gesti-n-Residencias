@@ -12,6 +12,7 @@ from complejos.models import Complejo
 from complejos.models import PropiedadPersona
 from django.http import JsonResponse
 from django.template.loader import render_to_string
+from finanzas.models import Factura, ContratoFinanciero
 
 @login_required
 def dashboard(request):
@@ -84,20 +85,66 @@ def dashboard(request):
         return redirect('dashboard_visitas')
     
     else:
-
         user = request.user
         avisos_recientes = Aviso.objects.none()
         
-
-        propiedad_activa = user.propiedades_asociadas.filter(estado='activo').first()
-        if propiedad_activa:
-            complejo_residente = propiedad_activa.propiedad.complejo
+        # Obtener contrato de propiedad activo
+        propiedad_contrato = user.propiedades_asociadas.filter(estado='activo').first()
+        
+        # Variables por defecto
+        deuda_total = 0
+        facturas_vencidas_count = 0
+        timeline_facturas = []
+        contrato_financiero = None
+        
+        if propiedad_contrato:
+            complejo_residente = propiedad_contrato.propiedad.complejo
+            
+            # Avisos
             avisos_recientes = Aviso.objects.filter(
                 complejo=complejo_residente
             ).exclude(leido_por=user).order_by('-fecha_creacion')[:5]
 
+            # --- LÓGICA FINANCIERA ---
+            
+            # 1. Totales de Deuda
+            facturas_pendientes = Factura.objects.filter(
+                propiedad=propiedad_contrato.propiedad,
+                estado__in=['PENDIENTE', 'VENCIDA']
+            )
+            for factura in facturas_pendientes:
+                deuda_total += factura.total_calculado
+                if factura.estado == 'VENCIDA':
+                    facturas_vencidas_count += 1
+            
+            # 2. Datos para la Línea de Tiempo (Últimas 6 + Próximas)
+            # Traemos todas para que el template las pinte en orden
+            timeline_facturas = Factura.objects.filter(
+                propiedad=propiedad_contrato.propiedad
+            ).order_by('fecha_vencimiento') # Orden cronológico (antiguas -> nuevas)
+
+            # 3. Datos del Contrato Financiero (Progreso de Cuotas)
+            contrato_financiero = ContratoFinanciero.objects.filter(
+                propiedad_persona=propiedad_contrato,
+                estado='ACTIVO'
+            ).first()
+
         context = {
             'avisos_recientes': avisos_recientes,
+            'deuda_total': deuda_total,
+            'facturas_vencidas_count': facturas_vencidas_count,
+            'tiene_propiedad': propiedad_contrato is not None,
+            # Nuevos datos al contexto:
+            'timeline_facturas': timeline_facturas,
+            'contrato_financiero': contrato_financiero,
+        }
+        return render(request, 'users/dashboard.html', context)
+
+        context = {
+            'avisos_recientes': avisos_recientes,
+            'deuda_total': deuda_total,
+            'facturas_vencidas_count': facturas_vencidas_count,
+            'tiene_propiedad': propiedad_contrato is not None
         }
         return render(request, 'users/dashboard.html', context)
 

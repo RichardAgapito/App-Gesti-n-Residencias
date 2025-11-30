@@ -8,51 +8,51 @@
 {% block content %}
 <div class="complejos-container">
     <div class="list-header">
-        <h1><i class="fa-solid fa-receipt"></i> Mis Facturas</h1>
+        <h1><i class="fa-solid fa-file-invoice-dollar"></i> Mis Facturas</h1>
+        <a href="{% url 'dashboard' %}" class="btn btn-secondary">Volver</a>
     </div>
     <hr>
 
     <main class="results-content">
         {% if facturas %}
-            <div class="table-responsive">
-                <table class="table table-striped">
-                    <thead>
-                        <tr>
-                            <th>Nº Factura</th>
-                            <th>Propiedad</th>
-                            <th>Plan de Cuota</th>
-                            <th>Fecha Emisión</th>
-                            <th>Fecha Vencimiento</th>
-                            <th>Monto Total</th>
-                            <th>Estado</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for factura in facturas %}
-                            <tr>
-                                <td>{{ factura.numero_factura }}</td>
-                                <td>{{ factura.propiedad }}</td>
-                                <td>{{ factura.plan_cuota|default:"N/A" }}</td>
-                                <td>{{ factura.fecha_emision }}</td>
-                                <td>{{ factura.fecha_vencimiento }}</td>
-                                <td>${{ factura.monto_total }}</td>
-                                <td>{{ factura.get_estado_display }}</td>
-                                <td>
-                                    {# TODO: Add detail view and download PDF functionality later #}
-                                    <a href="#" class="btn btn-info btn-sm">
-                                        <i class="fa-solid fa-eye"></i> Ver Detalles
-                                    </a>
-                                </td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+            <div style="display: flex; flex-direction: column; gap: 20px;">
+                {% for factura in facturas %}
+                    <div style="border: 1px solid #ddd; border-radius: 8px; padding: 20px; background: white; border-left: 5px solid {% if factura.estado == 'PAGADA' %}green{% elif factura.estado == 'VENCIDA' %}red{% else %}orange{% endif %};">
+                        
+                        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 10px;">
+                            <div>
+                                <h3 style="margin: 0;">{{ factura.numero_factura }}</h3>
+                                <small style="color: #666;">Vencimiento: {{ factura.fecha_vencimiento }}</small>
+                            </div>
+                            <div style="text-align: right;">
+                                <span style="font-weight: bold; font-size: 1.2em;">${{ factura.total_calculado|floatformat:2 }}</span>
+                                <br>
+                                <span class="badge">{{ factura.get_estado_display }}</span>
+                            </div>
+                        </div>
+
+                        <table style="width: 100%; font-size: 0.9em; color: #555;">
+                            {% for detalle in factura.detalles.all %}
+                                <tr>
+                                    <td>{{ detalle.concepto_cobro.nombre }}</td>
+                                    <td style="text-align: right;">${{ detalle.monto }}</td>
+                                </tr>
+                            {% endfor %}
+                        </table>
+
+                        {% if factura.estado == 'PENDIENTE' or factura.estado == 'VENCIDA' %}
+                            <div style="margin-top: 15px; text-align: right;">
+                                <button disabled style="background: #ccc; border: none; padding: 8px 15px; border-radius: 4px; color: white;">
+                                    Pagar Online (Próximamente)
+                                </button>
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
             </div>
         {% else %}
-            <p class="no-results-message">No tienes facturas registradas.</p>
+            <p>No tienes facturas registradas.</p>
         {% endif %}
     </main>
-    <a href="{% url 'dashboard' %}" class="back-link">← Volver al Dashboard</a>
 </div>
 {% endblock %}

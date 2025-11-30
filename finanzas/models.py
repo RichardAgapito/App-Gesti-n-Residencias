@@ -1,6 +1,6 @@
 from django.db import models
 from django.conf import settings
-from complejos.models import Propiedad, Complejo
+from complejos.models import Propiedad, Complejo, PropiedadPersona 
 from django.utils import timezone
 from datetime import datetime
 
@@ -162,3 +162,80 @@ class Recaudo(models.Model):
         factura_to_update = self.factura
         super().delete(*args, **kwargs)
         factura_to_update._update_factura_estado() # Update the factura's status after deletion
+
+
+class ConfiguracionFinanciera(models.Model):
+    """
+    Define las "Reglas de Juego" automáticas para cada complejo.
+    Centraliza la configuración para no tener números mágicos en el código.
+    """
+    complejo = models.OneToOneField(Complejo, on_delete=models.CASCADE, related_name='configuracion_financiera')
+    
+    # Automatización de Fechas
+    dia_corte = models.PositiveIntegerField(default=1, help_text="Día del mes en que se generan las facturas automáticamente (1-28)")
+    dias_vencimiento = models.PositiveIntegerField(default=15, help_text="Días de gracia después del corte antes de declarar mora")
+    
+    # Reglas de Cobranza
+    tasa_interes_mora_diaria = models.DecimalField(max_digits=5, decimal_places=3, default=0.033, help_text="Interés diario % (ej. 0.033% diario ≈ 1% mensual)")
+    bloquear_servicios_con_deuda = models.BooleanField(default=False, help_text="Si es True, impide reservar amenidades si hay facturas vencidas")
+    
+    # Plan Base
+    plan_mantenimiento_default = models.ForeignKey(
+        'PlanCuota', 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        related_name='config_mantenimiento',
+        help_text="Plan de cuotas (Gasto Común) que se aplica a TODOS los residentes activos"
+    )
+
+    def __str__(self):
+        return f"Configuración Financiera - {self.complejo.nombre}"
+
+
+class ContratoFinanciero(models.Model):
+    """
+    Maneja los cobros específicos de cada persona que NO son gastos comunes.
+    Ej: El pago mensual de su alquiler o la cuota de compra del departamento.
+    """
+    TIPO_CHOICES = [
+        ('ALQUILER', 'Alquiler / Renta Mensual'),
+        ('FINANCIAMIENTO', 'Financiamiento / Compra a Plazos'),
+    ]
+    
+    ESTADO_CHOICES = [
+        ('ACTIVO', 'Activo'),
+        ('PAUSADO', 'Pausado'),
+        ('FINALIZADO', 'Finalizado'), # Cuando termina de pagar la compra o se va el inquilino
+        ('CANCELADO', 'Cancelado'),
+    ]
+
+    # Relación con el contrato legal existente
+    propiedad_persona = models.ForeignKey(PropiedadPersona, on_delete=models.CASCADE, related_name='contratos_financieros')
+    
+    tipo = models.CharField(max_length=20, choices=TIPO_CHOICES)
+    estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='ACTIVO')
+    
+    # Cuánto debe pagar
+    monto_cuota = models.DecimalField(max_digits=12, decimal_places=2, help_text="Monto a cobrar en cada periodo")
+    
+    # Reglas de Tiempo
+    fecha_inicio_pago = models.DateField(help_text="Fecha desde la cual se empieza a facturar")
+    dia_vencimiento_mensual = models.PositiveIntegerField(default=5, help_text="Día límite de pago para este concepto específico")
+    
+    # Campos exclusivos para COMPRA (Financiamiento)
+    numero_cuotas_totales = models.PositiveIntegerField(null=True, blank=True, help_text="Solo para financiamiento: Total de cuotas pactadas (ej. 12, 24)")
+    cuotas_facturadas = models.PositiveIntegerField(default=0, help_text="Contador de cuotas ya generadas")
+    saldo_pendiente = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True, help_text="Deuda total restante del inmueble")
+
+    def __str__(self):
+        return f"{self.get_tipo_display()} - {self.propiedad_persona.persona.email}"
+
+    def es_vigente(self):
+        """Helper para saber si debemos generarle factura este mes"""
+        if self.estado != 'ACTIVO':
+            return False
+        # Si es financiamiento y ya se cobraron todas las cuotas, no es vigente
+        if self.tipo == 'FINANCIAMIENTO' and self.numero_cuotas_totales and self.cuotas_facturadas >= self.numero_cuotas_totales:
+            return False
+        return True

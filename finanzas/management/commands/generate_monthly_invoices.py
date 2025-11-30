@@ -1,94 +1,156 @@
 from django.core.management.base import BaseCommand
-from django.db import transaction, models
+from django.db import transaction
 from django.utils import timezone
-from datetime import timedelta
+from datetime import date, timedelta
 
 from complejos.models import Complejo, PropiedadPersona
-from finanzas.models import PlanCuota, PlanConceptoCobro, Factura, DetalleFactura
+from finanzas.models import (
+    Factura, DetalleFactura, ConfiguracionFinanciera, 
+    ContratoFinanciero, PlanConceptoCobro
+)
 
 class Command(BaseCommand):
-    help = 'Generates monthly invoices for all occupied properties in each complex.'
+    help = 'Genera facturas mensuales inteligentes (Mantenimiento + Contratos Específicos)'
 
     def add_arguments(self, parser):
         parser.add_argument(
-            '--complejo_id',
-            type=int,
-            help='Specify a complex ID to generate invoices for a single complex.',
+            '--force',
+            action='store_true',
+            help='Fuerza la generación aunque no sea el día de corte',
         )
 
     def handle(self, *args, **options):
-        self.stdout.write(self.style.SUCCESS('Starting monthly invoice generation...'))
-
+        self.stdout.write(self.style.SUCCESS('--- Iniciando Generación de Facturas ---'))
+        
         today = timezone.localdate()
-        complejo_id = options.get('complejo_id')
+        
+        # Recorremos todos los complejos que tengan configuración financiera
+        configs = ConfiguracionFinanciera.objects.select_related('complejo', 'plan_mantenimiento_default').all()
 
-        complejos_to_process = Complejo.objects.all()
-        if complejo_id:
-            complejos_to_process = Complejo.objects.filter(id=complejo_id)
-            if not complejos_to_process.exists():
-                self.stdout.write(self.style.ERROR(f'Complex with ID {complejo_id} not found.'))
-                return
+        if not configs.exists():
+            self.stdout.write(self.style.WARNING('No se encontraron configuraciones financieras. Crea una en el admin primero.'))
+            return
 
-        for complejo in complejos_to_process:
-            self.stdout.write(self.style.MIGRATE_HEADING(f'Processing Complex: {complejo.nombre}'))
+        for config in configs:
+            complejo = config.complejo
+            self.stdout.write(f"\nProcesando Complejo: {complejo.nombre}")
 
-            # Get active PlanCuota for this complex (assuming one active plan per complex for simplicity)
-            plan_to_apply = PlanCuota.objects.filter(complejo=complejo, activo=True).first()
-
-            if not plan_to_apply:
-                self.stdout.write(self.style.WARNING(f'  No active plan found for {complejo.nombre}. Skipping.'))
+            # 1. Validación de Día de Corte
+            if not options['force'] and today.day != config.dia_corte:
+                self.stdout.write(self.style.NOTICE(f"  -> Saltando: Hoy es día {today.day}, el corte es el {config.dia_corte}."))
                 continue
 
-            plan_conceptos = plan_to_apply.planconceptocobro_set.filter(activo=True)
-            if not plan_conceptos.exists():
-                self.stdout.write(self.style.WARNING(f'  Plan "{plan_to_apply.nombre}" has no active concepts. Skipping.'))
-                continue
-
-            # Get occupied properties
-            occupied_properties = PropiedadPersona.objects.filter(
+            # 2. Obtener residentes activos (Propietarios o Inquilinos principales)
+            # Filtramos solo los que tienen contrato activo con la propiedad
+            residentes_activos = PropiedadPersona.objects.filter(
                 propiedad__complejo=complejo,
-                estado='activo'
-            ).select_related('propiedad')
+                estado='activo',
+                es_principal=True  # Solo facturamos al responsable principal
+            ).select_related('propiedad', 'persona')
 
-            if not occupied_properties.exists():
-                self.stdout.write(self.style.NOTICE(f'  No occupied properties found. Skipping.'))
-                continue
+            count_facturas = 0
 
-            for pp in occupied_properties:
-                propiedad = pp.propiedad
+            for contrato_residencial in residentes_activos:
+                propiedad = contrato_residencial.propiedad
+                usuario = contrato_residencial.persona
                 
-                # Check if an invoice for this property and plan already exists for the current month
-                if Factura.objects.filter(propiedad=propiedad, plan_cuota=plan_to_apply, fecha_emision__month=today.month, fecha_emision__year=today.year).exists():
-                    self.stdout.write(self.style.NOTICE(f'    Invoice already exists for property {propiedad} this month. Skipping.'))
+                # 3. Verificar si ya existe factura para este mes y año para esta propiedad
+                # Esto evita duplicados si corres el script dos veces
+                if Factura.objects.filter(
+                    propiedad=propiedad, 
+                    fecha_emision__year=today.year, 
+                    fecha_emision__month=today.month
+                ).exists():
+                    # self.stdout.write(f"  -> Factura ya existe para {propiedad}")
                     continue
 
-                due_date = today + timedelta(days=15)
-                
                 try:
                     with transaction.atomic():
+                        # --- PASO A: Crear la Cabecera de la Factura ---
+                        # Calculamos vencimiento según la configuración del complejo
+                        fecha_vencimiento = today + timedelta(days=config.dias_vencimiento)
+                        
                         factura = Factura.objects.create(
                             propiedad=propiedad,
-                            plan_cuota=plan_to_apply,
-                            fecha_vencimiento=due_date,
-                            monto_total=0, # Will be updated
-                            observaciones=f"Factura mensual según {plan_to_apply.nombre} para {today.strftime('%B %Y')}"
+                            plan_cuota=config.plan_mantenimiento_default, # Referencia al plan base
+                            fecha_emision=today,
+                            fecha_vencimiento=fecha_vencimiento,
+                            estado='PENDIENTE',
+                            observaciones=f"Facturación Mensual - {today.strftime('%B %Y')}"
                         )
-                        
-                        total_monto_factura = 0
-                        for plan_concepto in plan_conceptos:
+
+                        total_acumulado = 0
+
+                        # --- PASO B: Agregar Conceptos de Mantenimiento (Para TODOS) ---
+                        if config.plan_mantenimiento_default:
+                            conceptos_base = PlanConceptoCobro.objects.filter(
+                                plan_cuota=config.plan_mantenimiento_default,
+                                activo=True
+                            ).select_related('concepto_cobro')
+
+                            for item in conceptos_base:
+                                DetalleFactura.objects.create(
+                                    factura=factura,
+                                    concepto_cobro=item.concepto_cobro,
+                                    monto=item.monto,
+                                    # descripcion=item.concepto_cobro.nombre # (Opcional si tu modelo tiene descripción)
+                                )
+                                total_acumulado += item.monto
+
+                        # --- PASO C: Buscar Contratos Financieros Específicos (Alquiler/Compra) ---
+                        # Buscamos si este residente tiene un contrato financiero activo
+                        contrato_fin = ContratoFinanciero.objects.filter(
+                            propiedad_persona=contrato_residencial,
+                            estado='ACTIVO'
+                        ).first()
+
+                        if contrato_fin and contrato_fin.es_vigente():
+                            # Crear un concepto de cobro "al vuelo" o usar uno genérico si prefieres
+                            # Aquí asumimos que tienes un ConceptoCobro genérico para "Alquiler/Cuota"
+                            # O creamos el detalle directamente.
+                            
+                            # NOTA: Para que esto funcione perfecto, asegúrate de tener un ConceptoCobro
+                            # llamado "Cuota Contrato" o similar en la BD, o créalo dinámicamente.
+                            from finanzas.models import ConceptoCobro
+                            concepto_extra, _ = ConceptoCobro.objects.get_or_create(
+                                nombre=f"Cuota {contrato_fin.get_tipo_display()}",
+                                defaults={'tipo': 'ORDINARIO', 'complejo': complejo}
+                            )
+
                             DetalleFactura.objects.create(
                                 factura=factura,
-                                concepto_cobro=plan_concepto.concepto_cobro,
-                                monto=plan_concepto.monto,
-                                descripcion=f"{plan_concepto.concepto_cobro.nombre}"
+                                concepto_cobro=concepto_extra,
+                                monto=contrato_fin.monto_cuota,
+                                # descripcion=f"Cuota correspondiente al contrato {contrato_fin.id}"
                             )
-                            total_monto_factura += plan_concepto.monto
-                        
-                        factura.monto_total = total_monto_factura
+                            total_acumulado += contrato_fin.monto_cuota
+
+                            # Si es financiamiento (compra), actualizamos el contador
+                            if contrato_fin.tipo == 'FINANCIAMIENTO':
+                                contrato_fin.cuotas_facturadas += 1
+                                if contrato_fin.saldo_pendiente:
+                                    contrato_fin.saldo_pendiente -= contrato_fin.monto_cuota
+                                
+                                # Auto-finalizar si completó cuotas
+                                if contrato_fin.numero_cuotas_totales and contrato_fin.cuotas_facturadas >= contrato_fin.numero_cuotas_totales:
+                                    contrato_fin.estado = 'FINALIZADO'
+                                    self.stdout.write(self.style.SUCCESS(f"    -> ¡Contrato de compra finalizado para {propiedad}!"))
+                                
+                                contrato_fin.save()
+
+                        # --- Guardar Total ---
+                        # Como tu modelo Factura calculaba el total dinámicamente con una @property,
+                        # no necesitamos guardar 'monto_total' si eliminaste el campo en migraciones anteriores.
+                        # Si aún tienes el campo monto_total en la BD para caché:
+                        # factura.monto_total = total_acumulado
                         factura.save()
-                        self.stdout.write(self.style.SUCCESS(f'      Generated invoice {factura.numero_factura} for property {propiedad}.'))
+                        
+                        count_facturas += 1
+                        self.stdout.write(f"  -> Generada Factura {factura.numero_factura} para {propiedad} (${total_acumulado})")
 
                 except Exception as e:
-                    self.stdout.write(self.style.ERROR(f'      Error generating invoice for property {propiedad}: {e}'))
+                    self.stdout.write(self.style.ERROR(f"  -> Error generando factura para {propiedad}: {str(e)}"))
 
-        self.stdout.write(self.style.SUCCESS('Monthly invoice generation finished.'))
+            self.stdout.write(self.style.SUCCESS(f"Complejo {complejo.nombre}: {count_facturas} facturas generadas."))
+
+        self.stdout.write(self.style.SUCCESS('\n--- Proceso Finalizado ---'))
