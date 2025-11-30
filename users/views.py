@@ -12,40 +12,47 @@ from complejos.models import Complejo
 from complejos.models import PropiedadPersona
 from django.http import JsonResponse
 from django.template.loader import render_to_string
-from finanzas.models import Factura, ContratoFinanciero
+from finanzas.models import Factura, ContratoFinanciero, Recaudo
 
 @login_required
 def dashboard(request):
     if request.user.rol == 'ADMIN':
-        from django.db.models import Count, Q
+        from django.db.models import Count, Q, Sum
         from datetime import timedelta
         from django.utils import timezone
+        from visitas.models import Visita
         
         # Estadísticas básicas
         total_usuarios = CustomUser.objects.count()
         total_complejos = Complejo.objects.count()
-        visitas_hoy = 0
+        visitas_hoy = Visita.objects.filter(fecha_hora_ingreso__date=timezone.now().date()).count()
+        
+        # Ingresos del mes
+        ingresos_mes = Recaudo.objects.filter(
+            fecha_pago__month=timezone.now().month,
+            fecha_pago__year=timezone.now().year
+        ).aggregate(Sum('monto_pagado'))['monto_pagado__sum'] or 0
 
         # Calcular ocupación por complejo
         complejos_data = []
         complejos = Complejo.objects.all()
         for complejo in complejos:
             total_propiedades = complejo.propiedades.count()
-            if total_propiedades > 0:
-                propiedades_ocupadas = complejo.propiedades.filter(estado_ocupacion='ocupado').count()
-                porcentaje_ocupacion = int((propiedades_ocupadas / total_propiedades) * 100)
-                complejos_data.append({
-                    'nombre': complejo.nombre,
-                    'ocupacion': porcentaje_ocupacion,
-                    'unidades': total_propiedades
-                })
+            # Mostrar complejo incluso si no tiene propiedades
+            propiedades_ocupadas = complejo.propiedades.filter(estado_ocupacion='ocupado').count()
+            porcentaje_ocupacion = int((propiedades_ocupadas / total_propiedades) * 100) if total_propiedades > 0 else 0
+            complejos_data.append({
+                'nombre': complejo.nombre,
+                'ocupacion': porcentaje_ocupacion,
+                'unidades': total_propiedades
+            })
 
-        # Actividad reciente (últimos 7 días)
-        hace_7_dias = timezone.now() - timedelta(days=7)
+        # Actividad reciente (últimos 30 días o sin límite para dev)
+        # hace_7_dias = timezone.now() - timedelta(days=7) # Comentado para mostrar más actividad
         actividad_reciente = []
 
-        # Usuarios recientes
-        usuarios_recientes = CustomUser.objects.filter(date_joined__gte=hace_7_dias).order_by('-date_joined')[:3]
+        # Usuarios recientes (últimos 10 registrados)
+        usuarios_recientes = CustomUser.objects.all().order_by('-date_joined')[:5]
         for usuario in usuarios_recientes:
             actividad_reciente.append({
                 'tipo': 'usuario',
@@ -53,8 +60,8 @@ def dashboard(request):
                 'tiempo': usuario.date_joined
             })
 
-        # Avisos recientes
-        avisos_recientes = Aviso.objects.filter(fecha_creacion__gte=hace_7_dias).order_by('-fecha_creacion')[:2]
+        # Avisos recientes (últimos 5)
+        avisos_recientes = Aviso.objects.all().order_by('-fecha_creacion')[:5]
         for aviso in avisos_recientes:
             actividad_reciente.append({
                 'tipo': 'aviso',
@@ -64,12 +71,13 @@ def dashboard(request):
 
         # Ordenar por tiempo (más reciente primero)
         actividad_reciente.sort(key=lambda x: x['tiempo'], reverse=True)
-        actividad_reciente = actividad_reciente[:5]  # Limitar a 5 items
+        actividad_reciente = actividad_reciente[:10]  # Limitar a 10 items
 
         context = {
             'total_usuarios': total_usuarios,
             'total_complejos': total_complejos,
             'visitas_hoy': visitas_hoy,
+            'ingresos_mes': ingresos_mes,
             'complejos_data': complejos_data,
             'actividad_reciente': actividad_reciente,
         }
