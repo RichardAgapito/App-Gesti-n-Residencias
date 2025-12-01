@@ -83,7 +83,7 @@
 
         function toggleComplejoField() {
             if (complejoFieldContainer) {
-                complejoFieldContainer.style.display = rolField.value === "GUARDIA" ? "block" : "none";
+                complejoFieldContainer.style.display = (rolField.value === "GUARDIA" || rolField.value === "GERENTE") ? "block" : "none";
             }
         }
 

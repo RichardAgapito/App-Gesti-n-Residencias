@@ -1,106 +1,137 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block bootstrap_css %}{% endblock %}
-{% block global_styles %}{% endblock %}
-
-{% block extra_css %}
-    <link rel="stylesheet" href="{% static 'css/complejos.css' %}">
-    <style>
-        .propiedad-detalle-container {
-            max-width: 1200px;
-            margin: 2rem auto;
-            padding: 2rem;
+{% block bootstrap_css %}
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3b82f6',
+                        blue: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                        }
+                    }
+                }
+            }
         }
-        .propiedad-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.5rem;
-        }
-        .propiedad-header h2 {
-            color: #2c3e50;
-            margin: 0;
-        }
-        .propiedad-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); /* Responsive columns */
-            gap: 2rem;
-            align-items: start; /* Crucial change: columns will not stretch to equal height */
-        }
-        .propiedad-info-card, .contrato-card {
-            background-color: #fff;
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            padding: 1.5rem;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        }
-        .propiedad-info-card h3, .contrato-card h3 {
-            margin-top: 0;
-            color: #34495e;
-            border-bottom: 1px solid #dde3e9;
-            padding-bottom: 0.75rem;
-            margin-bottom: 1rem;
-        }
-        .asociaciones-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 1rem;
-        }
-        .asociacion-card {
-            background-color: #f9f9f9;
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            padding: 1rem;
-        }
-    </style>
+    </script>
 {% endblock %}
 
+{% block global_styles %}{% endblock %}
+
 {% block content %}
-<div class="propiedad-detalle-container">
-    <div class="propiedad-header">
-        <h2><i class="fa-solid fa-house-user"></i> Detalles de la Propiedad: {{ propiedad.numero_identificador }}</h2>
-        <div>
-            <a href="{% url 'lista_contratos' %}?propiedad_id={{ propiedad.id }}" class="btn btn-primary">
-                <i class="fa-solid fa-file-signature"></i> Gestionar Contratos
-            </a>
-            <a href="{% url 'editar_propiedad' propiedad.id %}" class="btn btn-secondary">Editar Propiedad</a>
-        </div>
-    </div>
-    <hr>
+<div class="h-screen bg-gray-50 font-sans overflow-hidden flex">
+    
+    {% include 'includes/admin_sidebar.html' %}
 
-    <div class="propiedad-grid">
-        <div class="propiedad-info-card">
-            <h3><i class="fa-solid fa-circle-info"></i> Información de la Propiedad</h3>
-            <p><strong>Complejo:</strong> {{ propiedad.complejo.nombre }}</p>
-            <p><strong>Número Identificador:</strong> {{ propiedad.numero_identificador }}</p>
-            <p><strong>Tipo:</strong> {{ propiedad.get_tipo_display }}</p>
-            <p><strong>Área:</strong> {{ propiedad.area }} m²</p>
-            <p><strong>Habitaciones:</strong> {{ propiedad.numero_habitaciones }}</p>
-            <p><strong>Baños:</strong> {{ propiedad.numero_banos }}</p>
-            <p><strong>Piso/Nivel:</strong> {{ propiedad.piso_nivel }}</p>
-            <p><strong>Valor Estimado:</strong> ${{ propiedad.valor_estimado }}</p>
-            <p><strong>Estado de Ocupación:</strong> {{ propiedad.get_estado_ocupacion_display }}</p>
-            <p><strong>Fecha de Registro:</strong> {{ propiedad.fecha_registro|date:"d/m/Y H:i" }}</p>
-        </div>
-
-        <div class="contrato-card">
-            <h3><i class="fa-solid fa-file-signature"></i> Contratos Activos</h3>
-            <div class="asociaciones-container">
-                {% for asociacion in contratos_activos %}
-                    <div class="asociacion-card">
-                        <p><strong>Persona:</strong> {{ asociacion.persona.persona }}</p>
-                        <p><strong>Relación:</strong> {{ asociacion.get_tipo_relacion_display }}</p>
-                        <p><strong>Principal:</strong> {{ asociacion.es_principal|yesno:"Sí,No" }}</p>
-                        <p><strong>Estado:</strong> <span class="status-active">{{ asociacion.get_estado_display }}</span></p>
-                    </div>
-                {% empty %}
-                    <p>No hay contratos activos para esta propiedad.</p>
-                {% endfor %}
+    <div class="flex-1 flex flex-col h-full overflow-y-auto lg:ml-64">
+        <!-- System Header -->
+        <header class="px-8 mt-10 flex justify-between items-center">
+            <div>
+                <h1 class="text-4xl font-bold text-gray-900 flex items-center gap-2">
+                    <i class="fa-solid fa-house-user text-blue-600"></i>
+                    Propiedad {{ propiedad.numero_identificador }}
+                </h1>
+                <p class="text-sm text-gray-500 mt-1">
+                    Complejo <span class="font-medium text-gray-700">{{ propiedad.complejo.nombre }}</span>
+                </p>
             </div>
-        </div>
-    </div>
+        </header>
 
-    <a href="{% url 'detalle_complejo' propiedad.complejo.id %}" class="back-link">← Volver a los Detalles del Complejo</a>
+        <!-- Main Content Area -->
+        <main class="flex-1 p-8">
+            <div class="max-w-5xl mx-auto">
+                <!-- Action Bar -->
+                <div class="flex justify-between items-center mb-6">
+                    <a href="{% url 'detalle_complejo' propiedad.complejo.id %}" 
+                       class="inline-flex items-center text-sm font-medium text-gray-500 hover:text-blue-600 transition-colors group">
+                        <i class="fa-solid fa-arrow-left mr-2 transform group-hover:-translate-x-1 transition-transform"></i>
+                        Volver al Complejo
+                    </a>
+                </div>
+
+                <!-- Property Card -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
+                        <h3 class="text-lg font-semibold text-gray-800">Información General</h3>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium uppercase tracking-wide
+                            {% if propiedad.estado_ocupacion == 'ocupado' %}bg-red-100 text-red-800 border border-red-200
+                            {% elif propiedad.estado_ocupacion == 'mantenimiento' %}bg-yellow-100 text-yellow-800 border border-yellow-200
+                            {% else %}bg-green-100 text-green-800 border border-green-200{% endif %}">
+                            <span class="w-1.5 h-1.5 rounded-full mr-1.5 
+                                {% if propiedad.estado_ocupacion == 'ocupado' %}bg-red-500
+                                {% elif propiedad.estado_ocupacion == 'mantenimiento' %}bg-yellow-500
+                                {% else %}bg-green-500{% endif %}"></span>
+                            {{ propiedad.get_estado_ocupacion_display }}
+                        </span>
+                    </div>
+                    
+                    <div class="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <!-- Data Points -->
+                        <div class="space-y-1">
+                            <span class="text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</span>
+                            <div class="flex items-center gap-2 text-gray-900">
+                                <i class="fa-solid fa-building text-gray-400 w-5"></i>
+                                <span class="font-medium">{{ propiedad.get_tipo_display }}</span>
+                            </div>
+                        </div>
+
+                        <div class="space-y-1">
+                            <span class="text-xs font-medium text-gray-500 uppercase tracking-wider">Área</span>
+                            <div class="flex items-center gap-2 text-gray-900">
+                                <i class="fa-solid fa-ruler-combined text-gray-400 w-5"></i>
+                                <span class="font-medium">{{ propiedad.area }} m²</span>
+                            </div>
+                        </div>
+
+                        <div class="space-y-1">
+                            <span class="text-xs font-medium text-gray-500 uppercase tracking-wider">Habitaciones</span>
+                            <div class="flex items-center gap-2 text-gray-900">
+                                <i class="fa-solid fa-bed text-gray-400 w-5"></i>
+                                <span class="font-medium">{{ propiedad.numero_habitaciones }}</span>
+                            </div>
+                        </div>
+
+                        <div class="space-y-1">
+                            <span class="text-xs font-medium text-gray-500 uppercase tracking-wider">Baños</span>
+                            <div class="flex items-center gap-2 text-gray-900">
+                                <i class="fa-solid fa-bath text-gray-400 w-5"></i>
+                                <span class="font-medium">{{ propiedad.numero_banos }}</span>
+                            </div>
+                        </div>
+
+                        <div class="space-y-1">
+                            <span class="text-xs font-medium text-gray-500 uppercase tracking-wider">Piso / Nivel</span>
+                            <div class="flex items-center gap-2 text-gray-900">
+                                <i class="fa-solid fa-layer-group text-gray-400 w-5"></i>
+                                <span class="font-medium">{{ propiedad.piso_nivel }}</span>
+                            </div>
+                        </div>
+
+                        <div class="space-y-1">
+                            <span class="text-xs font-medium text-gray-500 uppercase tracking-wider">Valor Estimado</span>
+                            <div class="flex items-center gap-2 text-gray-900">
+                                <i class="fa-solid fa-sack-dollar text-gray-400 w-5"></i>
+                                <span class="font-medium">${{ propiedad.valor_estimado }}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="md:col-span-2 lg:col-span-3 pt-4 mt-2 border-t border-gray-100">
+                            <div class="flex items-center gap-2 text-sm text-gray-500">
+                                <i class="fa-regular fa-calendar text-gray-400"></i>
+                                Registrado el {{ propiedad.fecha_registro|date:"d \d\e F \d\e Y" }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
 </div>
 {% endblock %}

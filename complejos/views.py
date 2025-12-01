@@ -114,18 +114,45 @@ def lista_complejos(request):
     estado = request.GET.get('estado')
 
     # 1. Obtener QuerySet con anotaciones
-    complejos_qs = Complejo.objects.annotate(
-        total_amenidades=Count('amenidades', distinct=True),
-        unidades_ocupadas=Count('propiedades', filter=Q(propiedades__estado_ocupacion='ocupado'), distinct=True)
+    # 1. Obtener QuerySet con prefetch para evitar N+1
+    complejos_qs = Complejo.objects.prefetch_related(
+        'propiedades',
+        'propiedades__personas_asociadas'
+    ).annotate(
+        total_amenidades=Count('amenidades', distinct=True)
     )
 
-    # 2. Convertir a lista para poder agregar atributos dinámicos (porcentaje)
+    # 2. Convertir a lista
     complejos_list = list(complejos_qs)
 
-    # 3. Calcular porcentajes en los objetos de la lista
+    # 3. Calcular porcentajes en los objetos de la lista usando lógica Python
     for c in complejos_list:
-        if c.numero_total_unidades > 0:
-            c.porcentaje_ocupacion = int((c.unidades_ocupadas / c.numero_total_unidades) * 100)
+        occupied_count = 0
+        # Usamos .all() que utiliza el caché del prefetch
+        propiedades = c.propiedades.all()
+        real_total = len(propiedades)
+        
+        for p in propiedades:
+            # Verificar estado manual
+            is_occupied_manual = (p.estado_ocupacion == 'ocupado')
+            
+            # Verificar relaciones activas (filtrando en memoria para usar prefetch)
+            has_active_relation = False
+            for relation in p.personas_asociadas.all():
+                if relation.estado == 'activo' and relation.tipo_relacion in ['inquilino', 'propietario']:
+                    has_active_relation = True
+                    break
+            
+            if is_occupied_manual or has_active_relation:
+                occupied_count += 1
+        
+        c.unidades_ocupadas = occupied_count
+        
+        # Usar el total real si el configurado es 0 o inconsistente
+        denominator = c.numero_total_unidades if c.numero_total_unidades > 0 else real_total
+        
+        if denominator > 0:
+            c.porcentaje_ocupacion = int((c.unidades_ocupadas / denominator) * 100)
         else:
             c.porcentaje_ocupacion = 0
 
@@ -291,56 +318,7 @@ def detalle_propiedad(request, propiedad_id):
     return render(request, 'complejos/detalle_propiedad.html', context)
 
 
-@user_passes_test(es_admin, login_url='/')
-def asignar_contrato(request, propiedad_id):
-    propiedad = get_object_or_404(Propiedad, id=propiedad_id)
-    if request.method == 'POST':
-        form = PropiedadPersonaForm(request.POST, propiedad=propiedad)
-        if form.is_valid():
 
-            tipo_relacion_form = form.cleaned_data['tipo_relacion']
-            if tipo_relacion_form == 'co-propietario':
-                first_person_role = 'propietario'
-                second_person_role = 'co-propietario'
-            elif tipo_relacion_form == 'co-inquilino':
-                first_person_role = 'inquilino'
-                second_person_role = 'co-inquilino'
-            else:
-
-                first_person_role = tipo_relacion_form
-                second_person_role = None
-
-
-            propiedad_persona = PropiedadPersona(
-                propiedad=propiedad,
-                persona=form.cleaned_data['persona'],
-                tipo_relacion=first_person_role,
-                porcentaje_propiedad=form.cleaned_data['porcentaje_propiedad'],
-                fecha_inicio=form.cleaned_data['fecha_inicio'],
-                fecha_fin=form.cleaned_data['fecha_fin'],
-                es_principal=True,
-                estado=form.cleaned_data['estado']
-            )
-            propiedad_persona.save()
-
-
-            if second_person_role:
-                asignacion2 = PropiedadPersona(
-                    propiedad=propiedad,
-                    persona=form.cleaned_data['persona2'],
-                    tipo_relacion=second_person_role,
-                    porcentaje_propiedad=form.cleaned_data['porcentaje_propiedad'],
-                    fecha_inicio=form.cleaned_data['fecha_inicio'],
-                    fecha_fin=form.cleaned_data['fecha_fin'],
-                    es_principal=False,
-                    estado=form.cleaned_data['estado']
-                )
-                asignacion2.save()
-
-            return redirect('detalle_propiedad', propiedad_id=propiedad.id)
-    else:
-        form = PropiedadPersonaForm(propiedad=propiedad)
-    return render(request, 'complejos/asignar_contrato.html', {'form': form, 'propiedad': propiedad})
 
 
 @user_passes_test(es_admin, login_url='/')
@@ -892,3 +870,57 @@ def crear_contrato_global(request):
         'form': form,
     }
     return render(request, 'complejos/crear_contrato_global.html', context)
+
+
+@user_passes_test(es_admin, login_url='/')
+def seleccionar_complejo_contrato(request):
+    complejos = Complejo.objects.filter(estado='activo')
+    
+    query = request.GET.get('q')
+    if query:
+        complejos = complejos.filter(nombre__icontains=query)
+
+    # Reuse logic from lista_complejos to calculate occupancy
+    complejos_list = list(complejos)
+    for c in complejos_list:
+        occupied_count = 0
+        propiedades = c.propiedades.all()
+        real_total = len(propiedades)
+        
+        for p in propiedades:
+            is_occupied_manual = (p.estado_ocupacion == 'ocupado')
+            has_active_relation = False
+            for relation in p.personas_asociadas.all():
+                if relation.estado == 'activo' and relation.tipo_relacion in ['inquilino', 'propietario']:
+                    has_active_relation = True
+                    break
+            
+            if is_occupied_manual or has_active_relation:
+                occupied_count += 1
+        
+        c.unidades_ocupadas = occupied_count
+        denominator = c.numero_total_unidades if c.numero_total_unidades > 0 else real_total
+        
+        if denominator > 0:
+            c.porcentaje_ocupacion = int((c.unidades_ocupadas / denominator) * 100)
+        else:
+            c.porcentaje_ocupacion = 0
+
+    return render(request, 'complejos/seleccionar_complejo_contrato.html', {'complejos': complejos_list, 'query': query})
+
+@user_passes_test(es_admin, login_url='/')
+def seleccionar_propiedad_contrato(request, complejo_id):
+    complejo = get_object_or_404(Complejo, id=complejo_id)
+    propiedades = Propiedad.objects.filter(complejo=complejo)
+    
+    # Optional filtering
+    query = request.GET.get('q')
+    if query:
+        propiedades = propiedades.filter(numero_identificador__icontains=query)
+
+    context = {
+        'complejo': complejo,
+        'propiedades': propiedades,
+        'query': query
+    }
+    return render(request, 'complejos/seleccionar_propiedad_contrato.html', context)

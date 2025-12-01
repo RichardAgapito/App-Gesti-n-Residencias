@@ -106,7 +106,7 @@ class PropiedadPersona(models.Model):
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
         propiedad = self.propiedad
-        if propiedad.personas_asociadas.filter(tipo_relacion='inquilino', estado='activo').exists():
+        if propiedad.personas_asociadas.filter(tipo_relacion__in=['inquilino', 'propietario'], estado='activo').exists():
             if propiedad.estado_ocupacion != 'ocupado':
                 propiedad.estado_ocupacion = 'ocupado'
                 propiedad.save()

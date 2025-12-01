@@ -200,6 +200,21 @@ document.addEventListener('DOMContentLoaded', function() {
     function attachDynamicContentListeners() {
         const form = dynamicContent.querySelector('form');
         if (form) {
+            // Logic for dynamic field visibility
+            const rolField = form.querySelector("#id_rol");
+            const complejoFieldContainer = form.querySelector("#container-id_complejo_asignado");
+
+            function toggleComplejoField() {
+                if (complejoFieldContainer && rolField) {
+                    complejoFieldContainer.style.display = (rolField.value === "GUARDIA" || rolField.value === "GERENTE") ? "block" : "none";
+                }
+            }
+
+            if (rolField) {
+                toggleComplejoField();
+                rolField.addEventListener("change", toggleComplejoField);
+            }
+
             form.addEventListener('submit', async function(e) {
                 e.preventDefault();
                 const formData = new FormData(form);

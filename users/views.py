@@ -35,16 +35,34 @@ def dashboard(request):
 
         # Calcular ocupación por complejo
         complejos_data = []
-        complejos = Complejo.objects.all()
+        # Usar prefetch para optimizar
+        complejos = Complejo.objects.prefetch_related('propiedades', 'propiedades__personas_asociadas').all()
+        
         for complejo in complejos:
             total_propiedades = complejo.propiedades.count()
-            # Mostrar complejo incluso si no tiene propiedades
-            propiedades_ocupadas = complejo.propiedades.filter(estado_ocupacion='ocupado').count()
-            porcentaje_ocupacion = int((propiedades_ocupadas / total_propiedades) * 100) if total_propiedades > 0 else 0
+            occupied_count = 0
+            
+            # Calcular ocupación real
+            for p in complejo.propiedades.all():
+                is_occupied_manual = (p.estado_ocupacion == 'ocupado')
+                has_active_relation = False
+                for relation in p.personas_asociadas.all():
+                    if relation.estado == 'activo' and relation.tipo_relacion in ['inquilino', 'propietario']:
+                        has_active_relation = True
+                        break
+                
+                if is_occupied_manual or has_active_relation:
+                    occupied_count += 1
+
+            # Usar el total configurado si existe, sino el real
+            denominator = complejo.numero_total_unidades if complejo.numero_total_unidades > 0 else total_propiedades
+            
+            porcentaje_ocupacion = int((occupied_count / denominator) * 100) if denominator > 0 else 0
+            
             complejos_data.append({
                 'nombre': complejo.nombre,
                 'ocupacion': porcentaje_ocupacion,
-                'unidades': total_propiedades
+                'unidades': denominator # Mostrar el total planificado, no solo las creadas
             })
 
         # Actividad reciente (últimos 30 días o sin límite para dev)

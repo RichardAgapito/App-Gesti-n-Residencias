@@ -33,27 +33,26 @@
                 </a>
             </div>
 
-            <!-- Search & Filter Bar -->
+            <!-- Search & Filter Bar (Client-side) -->
             <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-2">
-                <form method="get" action="{% url 'lista_complejos' %}" class="flex items-center">
+                <div class="flex items-center">
                     <div class="relative flex-1">
                         <i class="fa-solid fa-search absolute left-4 top-3.5 text-gray-400"></i>
-                        <input type="search" name="q" value="{{ request.GET.q }}" placeholder="Buscar por nombre, dirección o administrador..." 
+                        <input type="text" id="searchInput" placeholder="Buscar por nombre, dirección o administrador..." 
                             class="w-full pl-11 pr-4 py-3 bg-transparent border-none focus:ring-0 text-gray-700 placeholder-gray-400 text-sm">
                     </div>
-                    <div class="h-8 w-px bg-gray-200 mx-2"></div>
-                    <button type="submit" class="px-6 py-2 bg-gray-50 text-gray-600 font-medium rounded-xl hover:bg-gray-100 transition-colors text-sm">
-                        Buscar
-                    </button>
-                </form>
+                </div>
             </div>
         </div>
 
         <!-- Grid Cards -->
         {% if complejos %}
-            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+            <div id="complejosGrid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
                 {% for complejo in complejos %}
-                    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 group overflow-hidden flex flex-col">
+                    <div class="complejo-card bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 group overflow-hidden flex flex-col"
+                         data-nombre="{{ complejo.nombre|lower }}" 
+                         data-direccion="{{ complejo.calle|lower }} {{ complejo.ciudad|lower }}"
+                         data-admin="{{ complejo.administrador_responsable|default:''|lower }}">
                         <!-- Card Header Gradient -->
                         <div class="h-2 bg-gradient-to-r from-blue-500 to-indigo-600"></div>
                         
@@ -140,6 +139,15 @@
                     </div>
                 {% endfor %}
             </div>
+
+            <!-- No Results Message (Hidden by default) -->
+            <div id="noResults" class="hidden text-center py-16 bg-white rounded-2xl border border-gray-200 border-dashed mt-6">
+                <div class="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <i class="fa-solid fa-magnifying-glass text-gray-300 text-3xl"></i>
+                </div>
+                <h3 class="text-xl font-bold text-gray-900 mb-2">No se encontraron resultados</h3>
+                <p class="text-gray-500">Intenta con otros términos de búsqueda.</p>
+            </div>
         {% else %}
             <div class="flex flex-col items-center justify-center py-20 bg-white rounded-3xl border border-dashed border-gray-300">
                 <div class="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mb-6 animate-pulse">
@@ -147,7 +155,7 @@
                 </div>
                 <h3 class="text-xl font-bold text-gray-900 mb-2">No se encontraron complejos</h3>
                 <p class="text-gray-500 text-center max-w-md mb-8">
-                    No hay complejos que coincidan con tu búsqueda. Intenta ajustar los filtros o registra uno nuevo.
+                    No hay complejos registrados. Registra uno nuevo para comenzar.
                 </p>
                 <a href="{% url 'crear_complejo' %}" class="px-6 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-md">
                     Registrar Primer Complejo
@@ -156,4 +164,41 @@
         {% endif %}
     </main>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('searchInput');
+        const cards = document.querySelectorAll('.complejo-card');
+        const noResults = document.getElementById('noResults');
+        const grid = document.getElementById('complejosGrid');
+
+        if (searchInput) {
+            searchInput.addEventListener('input', function(e) {
+                const searchTerm = e.target.value.toLowerCase();
+                let visibleCount = 0;
+
+                cards.forEach(card => {
+                    const nombre = card.dataset.nombre || '';
+                    const direccion = card.dataset.direccion || '';
+                    const admin = card.dataset.admin || '';
+                    
+                    if (nombre.includes(searchTerm) || direccion.includes(searchTerm) || admin.includes(searchTerm)) {
+                        card.classList.remove('hidden');
+                        visibleCount++;
+                    } else {
+                        card.classList.add('hidden');
+                    }
+                });
+
+                if (visibleCount === 0) {
+                    noResults.classList.remove('hidden');
+                    grid.classList.add('hidden');
+                } else {
+                    noResults.classList.add('hidden');
+                    grid.classList.remove('hidden');
+                }
+            });
+        }
+    });
+</script>
 {% endblock %}
