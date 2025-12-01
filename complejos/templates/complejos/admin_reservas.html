@@ -60,6 +60,7 @@
                 </h3>
 
                 <form method="get" class="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
+                    {% if request.user.rol == 'ADMIN' %}
                     <div>
                         <label for="complejo" class="block text-sm font-semibold text-gray-700 mb-2">Complejo</label>
                         <div class="relative">
@@ -73,6 +74,7 @@
                             </select>
                         </div>
                     </div>
+                    {% endif %}
 
                     <div>
                         <label for="amenidad" class="block text-sm font-semibold text-gray-700 mb-2">Amenidad</label>
@@ -122,12 +124,26 @@
                 <table class="w-full">
                     <thead class="bg-gray-50 border-b border-gray-100">
                         <tr>
+                            {% if request.user.rol == 'ADMIN' %}
                             <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
                                 Complejo</th>
-                            <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
-                                Amenidad</th>
+                            {% endif %}
+
+                            {% if request.user.rol == 'GERENTE' %}
                             <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
                                 Residente</th>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                Teléfono</th>
+                            {% endif %}
+
+                            <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                Amenidad</th>
+
+                            {% if request.user.rol == 'ADMIN' %}
+                            <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                Residente</th>
+                            {% endif %}
+
                             <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
                                 Fecha Inicio</th>
                             <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
@@ -141,6 +157,7 @@
                     <tbody class="divide-y divide-gray-50">
                         {% for reserva in reservas %}
                         <tr class="hover:bg-blue-50/30 transition-colors group">
+                            {% if request.user.rol == 'ADMIN' %}
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                 {% if reserva.complejo %}
                                 {{ reserva.complejo.nombre }}
@@ -148,17 +165,62 @@
                                 {{ reserva.amenidad.complejo_set.first.nombre }}
                                 {% endif %}
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ reserva.amenidad.nombre }}
-                            </td>
+                            {% endif %}
+
+                            {% if request.user.rol == 'GERENTE' %}
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                                 <div class="flex items-center gap-2">
                                     <div
                                         class="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-xs font-bold">
+                                        {% if reserva.residente.persona %}
+                                        {{ reserva.residente.persona.nombres|first|upper }}
+                                        {% else %}
                                         {{ reserva.residente.email|first|upper }}
+                                        {% endif %}
                                     </div>
-                                    {{ reserva.residente.email }}
+                                    <div class="flex flex-col">
+                                        {% if reserva.residente.persona %}
+                                        <span class="font-medium text-gray-900">{{ reserva.residente.persona.nombres }}
+                                            {{ reserva.residente.persona.apellidos }}</span>
+                                        <span class="text-xs text-gray-500">{{ reserva.residente.email }}</span>
+                                        {% else %}
+                                        <span>{{ reserva.residente.email }}</span>
+                                        {% endif %}
+                                    </div>
                                 </div>
                             </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                {{ reserva.residente.persona.telefono }}
+                            </td>
+                            {% endif %}
+
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ reserva.amenidad.nombre }}
+                            </td>
+
+                            {% if request.user.rol == 'ADMIN' %}
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                <div class="flex items-center gap-2">
+                                    <div
+                                        class="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-xs font-bold">
+                                        {% if reserva.residente.persona %}
+                                        {{ reserva.residente.persona.nombres|first|upper }}
+                                        {% else %}
+                                        {{ reserva.residente.email|first|upper }}
+                                        {% endif %}
+                                    </div>
+                                    <div class="flex flex-col">
+                                        {% if reserva.residente.persona %}
+                                        <span class="font-medium text-gray-900">{{ reserva.residente.persona.nombres }}
+                                            {{ reserva.residente.persona.apellidos }}</span>
+                                        <span class="text-xs text-gray-500">{{ reserva.residente.email }}</span>
+                                        {% else %}
+                                        <span>{{ reserva.residente.email }}</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </td>
+                            {% endif %}
+
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ reserva.fecha_inicio }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ reserva.fecha_fin }}</td>
