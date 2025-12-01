@@ -10,10 +10,12 @@ urlpatterns = [
     path('complejos/<int:complejo_id>/editar/', views.editar_complejo, name='editar_complejo'),
     path('complejos/<int:complejo_id>/añadir-propiedad/', views.crear_propiedad, name='crear_propiedad'),
     path('complejos/<int:complejo_id>/añadir-multiples-propiedades/', views.crear_propiedades_multiples, name='crear_propiedades_multiples'),
-    path('propiedades/<int:propiedad_id>/asignar-contrato/', views.asignar_contrato, name='asignar_contrato'),
+
     path('api/residentes/', views.get_residentes_json, name='get_residentes_json'),
     path('propiedades/<int:propiedad_id>/cancelar-contrato/<int:propiedad_persona_id>/', views.cancelar_contrato, name='cancelar_contrato'),
     path('contratos/', views.lista_contratos, name='lista_contratos'),
+    path('contratos/seleccionar-complejo/', views.seleccionar_complejo_contrato, name='seleccionar_complejo_contrato'),
+    path('contratos/seleccionar-propiedad/<int:complejo_id>/', views.seleccionar_propiedad_contrato, name='seleccionar_propiedad_contrato'),
     path('contratos/crear/', views.crear_contrato_global, name='crear_contrato_global'),
     path('propiedades/contrato/<int:contrato_id>/editar/', views.editar_contrato, name='editar_contrato'),
     path('contratos/<int:contrato_id>/reactivar/', views.reactivar_contrato, name='reactivar_contrato'),
@@ -38,7 +40,4 @@ urlpatterns = [
     path('mis-autorizaciones/crear/', views.crear_preautorizacion_view, name='residente_crear_preautorizacion'),
     path('mis-autorizaciones/<int:pa_id>/editar/', views.editar_preautorizacion_view, name='residente_editar_preautorizacion'),
     path('mis-autorizaciones/<int:pa_id>/cancelar/', views.cancelar_preautorizacion_view, name='residente_cancelar_preautorizacion'),
-    
-    path('mis-reservas/', views.mis_reservas_view, name='mis_reservas'),
-    path('reservas/amenidad/<int:amenidad_id>/disponibilidad/', views.ver_disponibilidad_view, name='ver_disponibilidad'),
 ]

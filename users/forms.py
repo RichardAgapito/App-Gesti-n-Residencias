@@ -66,7 +66,7 @@ class EditarUsuarioForm(forms.ModelForm):
 
 
 class CustomUserCreationForm(forms.ModelForm):
-    tipo_documento = forms.ChoiceField(choices=Persona.TipoDocumento.choices)
+    tipo_documento = forms.ChoiceField(choices=[('', 'Seleccionar Tipo de Documento')] + Persona.TipoDocumento.choices)
     numero_documento = forms.CharField(
         max_length=8,
         validators=[
@@ -112,7 +112,7 @@ class CustomUserCreationForm(forms.ModelForm):
             MaxLengthValidator(20, message="La contraseña no puede tener más de 20 caracteres.")
         ]
     )
-    rol = forms.ChoiceField(choices=CustomUser.Rol.choices)
+    rol = forms.ChoiceField(choices=[('', 'Seleccionar Rol')] + CustomUser.Rol.choices)
     complejo_asignado = forms.ModelChoiceField(queryset=Complejo.objects.all(), required=False)
 
     class Meta:
