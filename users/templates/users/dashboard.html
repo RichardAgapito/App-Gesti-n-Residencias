@@ -28,159 +28,130 @@
 
 {% block content %}
 {% if request.user.rol == 'ADMIN' %}
-<div class="min-h-screen bg-gray-50 flex font-sans">
+<div class="h-screen bg-gray-50 font-sans overflow-hidden">
     
-    <!-- Sidebar -->
     {% include 'includes/admin_sidebar.html' %}
 
-    <!-- Main Content -->
-    <main class="flex-1 lg:ml-64 p-8 transition-all duration-200">
+    <div class="lg:ml-64 flex flex-col h-full overflow-y-auto">
         <!-- Header -->
-        <div class="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <header class=" px-8 pt-5 flex justify-between items-center">
             <div>
-                <h1 class="text-3xl font-bold text-gray-900">Panel de Control</h1>
-                <p class="text-gray-600 mt-1">Resumen general del sistema de gestión residencial</p>
+                <h1 class="text-4xl font-bold text-gray-900">Panel de Control</h1>
+                <p class="text-sm text-gray-500 mt-1">Resumen general del sistema de gestión residencial</p>
             </div>
-            <div class="flex items-center gap-4">
+            <div class="flex items-center gap-4 bg-[#EFF6FF] p-5 rounded-xl shadow-sm">
                 <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-semibold text-lg">
+                    <div class="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold">
                         <i class="fa-solid fa-user"></i>
                     </div>
-                    <div class="flex-1 min-w-0">
-                        <p class="text-sm font-semibold text-gray-900 truncate">Administrador</p>
-                        <p class="text-xs text-gray-500 truncate">{{ request.user.email }}</p>
-                    </div>
-                </div>
-                <form method="post" action="{% url 'logout' %}">
-                    {% csrf_token %}
-                    <button type="submit" class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors">
-                        <i class="fa-solid fa-right-from-bracket"></i> Cerrar Sesión
-                    </button>
-                </form>
-            </div>
-        </div>
-
-        <!-- Stats Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <!-- Total Usuarios -->
-            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-sm font-medium text-gray-600">Total Usuarios</p>
-                        <p class="text-3xl font-bold text-gray-900 mt-2">{{ total_usuarios }}</p>
-                    </div>
-                    <div class="bg-blue-50 text-blue-600 p-3 rounded-lg">
-                        <i class="fa-solid fa-user-group text-xl"></i>
+                    <div class="text-right">
+                        <p class="text-[16px] font-medium text-gray-900">Administrador</p>
+                        <p class="text-xs text-gray-500">{{ request.user.persona.nombres|default:request.user.email }}</p>
                     </div>
                 </div>
             </div>
+        </header>
 
-            <!-- Complejos -->
-            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-                <div class="flex items-center justify-between">
+        <!-- Main Content -->
+        <main class="flex-1 p-8">
+            <!-- Stats Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <!-- Total Usuarios -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between">
                     <div>
-                        <p class="text-sm font-medium text-gray-600">Complejos Registrados</p>
-                        <p class="text-3xl font-bold text-gray-900 mt-2">{{ total_complejos }}</p>
+                        <p class="text-sm font-medium text-gray-500 mb-1">Total Usuarios</p>
+                        <h3 class="text-4xl font-bold text-gray-900">{{ total_usuarios }}</h3>
                     </div>
-                    <div class="bg-green-50 text-green-600 p-3 rounded-lg">
-                        <i class="fa-solid fa-building-lock text-xl"></i>
+                    <div class="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center text-blue-600">
+                        <i class="fa-solid fa-users text-xl"></i>
                     </div>
                 </div>
-            </div>
 
-            <!-- Visitas Hoy -->
-            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-                <div class="flex items-center justify-between">
+                <!-- Complejos Registrados -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between">
                     <div>
-                        <p class="text-sm font-medium text-gray-600">Visitas Hoy</p>
-                        <p class="text-3xl font-bold text-gray-900 mt-2">{{ visitas_hoy }}</p>
+                        <p class="text-sm font-medium text-gray-500 mb-1">Complejos Registrados</p>
+                        <h3 class="text-4xl font-bold text-gray-900">{{ total_complejos }}</h3>
                     </div>
-                    <div class="bg-yellow-50 text-yellow-600 p-3 rounded-lg">
+                    <div class="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center text-green-600">
+                        <i class="fa-solid fa-building text-xl"></i>
+                    </div>
+                </div>
+
+                <!-- Visitas Hoy -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-500 mb-1">Visitas Hoy</p>
+                        <h3 class="text-4xl font-bold text-gray-900">{{ visitas_hoy }}</h3>
+                    </div>
+                    <div class="w-12 h-12 bg-yellow-50 rounded-lg flex items-center justify-center text-yellow-600">
                         <i class="fa-solid fa-car text-xl"></i>
                     </div>
                 </div>
-            </div>
 
-            <!-- Ingresos (Mock) -->
-            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-                <div class="flex items-center justify-between">
+                <!-- Ingresos del Mes -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between">
                     <div>
-                        <p class="text-sm font-medium text-gray-600">Ingresos del Mes</p>
-                        <p class="text-3xl font-bold text-gray-900 mt-2">$0.00</p>
+                        <p class="text-sm font-medium text-gray-500 mb-1">Ingresos del Mes</p>
+                        <h3 class="text-4xl font-bold text-gray-900">${{ ingresos_mes|floatformat:2 }}</h3>
                     </div>
-                    <div class="bg-purple-50 text-purple-600 p-3 rounded-lg">
+                    <div class="w-12 h-12 bg-purple-50 rounded-lg flex items-center justify-center text-purple-600">
                         <i class="fa-solid fa-dollar-sign text-xl"></i>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Activity & Complexes -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <!-- Recent Activity -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100">
-                <div class="p-6 border-b border-gray-100">
-                    <h3 class="text-lg font-semibold text-gray-900">Actividad Reciente</h3>
-                </div>
-                <div class="p-6 space-y-4">
-                    {% if actividad_reciente %}
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Actividad Reciente -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                    <h3 class="text-lg font-bold text-gray-900 mb-6">Actividad Reciente</h3>
+                    <div class="space-y-6">
                         {% for actividad in actividad_reciente %}
-                            <div class="flex items-start gap-4 pb-4 border-b border-gray-50 last:border-0 last:pb-0">
-                                <div class="{% if actividad.tipo == 'usuario' %}bg-blue-50 text-blue-600{% elif actividad.tipo == 'aviso' %}bg-yellow-50 text-yellow-600{% else %}bg-green-50 text-green-600{% endif %} p-2 rounded-lg">
-                                    {% if actividad.tipo == 'usuario' %}
-                                        <i class="fa-solid fa-user-check text-sm"></i>
-                                    {% elif actividad.tipo == 'aviso' %}
-                                        <i class="fa-solid fa-bullhorn text-sm"></i>
-                                    {% else %}
-                                        <i class="fa-solid fa-star text-sm"></i>
-                                    {% endif %}
-                                </div>
-                                <div class="flex-1">
-                                    <p class="text-sm text-gray-900">{{ actividad.descripcion }}</p>
-                                    <p class="text-xs text-gray-500 mt-1">{{ actividad.tiempo|timesince }} atrás</p>
-                                </div>
+                        <div class="flex items-start gap-4">
+                            <div class="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
+                                {% if actividad.tipo == 'usuario' %}
+                                    <i class="fa-solid fa-user-plus text-blue-600"></i>
+                                {% else %}
+                                    <i class="fa-solid fa-bullhorn text-blue-600"></i>
+                                {% endif %}
                             </div>
+                            <div>
+                                <p class="text-sm text-gray-900 font-medium">{{ actividad.descripcion }}</p>
+                                <p class="text-xs text-gray-500 mt-1">{{ actividad.tiempo|timesince }} atrás</p>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <p class="text-sm text-gray-500">No hay actividad reciente.</p>
                         {% endfor %}
-                    {% else %}
-                        <p class="text-sm text-gray-500 text-center py-4">No hay actividad reciente en los últimos 7 días</p>
-                    {% endif %}
+                    </div>
                 </div>
-            </div>
 
-            <!-- Complexes Overview -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100">
-                <div class="p-6 border-b border-gray-100">
-                    <h3 class="text-lg font-semibold text-gray-900">Ocupación por Complejo</h3>
-                </div>
-                <div class="p-6 space-y-6">
-                    {% if complejos_data %}
+                <!-- Ocupación por Complejo -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                    <h3 class="text-lg font-bold text-gray-900 mb-6">Ocupación por Complejo</h3>
+                    <div class="space-y-6">
                         {% for complejo in complejos_data %}
-                            <div class="space-y-2">
-                                <div class="flex justify-between text-sm">
-                                    <span class="font-medium text-gray-700">{{ complejo.nombre }}</span>
-                                    <span class="text-gray-600">{{ complejo.ocupacion }}%</span>
-                                </div>
-                                <div class="w-full bg-gray-100 rounded-full h-2">
-                                    <div class="bg-blue-600 h-2 rounded-full transition-all" style="width: {{ complejo.ocupacion }}%"></div>
-                                </div>
-                                <p class="text-xs text-gray-500">{{ complejo.unidades }} unidades</p>
+                        <div>
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-sm font-medium text-gray-700">{{ complejo.nombre }}</span>
+                                <span class="text-sm text-gray-500">{{ complejo.ocupacion }}%</span>
                             </div>
+                            <div class="w-full bg-gray-100 rounded-full h-2">
+                                <div class="bg-blue-600 h-2 rounded-full" style="width: {{ complejo.ocupacion }}%"></div>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-1">{{ complejo.unidades }} unidades</p>
+                        </div>
+                        {% empty %}
+                        <p class="text-sm text-gray-500">No hay complejos registrados.</p>
                         {% endfor %}
-                    {% else %}
-                        <p class="text-sm text-gray-500 text-center py-4">No hay complejos registrados</p>
-                    {% endif %}
+                    </div>
                 </div>
             </div>
-        </div>
-
-    </main>
+        </main>
+    </div>
 </div>
-
 {% elif request.user.rol == 'GERENTE' %}
-<div class="dashboard-container">
-
     {% include 'includes/admin_sidebar.html' %}
-
     <div class="main-content">
         <header>
             <h1>Bienvenido, Gerente {{ request.user.persona.nombres|default:request.user.email }}</h1>
@@ -193,7 +164,6 @@
         <h2>Complejo: {{ complejo.nombre }}</h2>
 
     </div>
-</div>
 {% else %}
 <!-- (INICIO) NUEVA ESTRUCTURA PARA RESIDENTE -->
 <div class="dashboard-container">
@@ -218,7 +188,7 @@
                         <a href="{% url 'avisos:detalle_aviso' aviso.pk %}" class="notice-item {% if user not in aviso.leido_por.all %}unread{% endif %}">
                             <div class="notice-header">
                                 <h5>{{ aviso.titulo }}</h5>
-                                <span class="notice-time">{{ aviso.fecha_creacion|timesince }} ago</span>
+                                <span class="notice-time">Hace {{ aviso.fecha_creacion|timesince }}</span>
                             </div>
                             <p class="notice-content">{{ aviso.contenido|truncatewords:15 }}</p>
                             {% if user not in aviso.leido_por.all %}
@@ -303,23 +273,6 @@
 
         {% endif %}
         <!-- (NUEVO) SECCIÓN DE ACCIONES RÁPIDAS -->
-        <section class="quick-actions mt-4">
-            <h2><i class="fa-solid fa-bolt"></i> Acciones Rápidas</h2>
-            <p>Selecciona una de las operaciones más comunes:</p>
-            <div class="quick-actions-grid">
-                
-                <a href="{% url 'crear_reserva' %}" class="action-card">
-                    <div class="action-icon">
-                        <i class="fa-solid fa-calendar-plus"></i>
-                    </div>
-                    <h3>Reservar Amenidades</h3>
-                    <p>Crea una nueva reserva para las áreas comunes.</p>
-                </a>
-                
-                <a href="{% url 'mis_reservas' %}" class="action-card">
-                    <div class="action-icon">
-                        <i class="fa-solid fa-calendar-check"></i>
-                    </div>
                     <h3>Mis Reservas</h3>
                     <p>Consulta tus reservas activas y pasadas.</p>
                 </a>

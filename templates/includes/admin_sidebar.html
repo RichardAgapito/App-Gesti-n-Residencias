@@ -81,17 +81,19 @@
             </div>
         </div>
 
-        <a href="{% url 'avisos:lista_avisos' %}" 
-           class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {% if 'avisos' in request.resolver_match.url_name %}bg-blue-50 text-blue-600{% else %}text-gray-700 hover:bg-gray-50{% endif %}">
-            <i class="fa-solid fa-bullhorn w-5 text-center"></i>
-            <span class="font-medium">Gestionar Avisos</span>
-        </a>
-        
-        <div class="pt-4 mt-4 border-t border-gray-200">
+        <div class="pt-4 mt-4 border-t border-gray-200 space-y-2">
              <a href="/admin/" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors">
                 <i class="fa-solid fa-code w-5 text-center"></i>
                 <span class="font-medium">Panel Avanzado (Dev)</span>
             </a>
+            
+            <form method="post" action="{% url 'logout' %}" class="w-full">
+                {% csrf_token %}
+                <button type="submit" class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-red-600 hover:bg-red-50 transition-colors text-left">
+                    <i class="fa-solid fa-right-from-bracket w-5 text-center"></i>
+                    <span class="font-medium">Cerrar Sesión</span>
+                </button>
+            </form>
         </div>
     </nav>
 
