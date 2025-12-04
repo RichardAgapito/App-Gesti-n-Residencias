@@ -1,33 +1,132 @@
 {% extends 'base.html' %}
 {% load static %}
 
+{% block bootstrap_css %}{% endblock %}
+{% block global_styles %}{% endblock %}
+
 {% block extra_css %}
-    <link rel="stylesheet" href="{% static 'css/crear_complejo.css' %}">
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3b82f6',
+                    }
+                }
+            }
+        }
+    </script>
 {% endblock %}
 
 {% block content %}
-<div class="form-container">
-    <h2><i class="fa-solid fa-file-circle-plus"></i> Crear Nuevo Contrato</h2>
-    <hr>
-    <form method="post">
-        {% csrf_token %}
-        
-        {% for field in form %}
-            <div class="form-group" id="div_id_{{ field.name }}">
-                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-                {{ field }}
-                {% if field.help_text %}
-                    <small class="form-text text-muted">{{ field.help_text }}</small>
-                {% endif %}
-                {% for error in field.errors %}
-                    <div class="invalid-feedback" style="display: block;">{{ error }}</div>
-                {% endfor %}
+<div class="min-h-screen bg-gray-50 flex font-sans">
+    
+    {% include 'includes/admin_sidebar.html' %}
+
+    <main class="flex-1 lg:ml-64 p-8 h-screen overflow-y-auto">
+        <div class="max-w-4xl mx-auto">
+            <!-- Header -->
+            <div class="mb-8">
+                <a href="javascript:history.back()" class="inline-flex items-center text-gray-500 hover:text-blue-600 mb-4 transition-colors">
+                    <i class="fa-solid fa-arrow-left mr-2"></i> Volver atrás
+                </a>
+                <h1 class="text-3xl font-bold text-gray-900">Crear Nuevo Contrato</h1>
+                <p class="text-gray-500 mt-1">Registra un nuevo contrato para una propiedad</p>
             </div>
-        {% endfor %}
-        
-        <button type="submit" class="btn-submit">Guardar Contrato</button>
-    </form>
-    <a href="{% url 'lista_contratos' %}" class="back-link">Cancelar y Volver a la Lista</a>
+
+            <!-- Form Card -->
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+                <div class="h-2 bg-gradient-to-r from-blue-500 to-indigo-600"></div>
+                
+                <div class="p-8">
+                    <form method="post" class="space-y-6">
+                        {% csrf_token %}
+                        
+                        {% if form.non_field_errors %}
+                            <div class="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-r">
+                                {{ form.non_field_errors }}
+                            </div>
+                        {% endif %}
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                            {% if propiedad_preseleccionada %}
+                                <!-- Static Property Info (Premium Design) -->
+                                <div class="col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex relative group hover:shadow-md transition-all duration-300">
+                                    <div class="w-1.5 bg-gradient-to-b from-blue-500 to-indigo-600"></div>
+                                    <div class="p-5 flex-1 flex items-center justify-between">
+                                        <div class="flex items-center gap-5">
+                                            <div class="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600 shadow-sm group-hover:scale-110 transition-transform duration-300">
+                                                <i class="fa-solid fa-house text-xl"></i>
+                                            </div>
+                                            <div>
+                                                <p class="text-xs text-blue-600 font-bold uppercase tracking-wider mb-0.5">Propiedad Seleccionada</p>
+                                                <h3 class="text-xl font-bold text-gray-900">{{ propiedad_preseleccionada.numero_identificador }}</h3>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center gap-6 border-l border-gray-100 pl-6">
+                                            <div class="text-right">
+                                                <p class="text-xs text-gray-400 uppercase font-medium mb-0.5">Complejo</p>
+                                                <p class="text-sm font-semibold text-gray-700">{{ propiedad_preseleccionada.complejo.nombre }}</p>
+                                            </div>
+                                            <div class="text-right">
+                                                <p class="text-xs text-gray-400 uppercase font-medium mb-0.5">Tipo</p>
+                                                <p class="text-sm font-semibold text-gray-700">{{ propiedad_preseleccionada.get_tipo_display|title }}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <input type="hidden" name="propiedad" value="{{ propiedad_preseleccionada.id }}">
+                                </div>
+                            {% endif %}
+
+                            {% for field in form %}
+                                {% if not propiedad_preseleccionada or field.name != 'propiedad' %}
+                                    <div class="form-group col-span-2 {% if field.name == 'fecha_inicio' or field.name == 'fecha_fin' or field.name == 'estado' %}md:col-span-1{% endif %}" id="div_id_{{ field.name }}">
+                                        <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">{{ field.label }}</label>
+                                        <div class="relative">
+                                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 z-10">
+                                                {% if 'propiedad' in field.name %}<i class="fa-solid fa-house"></i>
+                                                {% elif 'persona' in field.name %}<i class="fa-solid fa-user"></i>
+                                                {% elif 'fecha' in field.name %}<i class="fa-solid fa-calendar"></i>
+                                                {% elif 'relacion' in field.name %}<i class="fa-solid fa-users"></i>
+                                                {% elif 'estado' in field.name %}<i class="fa-solid fa-toggle-on"></i>
+                                                {% else %}<i class="fa-solid fa-pen"></i>{% endif %}
+                                            </div>
+                                            
+                                            <div class="relative">
+                                                {{ field }}
+                                                {% if field.name == 'propiedad' or field.name == 'persona' or field.name == 'persona2' or field.name == 'tipo_relacion' or field.name == 'estado' %}
+                                                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                                                        <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        {% if field.help_text %}
+                                            <p class="mt-1 text-sm text-gray-500">{{ field.help_text }}</p>
+                                        {% endif %}
+                                        {% for error in field.errors %}
+                                            <p class="mt-1 text-sm text-red-600">{{ error }}</p>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="mt-8 flex items-center justify-end gap-4 pt-6 border-t border-gray-100">
+                            <button type="button" onclick="history.back()" class="px-6 py-2.5 text-gray-700 font-medium hover:bg-gray-100 rounded-xl transition-colors">
+                                Cancelar
+                            </button>
+                            <button type="submit" class="px-8 py-2.5 bg-blue-600 text-white font-semibold rounded-xl shadow-lg shadow-blue-200 hover:bg-blue-700 hover:shadow-blue-300 transition-all transform hover:-translate-y-0.5">
+                                <i class="fa-solid fa-save mr-2"></i>Guardar Contrato
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </main>
 </div>
 {% endblock %}
 
@@ -39,20 +138,26 @@ document.addEventListener('DOMContentLoaded', function() {
     const fechaFinContainer = document.getElementById('div_id_fecha_fin');
 
     function toggleFields() {
+        if (!tipoRelacionField) return;
+        
         const selectedValue = tipoRelacionField.value;
 
         // Toggle Persona 2
-        if (selectedValue === 'co-propietario' || selectedValue === 'co-inquilino') {
-            persona2Container.style.display = 'block';
-        } else {
-            persona2Container.style.display = 'none';
+        if (persona2Container) {
+            if (selectedValue === 'co-propietario' || selectedValue === 'co-inquilino') {
+                persona2Container.style.display = 'block';
+            } else {
+                persona2Container.style.display = 'none';
+            }
         }
 
         // Toggle Fecha Fin
-        if (selectedValue === 'propietario' || selectedValue === 'co-propietario') {
-            fechaFinContainer.style.display = 'none';
-        } else {
-            fechaFinContainer.style.display = 'block';
+        if (fechaFinContainer) {
+            if (selectedValue === 'propietario' || selectedValue === 'co-propietario') {
+                fechaFinContainer.style.display = 'none';
+            } else {
+                fechaFinContainer.style.display = 'block';
+            }
         }
     }
 
@@ -60,7 +165,9 @@ document.addEventListener('DOMContentLoaded', function() {
     toggleFields();
 
     // Add event listener for changes
-    tipoRelacionField.addEventListener('change', toggleFields);
+    if (tipoRelacionField) {
+        tipoRelacionField.addEventListener('change', toggleFields);
+    }
 });
 </script>
 {% endblock %}

@@ -5,6 +5,9 @@
 {% block global_styles %}{% endblock %}
 
 {% block extra_css %}
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
     <!-- 1. Carga los estilos del dashboard (sidebar, header, etc.) -->
     <link rel="stylesheet" href="{% static 'css/resident_dashboard.css' %}">
     
@@ -70,58 +73,60 @@
 
 {% block content %}
 <!-- (INICIO) ESTRUCTURA DEL DASHBOARD DE RESIDENTE -->
-<div class="dashboard-container">
+<div class="min-h-screen bg-gray-50 flex font-sans">
     
     {% include 'includes/resident_sidebar.html' %}
 
-    <div class="main-content">
+    <main class="flex-1 lg:ml-64 h-screen overflow-y-auto">
+        <div class="main-content" style="height: auto; overflow: visible; width: 100%; margin-left: 0;">
         
-        <header>
-            <h1><i class="fa-solid fa-calendar-check"></i> Mis Reservas</h1>
-            <div>
-                <a href="{% url 'dashboard' %}" class="btn btn-secondary">
-                    <i class="fa-solid fa-arrow-left"></i> Volver al Dashboard
-                </a>
-                <a href="{% url 'crear_reserva' %}" class="btn btn-primary">
-                    <i class="fa-solid fa-plus"></i> Nueva Reserva
-                </a>
-            </div>
-        </header>
+            <header>
+                <h1><i class="fa-solid fa-calendar-check"></i> Mis Reservas</h1>
+                <div>
+                    <a href="{% url 'dashboard' %}" class="btn btn-secondary">
+                        <i class="fa-solid fa-arrow-left"></i> Volver al Dashboard
+                    </a>
+                    <a href="{% url 'crear_reserva' %}" class="btn btn-primary">
+                        <i class="fa-solid fa-plus"></i> Nueva Reserva
+                    </a>
+                </div>
+            </header>
 
-        {% if not has_active_contract %}
-        <div class="content-locked-message">
-            </div>
-        {% endif %}
-
-        {% if reservas %}
-            <table class="reservas-table">
-                 <thead>
-                    <tr>
-                        <th>Amenidad</th>
-                        <th>Fecha de Inicio</th>
-                        <th>Fecha de Fin</th>
-                        <th>Estado</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for reserva in reservas %}
-                        <tr>
-                            <td>{{ reserva.amenidad.nombre }}</td>
-                            <td>{{ reserva.fecha_inicio|date:"d M Y, H:i" }}</td>
-                            <td>{{ reserva.fecha_fin|date:"d M Y, H:i" }}</td>
-                            <td>
-                                <span class="status-{{ reserva.estado }}">{{ reserva.get_estado_display }}</span>
-                            </td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        {% else %}
-            {% if has_active_contract %}
-            <p>No tienes ninguna reserva.</p>
+            {% if not has_active_contract %}
+            <div class="content-locked-message">
+                </div>
             {% endif %}
-        {% endif %}
-    </div>
+
+            {% if reservas %}
+                <table class="reservas-table">
+                     <thead>
+                        <tr>
+                            <th>Amenidad</th>
+                            <th>Fecha de Inicio</th>
+                            <th>Fecha de Fin</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for reserva in reservas %}
+                            <tr>
+                                <td>{{ reserva.amenidad.nombre }}</td>
+                                <td>{{ reserva.fecha_inicio|date:"d M Y, H:i" }}</td>
+                                <td>{{ reserva.fecha_fin|date:"d M Y, H:i" }}</td>
+                                <td>
+                                    <span class="status-{{ reserva.estado }}">{{ reserva.get_estado_display }}</span>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                {% if has_active_contract %}
+                <p>No tienes ninguna reserva.</p>
+                {% endif %}
+            {% endif %}
+        </div>
+    </main>
 </div>
 <!-- (FIN) ESTRUCTURA DEL DASHBOARD DE RESIDENTE -->
 {% endblock %}
