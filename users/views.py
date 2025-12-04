@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.views.decorators.http import require_POST
 from django.db.models import Q
+from django.utils import timezone
 from django.contrib import messages
 from django.views.generic import TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
@@ -9,7 +10,7 @@ from .forms import CustomUserCreationForm, EditarUsuarioForm
 from .models import CustomUser
 from avisos.models import Aviso
 from complejos.models import Complejo
-from complejos.models import PropiedadPersona
+from complejos.models import Complejo, PropiedadPersona, Reserva
 from django.http import JsonResponse
 from django.template.loader import render_to_string
 from finanzas.models import Factura, ContratoFinanciero, Recaudo
@@ -19,7 +20,6 @@ def dashboard(request):
     if request.user.rol == 'ADMIN':
         from django.db.models import Count, Q, Sum
         from datetime import timedelta
-        from django.utils import timezone
         from visitas.models import Visita
         
         # Estadísticas básicas
@@ -122,6 +122,9 @@ def dashboard(request):
         facturas_vencidas_count = 0
         timeline_facturas = []
         contrato_financiero = None
+        reservas_activas_count = 0
+        reservas_proximas = []
+        proximo_pago = None
         
         if propiedad_contrato:
             complejo_residente = propiedad_contrato.propiedad.complejo
@@ -155,6 +158,26 @@ def dashboard(request):
                 estado='ACTIVO'
             ).first()
 
+            # 4. Datos de Reservas
+            now = timezone.now()
+            reservas_activas_count = Reserva.objects.filter(
+                residente=user, 
+                estado__in=['pendiente', 'confirmada'],
+                fecha_inicio__month=now.month,
+                fecha_inicio__year=now.year
+            ).count()
+
+            reservas_proximas = Reserva.objects.filter(
+                residente=user,
+                fecha_inicio__gte=now
+            ).order_by('fecha_inicio')[:5]
+            
+            # 5. Próximo Pago (Primera factura pendiente)
+            proximo_pago = Factura.objects.filter(
+                propiedad=propiedad_contrato.propiedad,
+                estado__in=['PENDIENTE', 'VENCIDA']
+            ).order_by('fecha_vencimiento').first()
+
         context = {
             'avisos_recientes': avisos_recientes,
             'deuda_total': deuda_total,
@@ -163,6 +186,10 @@ def dashboard(request):
             # Nuevos datos al contexto:
             'timeline_facturas': timeline_facturas,
             'contrato_financiero': contrato_financiero,
+            'reservas_activas_count': reservas_activas_count,
+            'reservas_proximas': reservas_proximas,
+            'proximo_pago': proximo_pago,
+            'complejo_nombre': complejo_residente.nombre if propiedad_contrato else None,
         }
         return render(request, 'users/dashboard.html', context)
 

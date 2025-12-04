@@ -18,12 +18,6 @@
             }
         }
     </script>
-    
-    {% if request.user.rol == 'GERENTE' %}
-        <link rel="stylesheet" href="{% static 'css/admin_dashboard.css' %}">
-    {% elif request.user.rol != 'ADMIN' %}
-        <link rel="stylesheet" href="{% static 'css/resident_dashboard.css' %}">
-    {% endif %}
 {% endblock %}
 
 {% block content %}
@@ -166,126 +160,178 @@
     </div>
 {% else %}
 <!-- (INICIO) NUEVA ESTRUCTURA PARA RESIDENTE -->
-<div class="dashboard-container">
+<div class="h-screen bg-gray-50 font-sans overflow-hidden">
     
     {% include 'includes/resident_sidebar.html' %}
 
-    <div class="main-content">
-        <header>
-            <h1>Bienvenido, {{ request.user.persona.nombres|default:request.user.email }}</h1>
-            <form method="post" action="{% url 'logout' %}">
-                {% csrf_token %}
-                <button type="submit"><i class="fa-solid fa-right-from-bracket"></i> Cerrar Sesión</button>
-            </form>
+    <div class="lg:ml-64 flex flex-col h-full overflow-y-auto">
+        <!-- Header -->
+        <header class=" px-8 pt-5 flex justify-between items-center">
+            <div>
+                <h1 class="text-4xl font-bold text-gray-900">Dashboard</h1>
+                <p class="text-sm text-gray-500 mt-1">Bienvenido a tu portal de residente {% if complejo_nombre %}- {{ complejo_nombre }}{% endif %}</p>
+            </div>
+            <div class="flex items-center gap-4 bg-[#EFF6FF] p-5 rounded-xl shadow-sm">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold">
+                        <i class="fa-solid fa-user"></i>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-[16px] font-medium text-gray-900">Residente</p>
+                        <p class="text-xs text-gray-500">{{ request.user.email }}</p>
+                    </div>
+                </div>
+            </div>
         </header>
 
-        <!-- (NUEVO) SECCIÓN DE AVISOS RECIENTES -->
-        <section class="quick-actions mt-4">
-            <h2><i class="fa-solid fa-bell"></i> Avisos Recientes</h2>
-            {% if avisos_recientes %}
-                <div class="notice-list">
-                    {% for aviso in avisos_recientes %}
-                        <a href="{% url 'avisos:detalle_aviso' aviso.pk %}" class="notice-item {% if user not in aviso.leido_por.all %}unread{% endif %}">
-                            <div class="notice-header">
-                                <h5>{{ aviso.titulo }}</h5>
-                                <span class="notice-time">Hace {{ aviso.fecha_creacion|timesince }}</span>
-                            </div>
-                            <p class="notice-content">{{ aviso.contenido|truncatewords:15 }}</p>
-                            {% if user not in aviso.leido_por.all %}
-                                <span class="notice-new-badge">Nuevo</span>
-                            {% endif %}
-                        </a>
-                    {% endfor %}
+        <main class="flex-1 p-8 space-y-8">
+            
+            <!-- Summary Cards Row -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Estado de Cuenta -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-500 mb-1">Estado de Cuenta</p>
+                        {% if facturas_vencidas_count > 0 %}
+                            <h3 class="text-2xl font-bold text-red-600">Vencido</h3>
+                            <p class="text-xs text-red-400 mt-1">{{ facturas_vencidas_count }} pendientes</p>
+                        {% else %}
+                            <h3 class="text-2xl font-bold text-gray-900">Al día</h3>
+                            <p class="text-xs text-gray-400 mt-1">Sin pendientes</p>
+                        {% endif %}
+                    </div>
+                    <div class="w-12 h-12 rounded-xl flex items-center justify-center {% if facturas_vencidas_count > 0 %}bg-red-50 text-red-600{% else %}bg-green-50 text-green-600{% endif %}">
+                        {% if facturas_vencidas_count > 0 %}
+                            <i class="fa-solid fa-circle-exclamation text-xl"></i>
+                        {% else %}
+                            <i class="fa-regular fa-circle-check text-xl"></i>
+                        {% endif %}
+                    </div>
                 </div>
-                <a href="{% url 'avisos:lista_avisos' %}" class="view-all-link">Ver todos los avisos</a>
-            {% else %}
-                <p class="text-center text-muted mt-3">No tienes avisos nuevos en este momento.</p>
-            {% endif %}
-        </section>
-        <!-- (FIN) SECCIÓN DE AVISOS RECIENTES -->
-        {% if tiene_propiedad %}
-            <section class="quick-actions" style="margin-top: 20px;">
-                <h2><i class="fa-solid fa-timeline"></i> Cronología de Pagos</h2>
 
-                {% if contrato_financiero %}
-                    <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #e9ecef;">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                            <strong>{{ contrato_financiero.get_tipo_display }}</strong>
-                            <span>
-                                {{ contrato_financiero.cuotas_facturadas }} de {{ contrato_financiero.numero_cuotas_totales|default:"Indef." }} cuotas
-                            </span>
-                        </div>
+                <!-- Próximo Pago -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-500 mb-1">Próximo Pago</p>
+                        {% if proximo_pago %}
+                            <h3 class="text-2xl font-bold text-gray-900">${{ proximo_pago.total_calculado|floatformat:2 }}</h3>
+                            <p class="text-xs text-blue-500 mt-1">Vence {{ proximo_pago.fecha_vencimiento|date:"d M" }}</p>
+                        {% else %}
+                            <h3 class="text-2xl font-bold text-gray-900">$0.00</h3>
+                            <p class="text-xs text-gray-400 mt-1">No hay cobros</p>
+                        {% endif %}
+                    </div>
+                    <div class="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600">
+                        <i class="fa-regular fa-calendar text-xl"></i>
+                    </div>
+                </div>
+
+                <!-- Reportes Activos (Mocked/Placeholder as requested) -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-500 mb-1">Reportes Activos</p>
+                        <h3 class="text-2xl font-bold text-gray-900">0</h3>
+                        <p class="text-xs text-gray-400 mt-1">En proceso</p>
+                    </div>
+                    <div class="w-12 h-12 bg-orange-50 rounded-xl flex items-center justify-center text-orange-600">
+                        <i class="fa-solid fa-triangle-exclamation text-xl"></i>
+                    </div>
+                </div>
+
+                <!-- Reservas Activas -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-500 mb-1">Reservas Activas</p>
+                        <h3 class="text-2xl font-bold text-gray-900">{{ reservas_activas_count }}</h3>
+                        <p class="text-xs text-gray-400 mt-1">Este mes</p>
+                    </div>
+                    <div class="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center text-purple-600">
+                        <i class="fa-regular fa-calendar-check text-xl"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Actividad Reciente -->
+                <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
+                    <h3 class="text-lg font-bold text-gray-900 mb-6">Actividad Reciente</h3>
+                    <div class="space-y-6">
+                        {% for aviso in avisos_recientes %}
+                            <div class="flex items-start gap-4">
+                                <div class="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center flex-shrink-0 text-green-600">
+                                    <i class="fa-regular fa-bell"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <div class="flex justify-between items-start">
+                                        <h4 class="text-sm font-bold text-gray-900">{{ aviso.titulo }}</h4>
+                                        <span class="text-xs text-gray-400">{{ aviso.fecha_creacion|date:"d M" }}</span>
+                                    </div>
+                                    <p class="text-xs text-gray-500 mt-1 line-clamp-1">{{ aviso.contenido|striptags }}</p>
+                                </div>
+                            </div>
+                        {% empty %}
+                            <p class="text-sm text-gray-400 italic">No hay actividad reciente.</p>
+                        {% endfor %}
                         
-                        {% if contrato_financiero.numero_cuotas_totales %}
-                            <div style="width: 100%; background: #e0e0e0; border-radius: 10px; height: 10px;">
-                                <div style="background: #3498db; height: 10px; border-radius: 10px; width: calc(({{ contrato_financiero.cuotas_facturadas }} / {{ contrato_financiero.numero_cuotas_totales }}) * 100%);"></div>
+                        <!-- Mocked items to match design feel if list is empty or short -->
+                        {% if not avisos_recientes %}
+                             <div class="flex items-start gap-4 opacity-50">
+                                <div class="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0 text-blue-600">
+                                    <i class="fa-regular fa-credit-card"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <div class="flex justify-between items-start">
+                                        <h4 class="text-sm font-bold text-gray-900">Pago procesado</h4>
+                                        <span class="text-xs text-gray-400">--</span>
+                                    </div>
+                                    <p class="text-xs text-gray-500 mt-1">Cuota de mantenimiento</p>
+                                </div>
                             </div>
                         {% endif %}
-                        
-                        <p style="margin-top: 10px; font-size: 0.9em; color: #666;">
-                            Monto establecido por cuota: <strong>${{ contrato_financiero.monto_cuota }}</strong>
-                        </p>
                     </div>
-                {% endif %}
+                </div>
 
-                <div style="position: relative; padding-left: 20px; border-left: 2px solid #ddd;">
-                    {% for factura in timeline_facturas %}
-                        <div style="margin-bottom: 20px; position: relative;">
-                            <div style="
-                                position: absolute; 
-                                left: -26px; 
-                                top: 0; 
-                                width: 12px; 
-                                height: 12px; 
-                                border-radius: 50%; 
-                                background-color: {% if factura.estado == 'PAGADA' %}#2ecc71{% elif factura.estado == 'VENCIDA' %}#e74c3c{% else %}#f1c40f{% endif %};
-                                border: 2px solid white;
-                                box-shadow: 0 0 0 1px #ddd;">
-                            </div>
-
-                            <div style="background: white; border: 1px solid #eee; padding: 10px 15px; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
-                                <div style="display: flex; justify-content: space-between; align-items: center;">
-                                    <div>
-                                        <strong style="color: #2c3e50;">{{ factura.fecha_vencimiento|date:"d M Y" }}</strong>
-                                        <br>
-                                        <small style="color: #7f8c8d;">Factura #{{ factura.numero_factura }}</small>
+                <!-- Próximas Reservas -->
+                <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
+                    <h3 class="text-lg font-bold text-gray-900 mb-6">Próximas Reservas</h3>
+                    <div class="space-y-4">
+                        {% for reserva in reservas_proximas %}
+                            <div class="flex items-center gap-4 bg-gray-50 p-4 rounded-xl">
+                                <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 flex-shrink-0">
+                                    <i class="fa-solid fa-location-dot"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <div class="flex justify-between items-center mb-1">
+                                        <h4 class="text-sm font-bold text-gray-900">{{ reserva.amenidad.nombre }}</h4>
+                                        <span class="px-2 py-1 bg-green-100 text-green-700 text-[10px] font-bold rounded-md uppercase tracking-wide">
+                                            {{ reserva.get_estado_display }}
+                                        </span>
                                     </div>
-                                    <div style="text-align: right;">
-                                        <span style="font-weight: bold; font-size: 1.1em;">${{ factura.total_calculado|floatformat:2 }}</span>
-                                        <br>
-                                        <span style="
-                                            font-size: 0.75em; 
-                                            padding: 2px 6px; 
-                                            border-radius: 4px; 
-                                            background-color: {% if factura.estado == 'PAGADA' %}#e8f5e9; color: #2ecc71;{% elif factura.estado == 'VENCIDA' %}#fbe9e7; color: #e74c3c;{% else %}#fff3e0; color: #f39c12;{% endif %}
-                                        ">
-                                            {{ factura.get_estado_display }}
+                                    <div class="flex items-center gap-4 text-xs text-gray-500">
+                                        <span class="flex items-center gap-1">
+                                            <i class="fa-regular fa-calendar"></i> {{ reserva.fecha_inicio|date:"d M" }}
+                                        </span>
+                                        <span class="flex items-center gap-1">
+                                            <i class="fa-regular fa-clock"></i> {{ reserva.fecha_inicio|time:"H:i" }} - {{ reserva.fecha_fin|time:"H:i" }}
                                         </span>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    {% empty %}
-                        <p style="color: #999; font-style: italic;">No hay historial de pagos registrado.</p>
-                    {% endfor %}
-                </div>
-            </section>
-
-        {% endif %}
-        <!-- (NUEVO) SECCIÓN DE ACCIONES RÁPIDAS -->
-                    <h3>Mis Reservas</h3>
-                    <p>Consulta tus reservas activas y pasadas.</p>
-                </a>
-                <a href="{% url 'mis_preautorizaciones' %}" class="action-card">
-                    <div class="action-icon">
-                        <i class="fa-solid fa-id-card-clip"></i>
+                        {% empty %}
+                            <div class="text-center py-8">
+                                <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3 text-gray-400">
+                                    <i class="fa-regular fa-calendar-xmark text-2xl"></i>
+                                </div>
+                                <p class="text-sm text-gray-500">No tienes reservas próximas.</p>
+                                <a href="{% url 'crear_reserva' %}" class="text-sm font-bold text-blue-600 hover:underline mt-2 inline-block">
+                                    Nueva Reserva
+                                </a>
+                            </div>
+                        {% endfor %}
                     </div>
-                    <h3>Pre-Autorizar Visitas</h3>
-                    <p>Registra a tus visitantes antes de que lleguen.</p>
-                </a>
+                </div>
             </div>
-        </section>
-        
+        </main>
     </div>
 </div>
 <!-- (FIN) NUEVA ESTRUCTURA PARA RESIDENTE -->

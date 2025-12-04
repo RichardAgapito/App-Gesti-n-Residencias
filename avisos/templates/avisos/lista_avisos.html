@@ -24,111 +24,114 @@
         {% include 'includes/resident_sidebar.html' %}
     {% endif %}
 
-    <main class="flex-1 lg:ml-64 p-8">
-        <!-- Header -->
-        <div class="mb-6 flex items-center justify-between">
-            <div>
-                <h1 class="text-3xl font-bold text-gray-900">
-                    <i class="fa-solid fa-bullhorn text-blue-600"></i> 
-                    {% if user.is_staff %}
-                        Avisos Enviados
-                    {% else %}
-                        Bandeja de Entrada
-                    {% endif %}
-                </h1>
-                <p class="text-gray-600 mt-1">
-                    {% if user.is_staff %}
-                        Gestiona los avisos del sistema
-                    {% else %}
-                        Avisos de tu complejo
-                        {% if avisos_no_leidos > 0 %}
-                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 ml-2">
-                                {{ avisos_no_leidos }} sin leer
-                            </span>
+    <main class="flex-1 lg:ml-64 h-screen overflow-y-auto">
+        <!-- We use a wrapper div to handle the padding/layout expected by the inner content -->
+        <div class="p-8">
+            <!-- Header -->
+            <div class="mb-6 flex items-center justify-between">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900">
+                        <i class="fa-solid fa-bullhorn text-blue-600"></i> 
+                        {% if user.is_staff %}
+                            Avisos Enviados
+                        {% else %}
+                            Bandeja de Entrada
                         {% endif %}
-                    {% endif %}
-                </p>
-            </div>
-            <div class="flex gap-2">
-                <a href="{% url 'dashboard' %}" class="flex items-center gap-2 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors">
-                    <i class="fa-solid fa-arrow-left"></i> Volver al Dashboard
-                </a>
-                {% if user.is_staff %}
-                    <a href="{% url 'avisos:crear_aviso' %}" class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                        <i class="fa-solid fa-plus-circle"></i> Crear Aviso
+                    </h1>
+                    <p class="text-gray-600 mt-1">
+                        {% if user.is_staff %}
+                            Gestiona los avisos del sistema
+                        {% else %}
+                            Avisos de tu complejo
+                            {% if avisos_no_leidos > 0 %}
+                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 ml-2">
+                                    {{ avisos_no_leidos }} sin leer
+                                </span>
+                            {% endif %}
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="flex gap-2">
+                    <a href="{% url 'dashboard' %}" class="flex items-center gap-2 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors">
+                        <i class="fa-solid fa-arrow-left"></i> Volver al Dashboard
                     </a>
+                    {% if user.is_staff %}
+                        <a href="{% url 'avisos:crear_aviso' %}" class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                            <i class="fa-solid fa-plus-circle"></i> Crear Aviso
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Content Container -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                {% if user.is_staff %}
+                    {# --- VISTA PARA ADMIN --- #}
+                    {% if avisos %}
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead class="bg-gray-50 border-b border-gray-200">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Título</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Complejo</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha de Envío</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    {% for aviso in avisos %}
+                                        <tr class="hover:bg-gray-50">
+                                            <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ aviso.titulo }}</td>
+                                            <td class="px-6 py-4 text-sm text-gray-600">{{ aviso.complejo.nombre }}</td>
+                                            <td class="px-6 py-4 text-sm text-gray-600">{{ aviso.get_tipo_aviso_display }}</td>
+                                            <td class="px-6 py-4 text-sm text-gray-600">{{ aviso.fecha_creacion|date:"d/m/Y H:i" }}</td>
+                                            <td class="px-6 py-4 text-sm">
+                                                <a href="{% url 'avisos:detalle_aviso' aviso.pk %}" class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700">
+                                                    Ver Detalle
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-8">
+                            <i class="fa-solid fa-inbox text-gray-300 text-6xl mb-4"></i>
+                            <h4 class="text-gray-600 text-lg mb-2">No has enviado ningún aviso.</h4>
+                            <a href="{% url 'avisos:crear_aviso' %}" class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors mt-3">
+                                Crear mi primer aviso
+                            </a>
+                        </div>
+                    {% endif %}
+
+                {% else %}
+                    {# --- VISTA PARA RESIDENTE --- #}
+                    {% if avisos %}
+                        <div class="notice-list">
+                            {% for aviso in avisos %}
+                                <a href="{% url 'avisos:detalle_aviso' aviso.pk %}" class="notice-item {% if user not in aviso.leido_por.all %}unread{% endif %}">
+                                    <div class="notice-header">
+                                        <h5>{{ aviso.titulo }}</h5>
+                                        <span class="notice-time">{{ aviso.fecha_creacion|date:"d M Y, H:i" }}</span>
+                                    </div>
+                                    <p class="notice-content">{{ aviso.contenido|truncatewords:25 }}</p>
+                                    {% if user not in aviso.leido_por.all %}
+                                        <span class="notice-new-badge">Nuevo</span>
+                                    {% endif %}
+                                </a>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-8">
+                            <i class="fa-solid fa-inbox text-gray-300 text-6xl mb-4"></i>
+                            <h4 class="text-gray-600 text-lg mb-2">No hay avisos para mostrar.</h4>
+                            <p class="text-gray-500">No tienes avisos recibidos en este momento.</p>
+                        </div>
+                    {% endif %}
                 {% endif %}
             </div>
-        </div>
-
-        <!-- Content Container -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            {% if user.is_staff %}
-                {# --- VISTA PARA ADMIN --- #}
-                {% if avisos %}
-                    <div class="overflow-x-auto">
-                        <table class="w-full">
-                            <thead class="bg-gray-50 border-b border-gray-200">
-                                <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Título</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Complejo</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha de Envío</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                {% for aviso in avisos %}
-                                    <tr class="hover:bg-gray-50">
-                                        <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ aviso.titulo }}</td>
-                                        <td class="px-6 py-4 text-sm text-gray-600">{{ aviso.complejo.nombre }}</td>
-                                        <td class="px-6 py-4 text-sm text-gray-600">{{ aviso.get_tipo_aviso_display }}</td>
-                                        <td class="px-6 py-4 text-sm text-gray-600">{{ aviso.fecha_creacion|date:"d/m/Y H:i" }}</td>
-                                        <td class="px-6 py-4 text-sm">
-                                            <a href="{% url 'avisos:detalle_aviso' aviso.pk %}" class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700">
-                                                Ver Detalle
-                                            </a>
-                                        </td>
-                                    </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                {% else %}
-                    <div class="text-center py-8">
-                        <i class="fa-solid fa-inbox text-gray-300 text-6xl mb-4"></i>
-                        <h4 class="text-gray-600 text-lg mb-2">No has enviado ningún aviso.</h4>
-                        <a href="{% url 'avisos:crear_aviso' %}" class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors mt-3">
-                            Crear mi primer aviso
-                        </a>
-                    </div>
-                {% endif %}
-
-            {% else %}
-                {# --- VISTA PARA RESIDENTE --- #}
-                {% if avisos %}
-                    <div class="notice-list">
-                        {% for aviso in avisos %}
-                            <a href="{% url 'avisos:detalle_aviso' aviso.pk %}" class="notice-item {% if user not in aviso.leido_por.all %}unread{% endif %}">
-                                <div class="notice-header">
-                                    <h5>{{ aviso.titulo }}</h5>
-                                    <span class="notice-time">{{ aviso.fecha_creacion|date:"d M Y, H:i" }}</span>
-                                </div>
-                                <p class="notice-content">{{ aviso.contenido|truncatewords:25 }}</p>
-                                {% if user not in aviso.leido_por.all %}
-                                    <span class="notice-new-badge">Nuevo</span>
-                                {% endif %}
-                            </a>
-                        {% endfor %}
-                    </div>
-                {% else %}
-                    <div class="text-center py-8">
-                        <i class="fa-solid fa-inbox text-gray-300 text-6xl mb-4"></i>
-                        <h4 class="text-gray-600 text-lg mb-2">No hay avisos para mostrar.</h4>
-                        <p class="text-gray-500">No tienes avisos recibidos en este momento.</p>
-                    </div>
-                {% endif %}
-            {% endif %}
         </div>
     </main>
 </div>

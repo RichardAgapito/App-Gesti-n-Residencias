@@ -5,6 +5,9 @@
 {% block global_styles %}{% endblock %}
 
 {% block extra_css %}
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
     <link rel="stylesheet" href="{% static 'css/resident_dashboard.css' %}">
     <style>
         .reservas-table {
@@ -43,62 +46,64 @@
 {% endblock %}
 
 {% block content %}
-<div class="dashboard-container">
+<div class="min-h-screen bg-gray-50 flex font-sans">
     
     {% include 'includes/resident_sidebar.html' %}
 
-    <div class="main-content">
-        <header>
-            <h1><i class="fa-solid fa-id-card-clip"></i> Mis Pre-Autorizaciones</h1>
-            {% if has_active_contract %}
-            <a href="{% url 'residente_crear_preautorizacion' %}" class="btn btn-primary">
-                <i class="fa-solid fa-plus"></i> Nueva Autorización
-            </a>
+    <main class="flex-1 lg:ml-64 h-screen overflow-y-auto">
+        <div class="main-content" style="height: auto; overflow: visible; width: 100%; margin-left: 0;">
+            <header>
+                <h1><i class="fa-solid fa-id-card-clip"></i> Mis Pre-Autorizaciones</h1>
+                {% if has_active_contract %}
+                <a href="{% url 'residente_crear_preautorizacion' %}" class="btn btn-primary">
+                    <i class="fa-solid fa-plus"></i> Nueva Autorización
+                </a>
+                {% endif %}
+            </header>
+
+            {% if not has_active_contract %}
+            <div class="content-locked-message">
+                <h3><i class="fa-solid fa-triangle-exclamation"></i> Funcionalidad Limitada</h3>
+                <p>No puedes gestionar pre-autorizaciones porque no tienes un contrato activo.</p>
+            </div>
             {% endif %}
-        </header>
 
-        {% if not has_active_contract %}
-        <div class="content-locked-message">
-            <h3><i class="fa-solid fa-triangle-exclamation"></i> Funcionalidad Limitada</h3>
-            <p>No puedes gestionar pre-autorizaciones porque no tienes un contrato activo.</p>
-        </div>
-        {% endif %}
-
-        {% if autorizaciones %}
-            <table class="reservas-table">
-                <thead>
-                    <tr>
-                        <th>Visitante</th>
-                        <th>Documento</th>
-                        <th>Fecha Esperada</th>
-                        <th>Vigencia</th>
-                        <th>Estado</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for pa in autorizaciones %}
+            {% if autorizaciones %}
+                <table class="reservas-table">
+                    <thead>
                         <tr>
-                            <td>{{ pa.nombre_visitante }}</td>
-                            <td>{{ pa.documento_visitante }}</td>
-                            <td>{{ pa.fecha_hora_esperada|date:"d M Y, H:i" }}</td>
-                            <td>{{ pa.vigencia_desde|date:"d/m/y H:i" }} - {{ pa.vigencia_hasta|date:"d/m/y H:i" }}</td>
-                            <td><span class="status-{{ pa.estado }}">{{ pa.get_estado_display }}</span></td>
-                            <td class="action-links">
-                                {% if pa.estado == 'pendiente' %}
-                                    <a href="{% url 'residente_editar_preautorizacion' pa.id %}" class="btn-edit" title="Editar"><i class="fa-solid fa-pencil"></i></a>
-                                    <a href="{% url 'residente_cancelar_preautorizacion' pa.id %}" class="btn-cancel" title="Cancelar"><i class="fa-solid fa-ban"></i></a>
-                                {% else %}
-                                    -
-                                {% endif %}
-                            </td>     
+                            <th>Visitante</th>
+                            <th>Documento</th>
+                            <th>Fecha Esperada</th>
+                            <th>Vigencia</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
                         </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        {% else %}
-            <p>No tienes ninguna pre-autorización registrada.</p>
-        {% endif %}
-    </div>
+                    </thead>
+                    <tbody>
+                        {% for pa in autorizaciones %}
+                            <tr>
+                                <td>{{ pa.nombre_visitante }}</td>
+                                <td>{{ pa.documento_visitante }}</td>
+                                <td>{{ pa.fecha_hora_esperada|date:"d M Y, H:i" }}</td>
+                                <td>{{ pa.vigencia_desde|date:"d/m/y H:i" }} - {{ pa.vigencia_hasta|date:"d/m/y H:i" }}</td>
+                                <td><span class="status-{{ pa.estado }}">{{ pa.get_estado_display }}</span></td>
+                                <td class="action-links">
+                                    {% if pa.estado == 'pendiente' %}
+                                        <a href="{% url 'residente_editar_preautorizacion' pa.id %}" class="btn-edit" title="Editar"><i class="fa-solid fa-pencil"></i></a>
+                                        <a href="{% url 'residente_cancelar_preautorizacion' pa.id %}" class="btn-cancel" title="Cancelar"><i class="fa-solid fa-ban"></i></a>
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>     
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p>No tienes ninguna pre-autorización registrada.</p>
+            {% endif %}
+        </div>
+    </main>
 </div>
 {% endblock %}
