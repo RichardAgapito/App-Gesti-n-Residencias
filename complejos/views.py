@@ -372,7 +372,7 @@ def editar_contrato(request, contrato_id):
         form = EditarContratoForm(request.POST, instance=contrato)
         if form.is_valid():
             form.save()
-            return redirect('detalle_propiedad', propiedad_id=contrato.propiedad.id)
+            return redirect('seleccionar_propiedad_contrato', complejo_id=contrato.propiedad.complejo.id)
     else:
         form = EditarContratoForm(instance=contrato)
     
@@ -823,6 +823,14 @@ def cancelar_preautorizacion_view(request, pa_id):
 
 @user_passes_test(es_admin, login_url='/')
 def crear_contrato_global(request):
+    propiedad_id = request.GET.get('propiedad')
+    propiedad_preseleccionada = None
+    initial_data = {}
+    
+    if propiedad_id:
+        propiedad_preseleccionada = get_object_or_404(Propiedad, id=propiedad_id)
+        initial_data['propiedad'] = propiedad_preseleccionada
+
     if request.method == 'POST':
         form = GlobalContratoForm(request.POST)
         if form.is_valid():
@@ -862,12 +870,13 @@ def crear_contrato_global(request):
                 )
                 asignacion2.save()
             
-            return redirect('lista_contratos')
+            return redirect('seleccionar_propiedad_contrato', complejo_id=propiedad.complejo.id)
     else:
-        form = GlobalContratoForm()
+        form = GlobalContratoForm(initial=initial_data)
     
     context = {
         'form': form,
+        'propiedad_preseleccionada': propiedad_preseleccionada,
     }
     return render(request, 'complejos/crear_contrato_global.html', context)
 
@@ -918,9 +927,38 @@ def seleccionar_propiedad_contrato(request, complejo_id):
     if query:
         propiedades = propiedades.filter(numero_identificador__icontains=query)
 
+    # Check for latest contract (active or inactive)
+    propiedades_list = list(propiedades)
+    for p in propiedades_list:
+        latest_contract = p.personas_asociadas.filter(
+            tipo_relacion__in=['propietario', 'inquilino']
+        ).order_by('-id').first()
+        p.latest_contract = latest_contract
+
     context = {
         'complejo': complejo,
-        'propiedades': propiedades,
+        'propiedades': propiedades_list,
         'query': query
     }
     return render(request, 'complejos/seleccionar_propiedad_contrato.html', context)
+
+@login_required
+def detalle_contrato(request, contrato_id):
+    contrato = get_object_or_404(PropiedadPersona, id=contrato_id)
+    context = {
+        'contrato': contrato,
+    }
+    return render(request, 'complejos/detalle_contrato.html', context)
+
+@user_passes_test(es_admin, login_url='/')
+def eliminar_contrato(request, contrato_id):
+    contrato = get_object_or_404(PropiedadPersona, id=contrato_id)
+    propiedad_id = contrato.propiedad.id
+    complejo_id = contrato.propiedad.complejo.id
+    
+    if request.method == 'POST':
+        contrato.delete()
+        return redirect('seleccionar_propiedad_contrato', complejo_id=complejo_id)
+    
+    # If GET, redirect back to edit page (safety fallback)
+    return redirect('editar_contrato', contrato_id=contrato_id)

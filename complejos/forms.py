@@ -185,6 +185,16 @@ class GlobalContratoForm(forms.ModelForm):
             'fecha_fin': forms.DateInput(attrs={'type': 'date'}),
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field_name, field in self.fields.items():
+            base_classes = "w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all text-sm"
+            
+            if isinstance(field.widget, forms.Select):
+                field.widget.attrs['class'] = f"{base_classes} appearance-none"
+            else:
+                field.widget.attrs['class'] = base_classes
+
     def clean(self):
         cleaned_data = super().clean()
         propiedad = cleaned_data.get('propiedad')
@@ -240,6 +250,16 @@ class EditarContratoForm(forms.ModelForm):
         widgets = {
             'fecha_fin': forms.DateInput(attrs={'type': 'date'}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field_name, field in self.fields.items():
+            base_classes = "w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all text-sm"
+            
+            if isinstance(field.widget, forms.Select):
+                field.widget.attrs['class'] = f"{base_classes} appearance-none"
+            else:
+                field.widget.attrs['class'] = base_classes
 
 class ReservaForm(forms.ModelForm):
     class Meta:
