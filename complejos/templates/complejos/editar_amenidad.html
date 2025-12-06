@@ -7,7 +7,11 @@
 
 {% block content %}
 <div class="min-h-screen bg-gray-50 flex font-sans">
-    {% include 'includes/admin_sidebar.html' %}
+    {% if request.user.rol == 'GERENTE' %}
+        {% include 'includes/manager_sidebar.html' %}
+    {% else %}
+        {% include 'includes/admin_sidebar.html' %}
+    {% endif %}
 
     <main class="flex-1 lg:ml-64 p-8">
         <div class="max-w-2xl mx-auto">
