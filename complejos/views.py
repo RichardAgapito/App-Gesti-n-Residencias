@@ -8,7 +8,7 @@ from .forms import (
     PropiedadPersonaForm, GlobalContratoForm, ReservaForm, AmenidadForm, 
     AdminReservaForm, BloquearHorarioForm, EditarContratoForm, ResidentePreAutorizacionForm
 )
-from users.views import es_admin
+from users.views import es_admin, es_admin_o_gerente
 from django.contrib.auth import get_user_model
 from users.models import CustomUser
 from django.db import models, transaction
@@ -17,19 +17,34 @@ from collections import defaultdict
 from visitas.models import PreAutorizacion
 
 
-@user_passes_test(es_admin, login_url='/')
+@user_passes_test(es_admin_o_gerente, login_url='/')
 def gestionar_amenidades_view(request):
-    if request.method == 'POST':
-        form = AmenidadForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect('gestionar_amenidades')
-    else:
-        form = AmenidadForm()
-    
     amenidades = Amenidad.objects.prefetch_related(
         models.Prefetch('reservas', queryset=Reserva.objects.filter(estado='bloqueada'), to_attr='bloqueos')
     ).all()
+
+    # Filter for Manager
+    if request.user.rol == CustomUser.Rol.GERENTE:
+        if request.user.complejo_asignado:
+            amenidades = amenidades.filter(complejo=request.user.complejo_asignado)
+        else:
+            amenidades = Amenidad.objects.none()
+
+    if request.method == 'POST':
+        form = AmenidadForm(request.POST)
+        # Validation for Manager creating amenity
+        if request.user.rol == CustomUser.Rol.GERENTE:
+             # Ensure complex consistency if form has field, or set it automatically
+             pass 
+
+        if form.is_valid():
+            amenidad = form.save(commit=False)
+            if request.user.rol == CustomUser.Rol.GERENTE and request.user.complejo_asignado:
+                amenidad.complejo = request.user.complejo_asignado
+            amenidad.save()
+            return redirect('gestionar_amenidades')
+    else:
+        form = AmenidadForm()
 
     context = {
         'form': form,
@@ -37,9 +52,14 @@ def gestionar_amenidades_view(request):
     }
     return render(request, 'complejos/gestionar_amenidades.html', context)
 
-@user_passes_test(es_admin, login_url='/')
+@user_passes_test(es_admin_o_gerente, login_url='/')
 def editar_amenidad_view(request, amenidad_id):
     amenidad = get_object_or_404(Amenidad, id=amenidad_id)
+    
+    # Manager permission check
+    if request.user.rol == CustomUser.Rol.GERENTE:
+        if not request.user.complejo_asignado or amenidad.complejo != request.user.complejo_asignado:
+             return redirect('gestionar_amenidades')
     if request.method == 'POST':
         form = AmenidadForm(request.POST, instance=amenidad)
         if form.is_valid():
@@ -54,9 +74,14 @@ def editar_amenidad_view(request, amenidad_id):
     }
     return render(request, 'complejos/editar_amenidad.html', context)
 
-@user_passes_test(es_admin, login_url='/')
+@user_passes_test(es_admin_o_gerente, login_url='/')
 def eliminar_amenidad_view(request, amenidad_id):
     amenidad = get_object_or_404(Amenidad, id=amenidad_id)
+    
+    # Manager permission check
+    if request.user.rol == CustomUser.Rol.GERENTE:
+        if not request.user.complejo_asignado or amenidad.complejo != request.user.complejo_asignado:
+             return redirect('gestionar_amenidades')
     if request.method == 'POST':
         amenidad.delete()
         return redirect('gestionar_amenidades')
@@ -67,9 +92,14 @@ def eliminar_amenidad_view(request, amenidad_id):
     return render(request, 'complejos/eliminar_amenidad.html', context)
 
 
-@user_passes_test(es_admin, login_url='/')
+@user_passes_test(es_admin_o_gerente, login_url='/')
 def bloquear_horario_view(request, amenidad_id):
     amenidad = get_object_or_404(Amenidad, id=amenidad_id)
+
+    # Manager permission check
+    if request.user.rol == CustomUser.Rol.GERENTE:
+        if not request.user.complejo_asignado or amenidad.complejo != request.user.complejo_asignado:
+             return redirect('gestionar_amenidades')
     if request.method == 'POST':
         form = BloquearHorarioForm(request.POST, amenidad=amenidad)
         if form.is_valid():
@@ -97,7 +127,7 @@ def bloquear_horario_view(request, amenidad_id):
     return render(request, 'complejos/bloquear_horario.html', context)
 
 
-@user_passes_test(es_admin, login_url='/')
+@user_passes_test(es_admin_o_gerente, login_url='/')
 def unblock_horario_view(request, reserva_id):
     reserva = get_object_or_404(Reserva, id=reserva_id)
     if reserva.estado == 'bloqueada':
@@ -487,8 +517,6 @@ def ver_disponibilidad_view(request, amenidad_id):
     }
     return render(request, 'complejos/ver_disponibilidad.html', context)
 
-def es_admin_o_gerente(user):
-    return user.is_authenticated and (user.rol == CustomUser.Rol.ADMIN or user.rol == CustomUser.Rol.GERENTE)
 
 @user_passes_test(es_admin_o_gerente, login_url='/')
 def admin_reservas_view(request):

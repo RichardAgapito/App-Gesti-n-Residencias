@@ -28,7 +28,11 @@
 {% block content %}
 <div class="h-screen bg-gray-50 font-sans overflow-hidden flex">
     
-    {% include 'includes/admin_sidebar.html' %}
+    {% if request.user.rol == 'GERENTE' %}
+        {% include 'includes/manager_sidebar.html' %}
+    {% else %}
+        {% include 'includes/admin_sidebar.html' %}
+    {% endif %}
 
     <div class="flex-1 flex flex-col h-full overflow-y-auto lg:ml-64">
         <!-- System Header -->

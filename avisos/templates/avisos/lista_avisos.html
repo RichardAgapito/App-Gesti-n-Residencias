@@ -19,7 +19,11 @@
 <div class="min-h-screen bg-gray-50 flex font-sans">
     
     {% if user.is_staff %}
-        {% include 'includes/admin_sidebar.html' %}
+        {% if request.user.rol == 'GERENTE' %}
+            {% include 'includes/manager_sidebar.html' %}
+        {% else %}
+            {% include 'includes/admin_sidebar.html' %}
+        {% endif %}
     {% else %}
         {% include 'includes/resident_sidebar.html' %}
     {% endif %}

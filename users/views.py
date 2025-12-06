@@ -208,6 +208,9 @@ def es_admin(user):
 def es_residente(user):
     return user.is_authenticated and user.rol == CustomUser.Rol.RESIDENTE
 
+def es_admin_o_gerente(user):
+    return user.is_authenticated and (user.rol == CustomUser.Rol.ADMIN or user.rol == CustomUser.Rol.GERENTE)
+
 @user_passes_test(es_admin, login_url='/')
 def crear_usuario_view(request):
     is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
