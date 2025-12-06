@@ -8,6 +8,9 @@ from visitas.models import PreAutorizacion
 from django.core.validators import RegexValidator
 
 
+from finanzas.models import PlanCuota, ContratoFinanciero
+from django.db import transaction
+
 class UserChoiceField(forms.ModelChoiceField):
     def label_from_instance(self, obj):
         return obj.persona.__str__() if obj.persona else obj.email
@@ -530,3 +533,57 @@ class ResidentePreAutorizacionForm(forms.ModelForm):
         if commit:
             instance.save()
         return instance
+
+class ContratoUnificadoForm(PropiedadPersonaForm):
+    # Campos extra para la parte financiera
+    finanzas_tipo = forms.ChoiceField(
+        choices=ContratoFinanciero.TIPO_CHOICES, 
+        label="Tipo de Contrato Financiero",
+        required=True
+    )
+    finanzas_plan = forms.ModelChoiceField(
+        queryset=PlanCuota.objects.filter(activo=True),
+        label="Plan de Pago / Cuota",
+        required=False,
+        help_text="Seleccione qué plan define el monto a cobrar."
+    )
+    finanzas_dia_vencimiento = forms.IntegerField(
+        min_value=1, max_value=28, initial=5,
+        label="Día de Vencimiento Mensual"
+    )
+    finanzas_cuotas = forms.IntegerField(
+        min_value=1, required=False, 
+        label="Número de Cuotas (Solo para Compra)",
+        help_text="Ej: 12, 24, 36. Deje vacío para alquiler indefinido."
+    )
+    finanzas_saldo = forms.DecimalField(
+        max_digits=12, decimal_places=2, required=False,
+        label="Saldo Pendiente (Solo para Compra)",
+        help_text="Monto total de la deuda a financiar."
+    )
+
+    class Meta(PropiedadPersonaForm.Meta):
+        fields = PropiedadPersonaForm.Meta.fields + []
+
+    def save(self, commit=True):
+        # Usamos una transacción para asegurar que ambos se creen o ninguno
+        with transaction.atomic():
+            # 1. Guardar la parte de PropiedadPersona (Legal)
+            propiedad_persona = super().save(commit=True)
+
+            # 2. Guardar la parte de ContratoFinanciero (Financiera)
+            fin_tipo = self.cleaned_data.get('finanzas_tipo')
+            
+            # Crear contrato financiero vinculado
+            ContratoFinanciero.objects.create(
+                propiedad_persona=propiedad_persona,
+                tipo=fin_tipo,
+                plan_pago=self.cleaned_data.get('finanzas_plan'),
+                fecha_inicio_pago=propiedad_persona.fecha_inicio,
+                dia_vencimiento_mensual=self.cleaned_data.get('finanzas_dia_vencimiento'),
+                numero_cuotas_totales=self.cleaned_data.get('finanzas_cuotas'),
+                saldo_pendiente=self.cleaned_data.get('finanzas_saldo'),
+                estado='ACTIVO'
+            )
+            
+            return propiedad_persona

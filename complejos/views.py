@@ -6,7 +6,8 @@ from finanzas.models import Factura, ConfiguracionFinanciera
 from .forms import (
     ComplejoForm, PropiedadForm, CrearPropiedadesMultiplesForm, EditarPropiedadForm, 
     PropiedadPersonaForm, GlobalContratoForm, ReservaForm, AmenidadForm, 
-    AdminReservaForm, BloquearHorarioForm, EditarContratoForm, ResidentePreAutorizacionForm
+    AdminReservaForm, BloquearHorarioForm, EditarContratoForm, ResidentePreAutorizacionForm,
+    ContratoUnificadoForm
 )
 from users.views import es_admin, es_admin_o_gerente
 from django.contrib.auth import get_user_model
@@ -857,50 +858,48 @@ def crear_contrato_global(request):
     
     if propiedad_id:
         propiedad_preseleccionada = get_object_or_404(Propiedad, id=propiedad_id)
+        # Pre-fill data for the unify form if needed, e.g. propiedad
         initial_data['propiedad'] = propiedad_preseleccionada
 
     if request.method == 'POST':
-        form = GlobalContratoForm(request.POST)
+        form = ContratoUnificadoForm(request.POST) # Use unified form
         if form.is_valid():
-            propiedad = form.cleaned_data['propiedad']
-            tipo_relacion_form = form.cleaned_data['tipo_relacion']
+            # The form.save() method now handles atomic creation of both PropiedadPersona and ContratoFinanciero
+            propiedad_persona = form.save()
+
+            # Handle second person manually if needed (logic not in unified form yet, or reuse existing logic?)
+            # The unified form inherits from PropiedadPersonaForm, which handles single person.
+            # If we need to keep the 'second person' logic, we might need to adapt it. 
+            # However, looking at the previous code, it handled 'persona2' manually.
+            # The Unified Contract seems focused on the primary financial responsibility.
+            # Let's keep the second person logic but we need to check if 'persona2' is in cleaned_data
             
-            if tipo_relacion_form == 'co-propietario':
-                first_person_role = 'propietario'
-                second_person_role = 'co-propietario'
-            elif tipo_relacion_form == 'co-inquilino':
-                first_person_role = 'inquilino'
-                second_person_role = 'co-inquilino'
-            else:
-                first_person_role = tipo_relacion_form
-                second_person_role = None
+            # Note: ContratoUnificadoForm inherits PropiedadPersonaForm. 
+            # We need to see if PropiedadPersonaForm has 'persona2'. Yes it does.
+            
+            persona2 = form.cleaned_data.get('persona2')
+            if persona2:
+                tipo_relacion_form = form.cleaned_data['tipo_relacion']
+                if tipo_relacion_form == 'propietario':
+                    role2 = 'co-propietario'
+                elif tipo_relacion_form == 'inquilino':
+                    role2 = 'co-inquilino'
+                else:
+                    role2 = 'co-' + tipo_relacion_form # Fallback
 
-            propiedad_persona = PropiedadPersona(
-                propiedad=propiedad,
-                persona=form.cleaned_data['persona'],
-                tipo_relacion=first_person_role,
-                fecha_inicio=form.cleaned_data['fecha_inicio'],
-                fecha_fin=form.cleaned_data['fecha_fin'],
-                es_principal=True,
-                estado=form.cleaned_data['estado']
-            )
-            propiedad_persona.save()
-
-            if second_person_role:
-                asignacion2 = PropiedadPersona(
-                    propiedad=propiedad,
-                    persona=form.cleaned_data['persona2'],
-                    tipo_relacion=second_person_role,
-                    fecha_inicio=form.cleaned_data['fecha_inicio'],
-                    fecha_fin=form.cleaned_data['fecha_fin'],
+                PropiedadPersona.objects.create(
+                    propiedad=propiedad_persona.propiedad,
+                    persona=persona2,
+                    tipo_relacion=role2,
+                    fecha_inicio=propiedad_persona.fecha_inicio,
+                    fecha_fin=propiedad_persona.fecha_fin,
                     es_principal=False,
-                    estado=form.cleaned_data['estado']
+                    estado=propiedad_persona.estado
                 )
-                asignacion2.save()
             
-            return redirect('seleccionar_propiedad_contrato', complejo_id=propiedad.complejo.id)
+            return redirect('seleccionar_propiedad_contrato', complejo_id=propiedad_persona.propiedad.complejo.id)
     else:
-        form = GlobalContratoForm(initial=initial_data)
+        form = ContratoUnificadoForm(initial=initial_data)
     
     context = {
         'form': form,

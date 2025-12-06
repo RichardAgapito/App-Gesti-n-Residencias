@@ -1,14 +1,20 @@
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, View, TemplateView, DetailView
-from .models import PlanCuota, ConceptoCobro, MetodoPago, Factura, Recaudo
-from .forms import PlanCuotaForm, ConceptoCobroForm, MetodoPagoForm, FacturaForm, DetalleFacturaFormSet, RecaudoForm, PlanConceptoCobroFormSet
+from .models import PlanCuota, ConceptoCobro, MetodoPago, Factura, Recaudo, CargoAdicional, ConfiguracionFinanciera
+from .forms import (
+    PlanCuotaForm, ConceptoCobroForm, MetodoPagoForm, FacturaForm, 
+    DetalleFacturaFormSet, RecaudoForm, PlanConceptoCobroFormSet,
+    CargoAdicionalForm, ConfiguracionFinancieraForm
+)
 from django.db import transaction, models
 from django.shortcuts import get_object_or_404, redirect, reverse
+from django.http import Http404
 from django.contrib import messages
 from django.core.management import call_command
 from django.core.management import call_command
 from io import StringIO
+from complejos.models import Complejo # Added import
 
 class AdminRequiredMixin(UserPassesTestMixin):
     """
@@ -22,7 +28,7 @@ class GerenteRequiredMixin(UserPassesTestMixin):
     Mixin to ensure the user has the GERENTE role.
     """
     def test_func(self):
-        return self.request.user.is_authenticated and self.request.user.rol == 'GERENTE'
+        return self.request.user.is_authenticated and (self.request.user.rol == 'GERENTE' or self.request.user.rol == 'ADMIN')
 
 class ResidenteRequiredMixin(UserPassesTestMixin):
     """
@@ -512,4 +518,103 @@ class UpdateFinancialStatusView(LoginRequiredMixin, View):
             messages.error(request, f'Error al actualizar estados: {e}')
         
         # Redirigimos a la misma lista de facturas para ver los cambios (ej. estados VENCIDA)
+        # Redirigimos a la misma lista de facturas para ver los cambios (ej. estados VENCIDA)
         return redirect(reverse('lista_facturas'))
+
+class ListaCargosAdicionalesView(LoginRequiredMixin, GerenteRequiredMixin, ListView):
+    model = CargoAdicional
+    template_name = 'finanzas/lista_cargos.html'
+    context_object_name = 'cargos'
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.rol == 'GERENTE' and user.complejo_asignado:
+            return CargoAdicional.objects.filter(propiedad__complejo=user.complejo_asignado).order_by('-fecha_registro')
+        return CargoAdicional.objects.none()
+
+class CrearCargoAdicionalView(LoginRequiredMixin, GerenteRequiredMixin, CreateView):
+    model = CargoAdicional
+    form_class = CargoAdicionalForm
+    template_name = 'finanzas/crear_cargo.html'
+    success_url = reverse_lazy('lista_cargos')
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
+    
+    
+    def form_valid(self, form):
+        messages.success(self.request, "Cargo adicional registrado correctamente. Se incluirá en la próxima facturación.")
+        return super().form_valid(form)
+
+class ConfiguracionFinancieraUpdateView(LoginRequiredMixin, GerenteRequiredMixin, UpdateView):
+    model = ConfiguracionFinanciera
+    form_class = ConfiguracionFinancieraForm
+    template_name = 'finanzas/configuracion_financiera.html'
+    success_url = reverse_lazy('configuracion_financiera')
+
+    def get_object(self, queryset=None):
+        user = self.request.user
+        complejo = user.complejo_asignado
+
+        # Admin logic: Check for 'complejo_id' in GET or use assigned complex
+        if not complejo and (user.rol == 'ADMIN' or user.is_superuser):
+            complejo_id = self.request.GET.get('complejo_id')
+            if complejo_id:
+                complejo = get_object_or_404(Complejo, id=complejo_id)
+            else:
+                # If Admin and no complex specified, we can't show config.
+                # Returning None here might crash UpdateView.
+                # We should handle this in dispatch or redirect earlier.
+                # However, raising 404 is standard, but we want to prompt selection.
+                # Let's rely on the dispatch override below or just None (handled below).
+                return None
+
+        if not complejo:
+             # Should be caught by dispatch/redirect, but if here:
+             raise Http404("No tienes un complejo asignado.")
+        
+        config, created = ConfiguracionFinanciera.objects.get_or_create(
+            complejo=complejo,
+            propiedad=None # Configuración global
+        )
+        return config
+
+    def dispatch(self, request, *args, **kwargs):
+        user = self.request.user
+        if not user.complejo_asignado and (user.rol == 'ADMIN' or user.is_superuser):
+            if not request.GET.get('complejo_id'):
+                return redirect('seleccionar_complejo_finanzas')
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        # Ensure we pass the correct complex to the form
+        if self.object:
+            kwargs['complejo'] = self.object.complejo
+        else:
+             # Fallback if object creation failed (shouldn't happen with redirect)
+             kwargs['complejo'] = self.request.user.complejo_asignado
+        return kwargs
+
+    def form_valid(self, form):
+        messages.success(self.request, "Configuración financiera actualizada correctamente.")
+        # Preserve complejo_id in success URL if needed
+        response = super().form_valid(form)
+        if 'complejo_id' in self.request.GET:
+             self.success_url = f"{reverse_lazy('configuracion_financiera')}?complejo_id={self.request.GET['complejo_id']}"
+        return response
+
+class SeleccionarComplejoFinanzasView(LoginRequiredMixin, ListView):
+    model = Complejo
+    template_name = 'finanzas/seleccionar_complejo.html'
+    context_object_name = 'complejos'
+
+    def get_queryset(self):
+        return Complejo.objects.filter(estado='activo')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['titulo'] = "Seleccionar Complejo para Configuración"
+        return context
