@@ -1,7 +1,7 @@
 from django.contrib import admin
 from .models import (
     PlanCuota, ConceptoCobro, Factura, DetalleFactura, MetodoPago, Recaudo, 
-    PlanConceptoCobro, ConfiguracionFinanciera, ContratoFinanciero,PropiedadPersona
+    PlanConceptoCobro, ConfiguracionFinanciera, ContratoFinanciero, PropiedadPersona, CargoAdicional
 )
 
 class PlanConceptoCobroInline(admin.TabularInline):
@@ -46,19 +46,24 @@ class RecaudoAdmin(admin.ModelAdmin):
 
 @admin.register(ConfiguracionFinanciera)
 class ConfiguracionFinancieraAdmin(admin.ModelAdmin):
-    list_display = ('complejo', 'dia_corte', 'tasa_interes_mora_diaria')
+    list_display = ('complejo', 'propiedad', 'dia_corte', 'tasa_interes_mora_diaria')
+
 
 
 @admin.register(ContratoFinanciero)
 class ContratoFinancieroAdmin(admin.ModelAdmin):
-    list_display = ('propiedad_persona', 'tipo', 'monto_cuota', 'estado', 'cuotas_facturadas')
+    list_display = ('propiedad_persona', 'tipo', 'plan_pago', 'estado', 'cuotas_facturadas')
     list_filter = ('tipo', 'estado')
     search_fields = ('propiedad_persona__persona__email', 'propiedad_persona__persona__nombres')
     
-    # --- AGREGAR ESTO ---
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == "propiedad_persona":
             # Filtramos para que solo aparezcan los responsables principales activos
-            # Esto evita asignar deudas a co-propietarios o personas que ya se fueron
             kwargs["queryset"] = PropiedadPersona.objects.filter(es_principal=True, estado='activo')
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+@admin.register(CargoAdicional)
+class CargoAdicionalAdmin(admin.ModelAdmin):
+    list_display = ('concepto', 'propiedad', 'monto', 'fecha_registro', 'procesado')
+    list_filter = ('procesado', 'fecha_registro', 'concepto')
+    search_fields = ('propiedad__numero_identificador', 'observaciones')

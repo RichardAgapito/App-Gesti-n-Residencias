@@ -5,97 +5,106 @@
             <span class="text-xl font-bold text-gray-800">ResidencialApp</span>
         </div>
     </div>
-    
+
     <nav class="p-4 space-y-2">
-        <a href="{% url 'dashboard' %}" 
-           class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {% if request.resolver_match.url_name == 'dashboard' %}bg-blue-50 text-blue-600{% else %}text-gray-700 hover:bg-gray-50{% endif %}">
+        <a href="{% url 'dashboard' %}"
+            class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {% if request.resolver_match.url_name == 'dashboard' %}bg-blue-50 text-blue-600{% else %}text-gray-700 hover:bg-gray-50{% endif %}">
             <i class="fa-solid fa-table-columns w-5 text-center"></i>
             <span class="font-medium whitespace-nowrap">Dashboard</span>
         </a>
 
-        <a href="{% url 'lista_usuarios' %}" 
-           class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {% if 'usuario' in request.resolver_match.url_name %}bg-blue-50 text-blue-600{% else %}text-gray-700 hover:bg-gray-50{% endif %}">
+        <a href="{% url 'lista_usuarios' %}"
+            class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {% if 'usuario' in request.resolver_match.url_name %}bg-blue-50 text-blue-600{% else %}text-gray-700 hover:bg-gray-50{% endif %}">
             <i class="fa-solid fa-users w-5 text-center"></i>
             <span class="font-medium whitespace-nowrap">Gestionar Usuarios</span>
         </a>
 
-        <a href="{% url 'lista_complejos' %}" 
-           class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {% if 'complejo' in request.resolver_match.url_name and 'contrato' not in request.resolver_match.url_name %}bg-blue-50 text-blue-600{% else %}text-gray-700 hover:bg-gray-50{% endif %}">
+        <a href="{% url 'lista_complejos' %}"
+            class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {% if 'complejo' in request.resolver_match.url_name and 'contrato' not in request.resolver_match.url_name %}bg-blue-50 text-blue-600{% else %}text-gray-700 hover:bg-gray-50{% endif %}">
             <i class="fa-solid fa-building-user w-5 text-center"></i>
             <span class="font-medium whitespace-nowrap">Gestionar Complejos</span>
         </a>
 
-        <a href="{% url 'seleccionar_complejo_contrato' %}" 
-           class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {% if 'contrato' in request.resolver_match.url_name %}bg-blue-50 text-blue-600{% else %}text-gray-700 hover:bg-gray-50{% endif %}">
+        <a href="{% url 'seleccionar_complejo_contrato' %}"
+            class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {% if 'contrato' in request.resolver_match.url_name %}bg-blue-50 text-blue-600{% else %}text-gray-700 hover:bg-gray-50{% endif %}">
             <i class="fa-solid fa-file-signature w-5 text-center"></i>
             <span class="font-medium whitespace-nowrap">Gestionar Contratos</span>
         </a>
 
-        <a href="{% url 'gestionar_amenidades' %}" 
-           class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {% if 'amenidad' in request.resolver_match.url_name %}bg-blue-50 text-blue-600{% else %}text-gray-700 hover:bg-gray-50{% endif %}">
+        <a href="{% url 'gestionar_amenidades' %}"
+            class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {% if 'amenidad' in request.resolver_match.url_name %}bg-blue-50 text-blue-600{% else %}text-gray-700 hover:bg-gray-50{% endif %}">
             <i class="fa-solid fa-star w-5 text-center"></i>
             <span class="font-medium whitespace-nowrap">Gestionar Amenidades</span>
         </a>
 
-        <a href="{% url 'admin_reservas' %}" 
-           class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {% if 'reserva' in request.resolver_match.url_name %}bg-blue-50 text-blue-600{% else %}text-gray-700 hover:bg-gray-50{% endif %}">
+        <a href="{% url 'admin_reservas' %}"
+            class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {% if 'reserva' in request.resolver_match.url_name %}bg-blue-50 text-blue-600{% else %}text-gray-700 hover:bg-gray-50{% endif %}">
             <i class="fa-solid fa-calendar-days w-5 text-center"></i>
             <span class="font-medium whitespace-nowrap">Gestionar Reservas</span>
         </a>
 
         <!-- Finanzas Accordion -->
         <div class="space-y-1">
-            <button onclick="toggleFinanzas()" 
-                    class="w-full flex items-center justify-between gap-3 px-4 py-3 rounded-lg transition-colors text-gray-700 hover:bg-gray-50">
+            <button onclick="toggleFinanzas()"
+                class="w-full flex items-center justify-between gap-3 px-4 py-3 rounded-lg transition-colors text-gray-700 hover:bg-gray-50">
                 <div class="flex items-center gap-3">
                     <i class="fa-solid fa-dollar-sign w-5 text-center"></i>
                     <span class="font-medium whitespace-nowrap">Finanzas</span>
                 </div>
                 <i id="finanzas-icon" class="fa-solid fa-chevron-down text-xs transition-transform"></i>
             </button>
-            
-            <div id="finanzas-menu" class="max-h-0 opacity-0 overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] pl-4 space-y-1">
-                <a href="{% url 'lista_planes_cuota' %}" 
-                   class="flex items-center gap-3 px-4 py-2 rounded-lg transition-colors {% if 'planes_cuota' in request.resolver_match.url_name %}bg-blue-50 text-blue-600{% else %}text-gray-600 hover:bg-gray-50{% endif %}">
+
+            <div id="finanzas-menu"
+                class="max-h-0 opacity-0 overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] pl-4 space-y-1">
+                <a href="{% url 'lista_planes_cuota' %}"
+                    class="flex items-center gap-3 px-4 py-2 rounded-lg transition-colors {% if 'planes_cuota' in request.resolver_match.url_name %}bg-blue-50 text-blue-600{% else %}text-gray-600 hover:bg-gray-50{% endif %}">
                     <i class="fa-solid fa-file-invoice-dollar w-5 text-center text-xs"></i>
                     <span class="text-sm whitespace-nowrap">Planes de Cuota</span>
                 </a>
 
-                <a href="{% url 'lista_conceptos_cobro' %}" 
-                   class="flex items-center gap-3 px-4 py-2 rounded-lg transition-colors {% if 'conceptos_cobro' in request.resolver_match.url_name %}bg-blue-50 text-blue-600{% else %}text-gray-600 hover:bg-gray-50{% endif %}">
+                <a href="{% url 'lista_conceptos_cobro' %}"
+                    class="flex items-center gap-3 px-4 py-2 rounded-lg transition-colors {% if 'conceptos_cobro' in request.resolver_match.url_name %}bg-blue-50 text-blue-600{% else %}text-gray-600 hover:bg-gray-50{% endif %}">
                     <i class="fa-solid fa-tags w-5 text-center text-xs"></i>
                     <span class="text-sm whitespace-nowrap">Conceptos de Cobro</span>
                 </a>
 
-                <a href="{% url 'lista_metodos_pago' %}" 
-                   class="flex items-center gap-3 px-4 py-2 rounded-lg transition-colors {% if 'metodos_pago' in request.resolver_match.url_name %}bg-blue-50 text-blue-600{% else %}text-gray-600 hover:bg-gray-50{% endif %}">
+                <a href="{% url 'lista_metodos_pago' %}"
+                    class="flex items-center gap-3 px-4 py-2 rounded-lg transition-colors {% if 'metodos_pago' in request.resolver_match.url_name %}bg-blue-50 text-blue-600{% else %}text-gray-600 hover:bg-gray-50{% endif %}">
                     <i class="fa-solid fa-credit-card w-5 text-center text-xs"></i>
                     <span class="text-sm whitespace-nowrap">Métodos de Pago</span>
                 </a>
 
-                <a href="{% url 'lista_facturas' %}" 
-                   class="flex items-center gap-3 px-4 py-2 rounded-lg transition-colors {% if 'facturas' in request.resolver_match.url_name %}bg-blue-50 text-blue-600{% else %}text-gray-600 hover:bg-gray-50{% endif %}">
+                <a href="{% url 'lista_facturas' %}"
+                    class="flex items-center gap-3 px-4 py-2 rounded-lg transition-colors {% if 'facturas' in request.resolver_match.url_name %}bg-blue-50 text-blue-600{% else %}text-gray-600 hover:bg-gray-50{% endif %}">
                     <i class="fa-solid fa-file-invoice w-5 text-center text-xs"></i>
                     <span class="text-sm whitespace-nowrap">Gestionar Facturas</span>
                 </a>
 
-                <a href="{% url 'reporte_cobranza' %}" 
-                   class="flex items-center gap-3 px-4 py-2 rounded-lg transition-colors {% if 'reporte_cobranza' in request.resolver_match.url_name %}bg-blue-50 text-blue-600{% else %}text-gray-600 hover:bg-gray-50{% endif %}">
+                <a href="{% url 'reporte_cobranza' %}"
+                    class="flex items-center gap-3 px-4 py-2 rounded-lg transition-colors {% if 'reporte_cobranza' in request.resolver_match.url_name %}bg-blue-50 text-blue-600{% else %}text-gray-600 hover:bg-gray-50{% endif %}">
                     <i class="fa-solid fa-chart-line w-5 text-center text-xs"></i>
                     <span class="text-sm whitespace-nowrap">Reporte de Cobranza</span>
+                </a>
+
+                <a href="{% url 'configuracion_financiera' %}"
+                    class="flex items-center gap-3 px-4 py-2 rounded-lg transition-colors {% if 'configuracion_financiera' in request.resolver_match.url_name %}bg-blue-50 text-blue-600{% else %}text-gray-600 hover:bg-gray-50{% endif %}">
+                    <i class="fa-solid fa-gears w-5 text-center text-xs"></i>
+                    <span class="text-sm whitespace-nowrap">Configuración Financiera</span>
                 </a>
             </div>
         </div>
 
         <div class="pt-4 mt-4 border-t border-gray-200 space-y-2">
-             <a href="/admin/" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors">
+            <a href="/admin/"
+                class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors">
                 <i class="fa-solid fa-code w-5 text-center"></i>
                 <span class="font-medium whitespace-nowrap">Panel Avanzado (Dev)</span>
             </a>
-            
+
             <form method="post" action="{% url 'logout' %}" class="w-full">
                 {% csrf_token %}
-                <button type="submit" class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-red-600 hover:bg-red-50 transition-colors text-left">
+                <button type="submit"
+                    class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-red-600 hover:bg-red-50 transition-colors text-left">
                     <i class="fa-solid fa-right-from-bracket w-5 text-center"></i>
                     <span class="font-medium whitespace-nowrap">Cerrar Sesión</span>
                 </button>
@@ -107,7 +116,7 @@
         function toggleFinanzas() {
             const menu = document.getElementById('finanzas-menu');
             const icon = document.getElementById('finanzas-icon');
-            
+
             if (menu.classList.contains('max-h-0')) {
                 // Open
                 menu.classList.remove('max-h-0', 'opacity-0');
@@ -122,10 +131,10 @@
         }
 
         // Auto-open if we're on a finanzas page
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             const finanzasPages = ['planes_cuota', 'conceptos_cobro', 'metodos_pago', 'facturas', 'reporte_cobranza'];
             const currentUrl = window.location.pathname;
-            
+
             if (finanzasPages.some(page => currentUrl.includes(page))) {
                 const menu = document.getElementById('finanzas-menu');
                 const icon = document.getElementById('finanzas-icon');

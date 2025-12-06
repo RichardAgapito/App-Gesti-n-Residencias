@@ -6,7 +6,7 @@ from datetime import date, timedelta
 from complejos.models import Complejo, PropiedadPersona
 from finanzas.models import (
     Factura, DetalleFactura, ConfiguracionFinanciera, 
-    ContratoFinanciero, PlanConceptoCobro
+    ContratoFinanciero, PlanConceptoCobro, CargoAdicional
 )
 
 class Command(BaseCommand):
@@ -66,83 +66,104 @@ class Command(BaseCommand):
 
                 try:
                     with transaction.atomic():
+                        # --- PASO 0: Determinar Configuración a usar (Específica vs Global) ---
+                        # Buscamos configuracion especifica de la propiedad
+                        config_especifica = getattr(propiedad, 'configuracion_financiera_especifica', None)
+                        
+                        # Usar especifica si existe, sino la global (config del loop)
+                        config_actual = config_especifica if config_especifica else config
+
                         # --- PASO A: Crear la Cabecera de la Factura ---
-                        # Calculamos vencimiento según la configuración del complejo
-                        fecha_vencimiento = today + timedelta(days=config.dias_vencimiento)
+                        fecha_vencimiento = today + timedelta(days=config_actual.dias_vencimiento)
                         
                         factura = Factura.objects.create(
                             propiedad=propiedad,
-                            plan_cuota=config.plan_mantenimiento_default, # Referencia al plan base
+                            # El plan cuota cabecera será el de mantenimiento base (informativo)
+                            plan_cuota=config_actual.plan_mantenimiento_default, 
                             fecha_emision=today,
                             fecha_vencimiento=fecha_vencimiento,
                             estado='PENDIENTE',
                             observaciones=f"Facturación Mensual - {today.strftime('%B %Y')}"
                         )
-
+                        
                         total_acumulado = 0
 
-                        # --- PASO B: Agregar Conceptos de Mantenimiento (Para TODOS) ---
-                        if config.plan_mantenimiento_default:
+                        # --- PASO B: Agregar Conceptos de Mantenimiento (Gasto Común) ---
+                        if config_actual.plan_mantenimiento_default:
                             conceptos_base = PlanConceptoCobro.objects.filter(
-                                plan_cuota=config.plan_mantenimiento_default,
-                                activo=True
+                                plan_cuota=config_actual.plan_mantenimiento_default,
+                                # No filtar por activo=True aqui plan_cuota.planconceptocobro_set.all() ?
+                                # Asumiendo que el PlanConceptoCobro no tiene campo activo, pero el PlanCuota si.
                             ).select_related('concepto_cobro')
 
                             for item in conceptos_base:
                                 DetalleFactura.objects.create(
                                     factura=factura,
                                     concepto_cobro=item.concepto_cobro,
-                                    monto=item.monto,
-                                    # descripcion=item.concepto_cobro.nombre # (Opcional si tu modelo tiene descripción)
+                                    monto=item.monto
                                 )
                                 total_acumulado += item.monto
 
-                        # --- PASO C: Buscar Contratos Financieros Específicos (Alquiler/Compra) ---
-                        # Buscamos si este residente tiene un contrato financiero activo
+                        # --- PASO C: Buscar Contratos Financieros (Alquiler / Compra) ---
                         contrato_fin = ContratoFinanciero.objects.filter(
                             propiedad_persona=contrato_residencial,
                             estado='ACTIVO'
                         ).first()
 
                         if contrato_fin and contrato_fin.es_vigente():
-                            # Crear un concepto de cobro "al vuelo" o usar uno genérico si prefieres
-                            # Aquí asumimos que tienes un ConceptoCobro genérico para "Alquiler/Cuota"
-                            # O creamos el detalle directamente.
-                            
-                            # NOTA: Para que esto funcione perfecto, asegúrate de tener un ConceptoCobro
-                            # llamado "Cuota Contrato" o similar en la BD, o créalo dinámicamente.
-                            from finanzas.models import ConceptoCobro
-                            concepto_extra, _ = ConceptoCobro.objects.get_or_create(
-                                nombre=f"Cuota {contrato_fin.get_tipo_display()}",
-                                defaults={'tipo': 'ORDINARIO', 'complejo': complejo}
-                            )
-
-                            DetalleFactura.objects.create(
-                                factura=factura,
-                                concepto_cobro=concepto_extra,
-                                monto=contrato_fin.monto_cuota,
-                                # descripcion=f"Cuota correspondiente al contrato {contrato_fin.id}"
-                            )
-                            total_acumulado += contrato_fin.monto_cuota
-
-                            # Si es financiamiento (compra), actualizamos el contador
-                            if contrato_fin.tipo == 'FINANCIAMIENTO':
-                                contrato_fin.cuotas_facturadas += 1
-                                if contrato_fin.saldo_pendiente:
-                                    contrato_fin.saldo_pendiente -= contrato_fin.monto_cuota
+                            # Usar los conceptos del plan de pago del contrato
+                            if contrato_fin.plan_pago:
+                                conceptos_contrato = PlanConceptoCobro.objects.filter(
+                                    plan_cuota=contrato_fin.plan_pago
+                                ).select_related('concepto_cobro')
                                 
-                                # Auto-finalizar si completó cuotas
-                                if contrato_fin.numero_cuotas_totales and contrato_fin.cuotas_facturadas >= contrato_fin.numero_cuotas_totales:
-                                    contrato_fin.estado = 'FINALIZADO'
-                                    self.stdout.write(self.style.SUCCESS(f"    -> ¡Contrato de compra finalizado para {propiedad}!"))
+                                for item in conceptos_contrato:
+                                    DetalleFactura.objects.create(
+                                        factura=factura,
+                                        concepto_cobro=item.concepto_cobro,
+                                        monto=item.monto
+                                    )
+                                    total_acumulado += item.monto
                                 
-                                contrato_fin.save()
+                                # Actualizar estados del contrato
+                                if contrato_fin.tipo == 'FINANCIAMIENTO':
+                                    contrato_fin.cuotas_facturadas += 1
+                                    
+                                    # Reducir saldo si aplica
+                                    if contrato_fin.saldo_pendiente and total_acumulado > 0:
+                                        # Nota: Aquí estamos asumiendo que TODO el monto va al capital, 
+                                        # lo cual podría no ser cierto si hay intereses. 
+                                        # Simplificación: reducir saldo por el monto total del plan contrato.
+                                        monto_contrato_total = sum(c.monto for c in conceptos_contrato)
+                                        contrato_fin.saldo_pendiente -= monto_contrato_total
 
-                        # --- Guardar Total ---
-                        # Como tu modelo Factura calculaba el total dinámicamente con una @property,
-                        # no necesitamos guardar 'monto_total' si eliminaste el campo en migraciones anteriores.
-                        # Si aún tienes el campo monto_total en la BD para caché:
-                        # factura.monto_total = total_acumulado
+                                    if contrato_fin.numero_cuotas_totales and contrato_fin.cuotas_facturadas >= contrato_fin.numero_cuotas_totales:
+                                        contrato_fin.estado = 'FINALIZADO'
+                                        self.stdout.write(self.style.SUCCESS(f"    -> Fin contrato compra para {propiedad}"))
+                                    
+                                    contrato_fin.save()
+                        
+                        # --- PASO D: Agregar Cargos Adicionales Pendientes (Multas / Extras) ---
+                        cargos_pendientes = CargoAdicional.objects.filter(
+                            propiedad=propiedad,
+                            procesado=False
+                        )
+                        
+                        if cargos_pendientes.exists():
+                            for cargo in cargos_pendientes:
+                                DetalleFactura.objects.create(
+                                    factura=factura,
+                                    concepto_cobro=cargo.concepto,
+                                    monto=cargo.monto
+                                )
+                                total_acumulado += cargo.monto
+                                
+                                # Marcar como procesado
+                                cargo.procesado = True
+                                cargo.factura_asociada = factura
+                                cargo.save()
+                                self.stdout.write(f"    -> Cargo agregado: {cargo.monto}")
+
                         factura.save()
                         
                         count_facturas += 1

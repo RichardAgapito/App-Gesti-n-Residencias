@@ -5,31 +5,32 @@
 {% block global_styles %}{% endblock %}
 
 {% block extra_css %}
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#3b82f6',
-                    }
+<!-- Tailwind CSS CDN -->
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+    tailwind.config = {
+        theme: {
+            extend: {
+                colors: {
+                    primary: '#3b82f6',
                 }
             }
         }
-    </script>
+    }
+</script>
 {% endblock %}
 
 {% block content %}
 <div class="min-h-screen bg-gray-50 flex font-sans">
-    
+
     {% include 'includes/admin_sidebar.html' %}
 
     <main class="flex-1 lg:ml-64 p-8 h-screen overflow-y-auto">
         <div class="max-w-4xl mx-auto">
             <!-- Header -->
             <div class="mb-8">
-                <a href="javascript:history.back()" class="inline-flex items-center text-gray-500 hover:text-blue-600 mb-4 transition-colors">
+                <a href="javascript:history.back()"
+                    class="inline-flex items-center text-gray-500 hover:text-blue-600 mb-4 transition-colors">
                     <i class="fa-solid fa-arrow-left mr-2"></i> Volver atrás
                 </a>
                 <h1 class="text-3xl font-bold text-gray-900">Crear Nuevo Contrato</h1>
@@ -39,86 +40,237 @@
             <!-- Form Card -->
             <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
                 <div class="h-2 bg-gradient-to-r from-blue-500 to-indigo-600"></div>
-                
+
                 <div class="p-8">
                     <form method="post" class="space-y-6">
                         {% csrf_token %}
-                        
+
                         {% if form.non_field_errors %}
-                            <div class="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-r">
-                                {{ form.non_field_errors }}
-                            </div>
+                        <div class="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-r">
+                            {{ form.non_field_errors }}
+                        </div>
                         {% endif %}
-                        
+
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                             {% if propiedad_preseleccionada %}
-                                <!-- Static Property Info (Premium Design) -->
-                                <div class="col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex relative group hover:shadow-md transition-all duration-300">
-                                    <div class="w-1.5 bg-gradient-to-b from-blue-500 to-indigo-600"></div>
-                                    <div class="p-5 flex-1 flex items-center justify-between">
-                                        <div class="flex items-center gap-5">
-                                            <div class="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600 shadow-sm group-hover:scale-110 transition-transform duration-300">
-                                                <i class="fa-solid fa-house text-xl"></i>
-                                            </div>
-                                            <div>
-                                                <p class="text-xs text-blue-600 font-bold uppercase tracking-wider mb-0.5">Propiedad Seleccionada</p>
-                                                <h3 class="text-xl font-bold text-gray-900">{{ propiedad_preseleccionada.numero_identificador }}</h3>
-                                            </div>
+                            <!-- Static Property Info (Premium Design) -->
+                            <div
+                                class="col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex relative group hover:shadow-md transition-all duration-300">
+                                <div class="w-1.5 bg-gradient-to-b from-blue-500 to-indigo-600"></div>
+                                <div class="p-5 flex-1 flex items-center justify-between">
+                                    <div class="flex items-center gap-5">
+                                        <div
+                                            class="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600 shadow-sm group-hover:scale-110 transition-transform duration-300">
+                                            <i class="fa-solid fa-house text-xl"></i>
                                         </div>
-                                        <div class="flex items-center gap-6 border-l border-gray-100 pl-6">
-                                            <div class="text-right">
-                                                <p class="text-xs text-gray-400 uppercase font-medium mb-0.5">Complejo</p>
-                                                <p class="text-sm font-semibold text-gray-700">{{ propiedad_preseleccionada.complejo.nombre }}</p>
-                                            </div>
-                                            <div class="text-right">
-                                                <p class="text-xs text-gray-400 uppercase font-medium mb-0.5">Tipo</p>
-                                                <p class="text-sm font-semibold text-gray-700">{{ propiedad_preseleccionada.get_tipo_display|title }}</p>
-                                            </div>
+                                        <div>
+                                            <p class="text-xs text-blue-600 font-bold uppercase tracking-wider mb-0.5">
+                                                Propiedad Seleccionada</p>
+                                            <h3 class="text-xl font-bold text-gray-900">{{
+                                                propiedad_preseleccionada.numero_identificador }}</h3>
                                         </div>
                                     </div>
-                                    <input type="hidden" name="propiedad" value="{{ propiedad_preseleccionada.id }}">
+                                    <div class="flex items-center gap-6 border-l border-gray-100 pl-6">
+                                        <div class="text-right">
+                                            <p class="text-xs text-gray-400 uppercase font-medium mb-0.5">Complejo</p>
+                                            <p class="text-sm font-semibold text-gray-700">{{
+                                                propiedad_preseleccionada.complejo.nombre }}</p>
+                                        </div>
+                                        <div class="text-right">
+                                            <p class="text-xs text-gray-400 uppercase font-medium mb-0.5">Tipo</p>
+                                            <p class="text-sm font-semibold text-gray-700">{{
+                                                propiedad_preseleccionada.get_tipo_display|title }}</p>
+                                        </div>
+                                    </div>
                                 </div>
+                                <input type="hidden" name="propiedad" value="{{ propiedad_preseleccionada.id }}">
+                            </div>
                             {% endif %}
 
-                            {% for field in form %}
-                                {% if not propiedad_preseleccionada or field.name != 'propiedad' %}
-                                    <div class="form-group col-span-2 {% if field.name == 'fecha_inicio' or field.name == 'fecha_fin' or field.name == 'estado' %}md:col-span-1{% endif %}" id="div_id_{{ field.name }}">
-                                        <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">{{ field.label }}</label>
+                            <!-- 1. Información Legal -->
+                            <div class="col-span-2">
+                                <h3 class="text-xl font-bold text-gray-800 mb-4 border-b pb-2 flex items-center gap-2">
+                                    <i class="fa-solid fa-file-contract text-blue-600"></i> Información Legal
+                                </h3>
+                                <div
+                                    class="grid grid-cols-1 md:grid-cols-2 gap-6 bg-gray-50 p-6 rounded-xl border border-gray-100">
+                                    {% if not propiedad_preseleccionada %}
+                                    <div class="form-group col-span-2">
+                                        <label class="block text-sm font-semibold text-gray-700 mb-1">Propiedad</label>
                                         <div class="relative">
-                                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 z-10">
-                                                {% if 'propiedad' in field.name %}<i class="fa-solid fa-house"></i>
-                                                {% elif 'persona' in field.name %}<i class="fa-solid fa-user"></i>
-                                                {% elif 'fecha' in field.name %}<i class="fa-solid fa-calendar"></i>
-                                                {% elif 'relacion' in field.name %}<i class="fa-solid fa-users"></i>
-                                                {% elif 'estado' in field.name %}<i class="fa-solid fa-toggle-on"></i>
-                                                {% else %}<i class="fa-solid fa-pen"></i>{% endif %}
+                                            <div
+                                                class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                                                <i class="fa-solid fa-house"></i>
                                             </div>
-                                            
+                                            {{ form.propiedad }}
+                                        </div>
+                                        {{ form.propiedad.errors }}
+                                    </div>
+                                    {% endif %}
+
+                                    <div class="form-group">
+                                        <label class="block text-sm font-semibold text-gray-700 mb-1">Residente
+                                            (Persona)</label>
+                                        <div class="relative">
+                                            <div
+                                                class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                                                <i class="fa-solid fa-user"></i>
+                                            </div>
+                                            {{ form.persona }}
+                                        </div>
+                                        {{ form.persona.errors }}
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label class="block text-sm font-semibold text-gray-700 mb-1">Tipo de
+                                            Relación</label>
+                                        <div class="relative">
+                                            <div
+                                                class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                                                <i class="fa-solid fa-users"></i>
+                                            </div>
+                                            {{ form.tipo_relacion }}
+                                        </div>
+                                        {{ form.tipo_relacion.errors }}
+                                    </div>
+
+                                    <div class="form-group" id="div_id_persona2">
+                                        <label class="block text-sm font-semibold text-gray-700 mb-1">Segunda Persona
+                                            (Co-titular)</label>
+                                        <div class="relative">
+                                            <div
+                                                class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                                                <i class="fa-solid fa-user-group"></i>
+                                            </div>
+                                            {{ form.persona2 }}
+                                        </div>
+                                        <p class="text-xs text-gray-500 mt-1">Solo si aplica co-propiedad o co-alquiler
+                                        </p>
+                                        {{ form.persona2.errors }}
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label class="block text-sm font-semibold text-gray-700 mb-1">Fecha
+                                            Inicio</label>
+                                        <div class="relative">
+                                            <div
+                                                class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                                                <i class="fa-solid fa-calendar-plus"></i>
+                                            </div>
+                                            {{ form.fecha_inicio }}
+                                        </div>
+                                        {{ form.fecha_inicio.errors }}
+                                    </div>
+
+                                    <div class="form-group" id="div_id_fecha_fin">
+                                        <label class="block text-sm font-semibold text-gray-700 mb-1">Fecha Fin
+                                            (Vencimiento Contrato)</label>
+                                        <div class="relative">
+                                            <div
+                                                class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                                                <i class="fa-solid fa-calendar-minus"></i>
+                                            </div>
+                                            {{ form.fecha_fin }}
+                                        </div>
+                                        {{ form.fecha_fin.errors }}
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label class="block text-sm font-semibold text-gray-700 mb-1">Estado
+                                            Legal</label>
+                                        <div class="relative">
+                                            <div
+                                                class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                                                <i class="fa-solid fa-toggle-on"></i>
+                                            </div>
+                                            {{ form.estado }}
+                                        </div>
+                                        {{ form.estado.errors }}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 2. Información Financiera (NUEVA SECCIÓN) -->
+                            <div class="col-span-2 mt-4">
+                                <h3 class="text-xl font-bold text-gray-800 mb-4 border-b pb-2 flex items-center gap-2">
+                                    <i class="fa-solid fa-sack-dollar text-green-600"></i> Términos Financieros
+                                </h3>
+                                <div
+                                    class="bg-gradient-to-br from-green-50 to-white p-6 rounded-xl border border-green-100 shadow-sm grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                                    <div class="form-group">
+                                        <label class="block text-sm font-semibold text-gray-800 mb-1">Tipo de
+                                            Operación</label>
+                                        <div class="relative">
+                                            <div
+                                                class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                                                <i class="fa-solid fa-hand-holding-dollar"></i>
+                                            </div>
+                                            {{ form.finanzas_tipo }}
+                                        </div>
+                                        {{ form.finanzas_tipo.errors }}
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label class="block text-sm font-semibold text-gray-800 mb-1">Plan de Cuotas /
+                                            Pago</label>
+                                        <div class="relative">
+                                            <div
+                                                class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                                                <i class="fa-solid fa-file-invoice"></i>
+                                            </div>
+                                            {{ form.finanzas_plan }}
+                                        </div>
+                                        <p class="text-xs text-gray-500 mt-1">{{ form.finanzas_plan.help_text }}</p>
+                                        {{ form.finanzas_plan.errors }}
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label class="block text-sm font-semibold text-gray-800 mb-1">Día de Pago
+                                            Mensual</label>
+                                        <div class="relative">
+                                            <div
+                                                class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                                                <i class="fa-solid fa-calendar-day"></i>
+                                            </div>
+                                            {{ form.finanzas_dia_vencimiento }}
+                                        </div>
+                                        {{ form.finanzas_dia_vencimiento.errors }}
+                                    </div>
+
+                                    <!-- Campos exclusivos de financiamiento -->
+                                    <div
+                                        class="col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6 p-4 bg-green-100/50 rounded-lg border border-green-200">
+                                        <div class="form-group">
+                                            <label class="block text-sm font-bold text-gray-700 mb-1">Cuotas Totales
+                                                (Solo Compra)</label>
+                                            {{ form.finanzas_cuotas }}
+                                            <p class="text-xs text-gray-500 mt-1">Ej: 12, 24, 60.</p>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="block text-sm font-bold text-gray-700 mb-1">Saldo Total a
+                                                Financiar ($)</label>
                                             <div class="relative">
-                                                {{ field }}
-                                                {% if field.name == 'propiedad' or field.name == 'persona' or field.name == 'persona2' or field.name == 'tipo_relacion' or field.name == 'estado' %}
-                                                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                                                        <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
-                                                    </div>
-                                                {% endif %}
+                                                <div
+                                                    class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-500 font-bold">
+                                                    $
+                                                </div>
+                                                {{ form.finanzas_saldo }}
                                             </div>
                                         </div>
-                                        {% if field.help_text %}
-                                            <p class="mt-1 text-sm text-gray-500">{{ field.help_text }}</p>
-                                        {% endif %}
-                                        {% for error in field.errors %}
-                                            <p class="mt-1 text-sm text-red-600">{{ error }}</p>
-                                        {% endfor %}
                                     </div>
-                                {% endif %}
-                            {% endfor %}
+
+                                </div>
+                            </div>
                         </div>
-                        
+
                         <div class="mt-8 flex items-center justify-end gap-4 pt-6 border-t border-gray-100">
-                            <button type="button" onclick="history.back()" class="px-6 py-2.5 text-gray-700 font-medium hover:bg-gray-100 rounded-xl transition-colors">
+                            <button type="button" onclick="history.back()"
+                                class="px-6 py-2.5 text-gray-700 font-medium hover:bg-gray-100 rounded-xl transition-colors">
                                 Cancelar
                             </button>
-                            <button type="submit" class="px-8 py-2.5 bg-blue-600 text-white font-semibold rounded-xl shadow-lg shadow-blue-200 hover:bg-blue-700 hover:shadow-blue-300 transition-all transform hover:-translate-y-0.5">
+                            <button type="submit"
+                                class="px-8 py-2.5 bg-blue-600 text-white font-semibold rounded-xl shadow-lg shadow-blue-200 hover:bg-blue-700 hover:shadow-blue-300 transition-all transform hover:-translate-y-0.5">
                                 <i class="fa-solid fa-save mr-2"></i>Guardar Contrato
                             </button>
                         </div>
@@ -131,43 +283,123 @@
 {% endblock %}
 
 {% block extra_js %}
+<style>
+    /* Custom styles for form inputs to match Tailwind (copied from crear_complejo.html) */
+    input[type="text"],
+    input[type="number"],
+    input[type="date"],
+    input[type="email"],
+    select,
+    textarea {
+        width: 100%;
+        padding-left: 2.5rem;
+        /* Space for icon */
+        padding-right: 1rem;
+        padding-top: 0.625rem;
+        padding-bottom: 0.625rem;
+        border-radius: 0.75rem;
+        border: 1px solid #e5e7eb;
+        background-color: #f9fafb;
+        font-size: 0.875rem;
+        transition: all 0.2s;
+    }
+
+    input[type="text"]:focus,
+    input[type="number"]:focus,
+    input[type="date"]:focus,
+    input[type="email"]:focus,
+    select:focus,
+    textarea:focus {
+        outline: none;
+        border-color: #3b82f6;
+        background-color: #ffffff;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    input[type="checkbox"]:focus {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5);
+    }
+</style>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const tipoRelacionField = document.getElementById('id_tipo_relacion');
-    const persona2Container = document.getElementById('div_id_persona2');
-    const fechaFinContainer = document.getElementById('div_id_fecha_fin');
+    document.addEventListener('DOMContentLoaded', function () {
+        const tipoRelacionField = document.getElementById('id_tipo_relacion');
+        const finanzasTipoField = document.getElementById('id_finanzas_tipo');
+        const divIdPersona2 = document.getElementById('div_id_persona2'); // Field container for Person 2
+        const divIdFechaFin = document.getElementById('div_id_fecha_fin'); // Field container for End Date
 
-    function toggleFields() {
-        if (!tipoRelacionField) return;
-        
-        const selectedValue = tipoRelacionField.value;
+        // Helper to find container (Tailwind/DaisyUI structure dependent)
+        // Adjust standard form-group selector if needed
+        function getContainer(fieldId) {
+            const field = document.getElementById(fieldId);
+            return field ? field.closest('.form-group') : null;
+        }
 
-        // Toggle Persona 2
-        if (persona2Container) {
-            if (selectedValue === 'co-propietario' || selectedValue === 'co-inquilino') {
-                persona2Container.style.display = 'block';
-            } else {
-                persona2Container.style.display = 'none';
+        const finanzasCuotasContainer = getContainer('id_finanzas_cuotas');
+        const finanzasSaldoContainer = getContainer('id_finanzas_saldo');
+
+        function toggleFields() {
+            if (!tipoRelacionField) return;
+
+            const tipo = tipoRelacionField.value;
+
+            // 1. Logic for Co-Owner / Second Person
+            if (divIdPersona2) {
+                if (tipo === 'PROPIETARIO' || tipo === 'INQUILINO' || tipo === 'propietario' || tipo === 'inquilino') {
+                    divIdPersona2.style.display = 'block';
+                } else {
+                    // Hide for other types if any, or keep visible as generic fallback?
+                    // Based on user complaint "always active", let's be explicit.
+                    // If choices are strict, this is safe.
+                    divIdPersona2.style.display = 'block';
+                }
+            }
+
+            // 2. Logic for Financial Fields (Owner vs Tenant)
+            if (finanzasTipoField) {
+                // Check both uppercase and lowercase just in case
+                if (tipo === 'INQUILINO' || tipo === 'inquilino') {
+                    finanzasTipoField.value = 'ALQUILER';
+                    if (finanzasCuotasContainer) finanzasCuotasContainer.style.display = 'none';
+                    if (finanzasSaldoContainer) finanzasSaldoContainer.style.display = 'none';
+
+                    // Show End Date for Tenant
+                    if (divIdFechaFin) divIdFechaFin.style.display = 'block';
+
+                } else if (tipo === 'PROPIETARIO' || tipo === 'propietario') {
+                    finanzasTipoField.value = 'FINANCIAMIENTO';
+                    if (finanzasCuotasContainer) finanzasCuotasContainer.style.display = 'block';
+                    if (finanzasSaldoContainer) finanzasSaldoContainer.style.display = 'block';
+
+                    // Hide End Date for Owner (Indefinite)
+                    if (divIdFechaFin) divIdFechaFin.style.display = 'none';
+                } else {
+                    if (finanzasCuotasContainer) finanzasCuotasContainer.style.display = 'block';
+                    if (finanzasSaldoContainer) finanzasSaldoContainer.style.display = 'block';
+                    if (divIdFechaFin) divIdFechaFin.style.display = 'block';
+                }
             }
         }
 
-        // Toggle Fecha Fin
-        if (fechaFinContainer) {
-            if (selectedValue === 'propietario' || selectedValue === 'co-propietario') {
-                fechaFinContainer.style.display = 'none';
-            } else {
-                fechaFinContainer.style.display = 'block';
-            }
+        // Initialize and Listen
+        if (tipoRelacionField) {
+            toggleFields();
+            tipoRelacionField.addEventListener('change', toggleFields);
         }
-    }
 
-    // Initial check on page load
-    toggleFields();
-
-    // Add event listener for changes
-    if (tipoRelacionField) {
-        tipoRelacionField.addEventListener('change', toggleFields);
-    }
-});
+        // Also listen to manual changes on Financial Type (if user overrides)
+        if (finanzasTipoField) {
+            finanzasTipoField.addEventListener('change', function () {
+                const fTipo = this.value;
+                if (fTipo === 'ALQUILER') {
+                    if (finanzasCuotasContainer) finanzasCuotasContainer.style.display = 'none';
+                    if (finanzasSaldoContainer) finanzasSaldoContainer.style.display = 'none';
+                } else {
+                    if (finanzasCuotasContainer) finanzasCuotasContainer.style.display = 'block';
+                    if (finanzasSaldoContainer) finanzasSaldoContainer.style.display = 'block';
+                }
+            });
+        }
+    });
 </script>
 {% endblock %}
