@@ -24,7 +24,11 @@
 {% if request.user.rol == 'ADMIN' %}
 <div class="h-screen bg-gray-50 font-sans overflow-hidden">
     
-    {% include 'includes/admin_sidebar.html' %}
+    {% if request.user.rol == 'GERENTE' %}
+        {% include 'includes/manager_sidebar.html' %}
+    {% else %}
+        {% include 'includes/admin_sidebar.html' %}
+    {% endif %}
 
     <div class="lg:ml-64 flex flex-col h-full overflow-y-auto">
         <!-- Header -->
@@ -145,7 +149,11 @@
     </div>
 </div>
 {% elif request.user.rol == 'GERENTE' %}
-    {% include 'includes/admin_sidebar.html' %}
+    {% if request.user.rol == 'GERENTE' %}
+        {% include 'includes/manager_sidebar.html' %}
+    {% else %}
+        {% include 'includes/admin_sidebar.html' %}
+    {% endif %}
     <div class="main-content">
         <header>
             <h1>Bienvenido, Gerente {{ request.user.persona.nombres|default:request.user.email }}</h1>
