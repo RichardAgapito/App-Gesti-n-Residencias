@@ -5,31 +5,32 @@
 {% block global_styles %}{% endblock %}
 
 {% block extra_css %}
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#3b82f6',
-                    }
+<!-- Tailwind CSS CDN -->
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+    tailwind.config = {
+        theme: {
+            extend: {
+                colors: {
+                    primary: '#3b82f6',
                 }
             }
         }
-    </script>
+    }
+</script>
 {% endblock %}
 
 {% block content %}
 <div class="min-h-screen bg-gray-50 flex font-sans">
-    
+
     {% include 'includes/admin_sidebar.html' %}
 
     <main class="flex-1 lg:ml-64 p-8 h-screen overflow-y-auto">
         <div class="max-w-4xl mx-auto">
             <!-- Header -->
             <div class="mb-8">
-                <a href="{% url 'seleccionar_propiedad_contrato' form.instance.propiedad.complejo.id %}" class="inline-flex items-center text-gray-500 hover:text-blue-600 mb-4 transition-colors">
+                <a href="{% url 'seleccionar_propiedad_contrato' form.instance.propiedad.complejo.id %}"
+                    class="inline-flex items-center text-gray-500 hover:text-blue-600 mb-4 transition-colors">
                     <i class="fa-solid fa-arrow-left mr-2"></i> Volver a propiedades
                 </a>
                 <h1 class="text-3xl font-bold text-gray-900">Editar Contrato</h1>
@@ -39,80 +40,176 @@
             <!-- Form Card -->
             <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
                 <div class="h-2 bg-gradient-to-r from-blue-500 to-indigo-600"></div>
-                
+
                 <div class="p-8">
-                    <!-- Contract Details Card -->
-                    <div class="bg-blue-50 rounded-xl p-6 mb-8 border border-blue-100">
-                        <h3 class="text-lg font-semibold text-blue-900 mb-4 flex items-center gap-2">
-                            <i class="fa-solid fa-circle-info"></i> Información del Contrato
-                        </h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <p class="text-sm text-blue-600 font-medium mb-1">Propiedad</p>
-                                <p class="text-gray-900 font-semibold">{{ form.instance.propiedad.numero_identificador }}</p>
-                            </div>
-                            <div>
-                                <p class="text-sm text-blue-600 font-medium mb-1">Persona</p>
-                                <p class="text-gray-900 font-semibold capitalize">{{ form.instance.persona.persona }}</p>
-                            </div>
-                            <div>
-                                <p class="text-sm text-blue-600 font-medium mb-1">Relación</p>
-                                <p class="text-gray-900 font-semibold">{{ form.instance.get_tipo_relacion_display }}</p>
-                            </div>
-                            <div>
-                                <p class="text-sm text-blue-600 font-medium mb-1">Fecha de Inicio</p>
-                                <p class="text-gray-900 font-semibold">{{ form.instance.fecha_inicio|date:"d/m/Y" }}</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <form method="post" action="" class="space-y-6">
+                    <form method="post" action="" class="space-y-8">
                         {% csrf_token %}
-                        
+
                         {% if form.non_field_errors %}
-                            <div class="bg-red-50 text-red-700 p-4 rounded-lg border border-red-200">
-                                {{ form.non_field_errors }}
-                            </div>
+                        <div class="bg-red-50 text-red-700 p-4 rounded-lg border border-red-200">
+                            {{ form.non_field_errors }}
+                        </div>
                         {% endif %}
-                        
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div class="form-group">
-                                <label for="{{ form.fecha_fin.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Fecha de fin</label>
-                                <div class="relative">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 z-10">
-                                        <i class="fa-solid fa-calendar"></i>
+
+                        <!-- LEGAL / GENERAL SECTION -->
+                        <section>
+                            <h2 class="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                                <i class="fa-solid fa-file-contract text-blue-600"></i> Contrato Legal
+                            </h2>
+
+                            <!-- Legal Info Card -->
+                            <div class="bg-blue-50 rounded-xl p-6 mb-6 border border-blue-100">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <p class="text-sm text-blue-600 font-medium mb-1">Propiedad</p>
+                                        <p class="text-gray-900 font-semibold md:truncate">
+                                            {{ form.instance.propiedad.numero_identificador }}</p>
                                     </div>
-                                    {{ form.fecha_fin }}
+                                    <div>
+                                        <p class="text-sm text-blue-600 font-medium mb-1">Persona</p>
+                                        <p class="text-gray-900 font-semibold capitalize">
+                                            {{ form.instance.persona.persona }}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm text-blue-600 font-medium mb-1">Relación</p>
+                                        <p class="text-gray-900 font-semibold">
+                                            {{ form.instance.get_tipo_relacion_display }}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm text-blue-600 font-medium mb-1">Fecha de Inicio</p>
+                                        <p class="text-gray-900 font-semibold">
+                                            {{ form.instance.fecha_inicio|date:"d/m/Y" }}</p>
+                                    </div>
                                 </div>
-                                {% if form.fecha_fin.errors %}
-                                    <p class="mt-1 text-sm text-red-600">{{ form.fecha_fin.errors.0 }}</p>
-                                {% endif %}
                             </div>
 
-                            <div class="form-group">
-                                <label for="{{ form.estado.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Estado</label>
-                                <div class="relative">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 z-10">
-                                        <i class="fa-solid fa-toggle-on"></i>
-                                    </div>
+                            <!-- Legal Edit Fields -->
+                            <div
+                                class="grid grid-cols-1 md:grid-cols-2 gap-6 bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
+                                <div class="form-group">
+                                    <label for="{{ form.fecha_fin.id_for_label }}"
+                                        class="block text-sm font-medium text-gray-700 mb-1">Fecha de fin</label>
                                     <div class="relative">
-                                        {{ form.estado }}
-                                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                                            <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                                        <div
+                                            class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 z-10">
+                                            <i class="fa-solid fa-calendar"></i>
+                                        </div>
+                                        {{ form.fecha_fin }}
+                                    </div>
+                                    {% if form.fecha_fin.errors %}
+                                    <p class="mt-1 text-sm text-red-600">{{ form.fecha_fin.errors.0 }}</p>
+                                    {% endif %}
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="{{ form.estado.id_for_label }}"
+                                        class="block text-sm font-medium text-gray-700 mb-1">Estado</label>
+                                    <div class="relative">
+                                        <div
+                                            class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 z-10">
+                                            <i class="fa-solid fa-toggle-on"></i>
+                                        </div>
+                                        <div class="relative">
+                                            {{ form.estado }}
+                                            <div
+                                                class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                                                <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg"
+                                                    viewBox="0 0 20 20">
+                                                    <path
+                                                        d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
+                                                </svg>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                                {% if form.estado.errors %}
+                                    {% if form.estado.errors %}
                                     <p class="mt-1 text-sm text-red-600">{{ form.estado.errors.0 }}</p>
-                                {% endif %}
+                                    {% endif %}
+                                </div>
                             </div>
-                        </div>
+                        </section>
 
+                        <!-- FINANCIAL SECTION -->
+                        {% if contrato_financiero %}
+                        <section class="mt-12 pt-8 border-t border-gray-100">
+                            <h2 class="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                                <i class="fa-solid fa-sack-dollar text-green-600"></i> Contrato Financiero
+                            </h2>
+
+                            <!-- Financial Info Card -->
+                            <div class="bg-green-50 rounded-xl p-6 mb-6 border border-green-100">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <p class="text-sm text-green-700 font-medium mb-1">Tipo de Operación</p>
+                                        <p class="text-gray-900 font-semibold">
+                                            {{ contrato_financiero.get_tipo_display }}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm text-green-700 font-medium mb-1">Estado Financiero</p>
+                                        <span
+                                            class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-white text-green-800 border border-green-200 shadow-sm">
+                                            {{ contrato_financiero.get_estado_display }}
+                                        </span>
+                                    </div>
+                                    {% if contrato_financiero.tipo == 'FINANCIAMIENTO' %}
+                                    <div>
+                                        <p class="text-sm text-green-700 font-medium mb-1">Saldo Pendiente</p>
+                                        <p class="text-gray-900 font-bold">
+                                            ${{ contrato_financiero.saldo_pendiente|default:"0.00" }}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm text-green-700 font-medium mb-1">Cuotas Facturadas</p>
+                                        <p class="text-gray-900 font-semibold">
+                                            {{ contrato_financiero.cuotas_facturadas }} / {{
+                                            contrato_financiero.numero_cuotas_totales|default:"?" }}</p>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- Financial Edit Fields -->
+                            <div class="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
+                                <div class="form-group">
+                                    <label for="{{ form.finanzas_plan.id_for_label }}"
+                                        class="block text-sm font-medium text-gray-700 mb-1">
+                                        {{ form.finanzas_plan.label }}
+                                        {% if form.finanzas_plan.field.required %}<span
+                                            class="text-red-500 ml-1">*</span>{% endif %}
+                                    </label>
+                                    <div class="relative">
+                                        <div
+                                            class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 z-10">
+                                            <i class="fa-solid fa-money-check-dollar"></i>
+                                        </div>
+                                        <div class="relative">
+                                            {{ form.finanzas_plan }}
+                                            <div
+                                                class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                                                <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg"
+                                                    viewBox="0 0 20 20">
+                                                    <path
+                                                        d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
+                                                </svg>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% if form.finanzas_plan.help_text %}<p class="mt-1 text-xs text-gray-500">
+                                        {{ form.finanzas_plan.help_text }}</p>{% endif %}
+                                    {% if form.finanzas_plan.errors %}
+                                    <p class="mt-1 text-sm text-red-600">{{ form.finanzas_plan.errors.0 }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </section>
+                        {% endif %}
+
+                        <!-- Actions -->
                         <div class="mt-8 flex items-center justify-end gap-4 pt-6 border-t border-gray-100">
-                            <a href="{% url 'seleccionar_propiedad_contrato' form.instance.propiedad.complejo.id %}" class="px-6 py-2.5 text-gray-700 font-medium hover:bg-gray-100 rounded-xl transition-colors">
+                            <a href="{% url 'seleccionar_propiedad_contrato' form.instance.propiedad.complejo.id %}"
+                                class="px-6 py-2.5 text-gray-700 font-medium hover:bg-gray-100 rounded-xl transition-colors">
                                 Cancelar
                             </a>
-                            <button type="submit" class="px-8 py-2.5 bg-blue-600 text-white font-semibold rounded-xl shadow-lg shadow-blue-200 hover:bg-blue-700 hover:shadow-blue-300 transition-all transform hover:-translate-y-0.5">
+                            <button type="submit"
+                                class="px-8 py-2.5 bg-blue-600 text-white font-semibold rounded-xl shadow-lg shadow-blue-200 hover:bg-blue-700 hover:shadow-blue-300 transition-all transform hover:-translate-y-0.5">
                                 <i class="fa-solid fa-save mr-2"></i>Guardar Cambios
                             </button>
                         </div>

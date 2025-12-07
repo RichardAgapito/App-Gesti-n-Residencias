@@ -5,31 +5,32 @@
 {% block global_styles %}{% endblock %}
 
 {% block extra_css %}
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#3b82f6',
-                    }
+<!-- Tailwind CSS CDN -->
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+    tailwind.config = {
+        theme: {
+            extend: {
+                colors: {
+                    primary: '#3b82f6',
                 }
             }
         }
-    </script>
+    }
+</script>
 {% endblock %}
 
 {% block content %}
 <div class="min-h-screen bg-gray-50 flex font-sans">
-    
+
     {% include 'includes/admin_sidebar.html' %}
 
     <main class="flex-1 lg:ml-64 p-8 h-screen overflow-y-auto">
         <div class="max-w-4xl mx-auto">
             <!-- Header -->
             <div class="mb-8">
-                <a href="{% url 'seleccionar_propiedad_contrato' contrato.propiedad.complejo.id %}" class="inline-flex items-center text-gray-500 hover:text-blue-600 mb-4 transition-colors">
+                <a href="{% url 'seleccionar_propiedad_contrato' contrato.propiedad.complejo.id %}"
+                    class="inline-flex items-center text-gray-500 hover:text-blue-600 mb-4 transition-colors">
                     <i class="fa-solid fa-arrow-left mr-2"></i> Volver a propiedades
                 </a>
                 <h1 class="text-3xl font-bold text-gray-900">Detalle del Contrato</h1>
@@ -39,7 +40,7 @@
             <!-- Contract Card -->
             <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
                 <div class="h-2 bg-gradient-to-r from-blue-500 to-indigo-600"></div>
-                
+
                 <div class="p-8">
                     <div class="flex justify-between items-start mb-8">
                         <div>
@@ -47,12 +48,14 @@
                                 <i class="fa-solid fa-file-contract text-blue-500"></i>
                                 Contrato #{{ contrato.id }}
                             </h2>
-                            <p class="text-sm text-gray-500 mt-1">Registrado el {{ contrato.fecha_inicio|date:"d/m/Y" }}</p>
+                            <p class="text-sm text-gray-500 mt-1">Registrado el {{ contrato.fecha_inicio|date:"d/m/Y" }}
+                            </p>
                         </div>
                         <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
                             {% if contrato.estado == 'activo' %}bg-emerald-100 text-emerald-800 border border-emerald-200
                             {% else %}bg-red-100 text-red-800 border border-red-200{% endif %}">
-                            <span class="w-2 h-2 rounded-full mr-2 {% if contrato.estado == 'activo' %}bg-emerald-500{% else %}bg-red-500{% endif %}"></span>
+                            <span
+                                class="w-2 h-2 rounded-full mr-2 {% if contrato.estado == 'activo' %}bg-emerald-500{% else %}bg-red-500{% endif %}"></span>
                             {{ contrato.get_estado_display|upper }}
                         </span>
                     </div>
@@ -60,30 +63,35 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <!-- Property Info -->
                         <div class="bg-gray-50 rounded-xl p-6 border border-gray-100">
-                            <h3 class="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-4 border-b border-gray-200 pb-2">
+                            <h3
+                                class="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-4 border-b border-gray-200 pb-2">
                                 Propiedad
                             </h3>
                             <div class="space-y-4">
                                 <div>
                                     <p class="text-xs text-gray-500 uppercase">Identificador</p>
-                                    <p class="text-lg font-medium text-gray-900">{{ contrato.propiedad.numero_identificador }}</p>
+                                    <p class="text-lg font-medium text-gray-900">
+                                        {{ contrato.propiedad.numero_identificador }}</p>
                                 </div>
                                 <div>
                                     <p class="text-xs text-gray-500 uppercase">Complejo</p>
-                                    <p class="text-base font-medium text-gray-900">{{ contrato.propiedad.complejo.nombre }}</p>
+                                    <p class="text-base font-medium text-gray-900">
+                                        {{ contrato.propiedad.complejo.nombre }}</p>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Person Info -->
                         <div class="bg-gray-50 rounded-xl p-6 border border-gray-100">
-                            <h3 class="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-4 border-b border-gray-200 pb-2">
+                            <h3
+                                class="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-4 border-b border-gray-200 pb-2">
                                 Residente
                             </h3>
                             <div class="space-y-4">
                                 <div>
                                     <p class="text-xs text-gray-500 uppercase">Nombre</p>
-                                    <p class="text-lg font-medium text-gray-900 capitalize">{{ contrato.persona.persona }}</p>
+                                    <p class="text-lg font-medium text-gray-900 capitalize">
+                                        {{ contrato.persona.persona }}</p>
                                 </div>
                                 <div>
                                     <p class="text-xs text-gray-500 uppercase">Relación</p>
@@ -99,30 +107,34 @@
 
                         <!-- Dates -->
                         <div class="bg-blue-50 rounded-xl p-6 border border-blue-100 md:col-span-2">
-                            <h3 class="text-sm font-semibold text-blue-900 uppercase tracking-wider mb-4 border-b border-blue-200 pb-2">
+                            <h3
+                                class="text-sm font-semibold text-blue-900 uppercase tracking-wider mb-4 border-b border-blue-200 pb-2">
                                 Vigencia
                             </h3>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 <div class="flex items-center gap-3">
-                                    <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+                                    <div
+                                        class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
                                         <i class="fa-solid fa-calendar-check"></i>
                                     </div>
                                     <div>
                                         <p class="text-xs text-blue-600 uppercase font-semibold">Fecha de Inicio</p>
-                                        <p class="text-lg font-bold text-gray-900">{{ contrato.fecha_inicio|date:"d \d\e F \d\e Y" }}</p>
+                                        <p class="text-lg font-bold text-gray-900">
+                                            {{ contrato.fecha_inicio|date:"d \d\e F \d\e Y" }}</p>
                                     </div>
                                 </div>
                                 <div class="flex items-center gap-3">
-                                    <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+                                    <div
+                                        class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
                                         <i class="fa-solid fa-calendar-xmark"></i>
                                     </div>
                                     <div>
                                         <p class="text-xs text-blue-600 uppercase font-semibold">Fecha de Fin</p>
                                         <p class="text-lg font-bold text-gray-900">
                                             {% if contrato.fecha_fin %}
-                                                {{ contrato.fecha_fin|date:"d \d\e F \d\e Y" }}
+                                            {{ contrato.fecha_fin|date:"d \d\e F \d\e Y" }}
                                             {% else %}
-                                                <span class="text-gray-400 italic">Indefinido</span>
+                                            <span class="text-gray-400 italic">Indefinido</span>
                                             {% endif %}
                                         </p>
                                     </div>
@@ -131,16 +143,96 @@
                         </div>
                     </div>
 
+                    {% if contrato_financiero %}
+                    <!-- Financial Info Section -->
+                    <div class="mt-8 pt-8 border-t border-gray-100">
+                        <h3 class="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                            <i class="fa-solid fa-sack-dollar text-green-600"></i>
+                            Detalles Financieros
+                        </h3>
+
+                        <div
+                            class="bg-gradient-to-br from-green-50 to-white rounded-xl p-6 border border-green-100 shadow-sm grid grid-cols-1 md:grid-cols-2 gap-8">
+
+                            <!-- Tipo & Estado -->
+                            <div class="space-y-4">
+                                <div>
+                                    <p class="text-xs text-gray-500 uppercase font-semibold">Tipo de Operación</p>
+                                    <p class="text-lg font-bold text-gray-900">
+                                        {{ contrato_financiero.get_tipo_display }}</p>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-500 uppercase font-semibold">Estado Financiero</p>
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium mt-1
+                                        {% if contrato_financiero.estado == 'ACTIVO' %}bg-green-100 text-green-800
+                                        {% elif contrato_financiero.estado == 'PAUSADO' %}bg-yellow-100 text-yellow-800
+                                        {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                        {{ contrato_financiero.get_estado_display }}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Plan details -->
+                            <div class="space-y-4">
+                                <div>
+                                    <p class="text-xs text-gray-500 uppercase font-semibold">Plan de Pago / Cuotas</p>
+                                    <p class="text-lg font-medium text-gray-900">
+                                        {% if contrato_financiero.plan_pago %}
+                                        {{ contrato_financiero.plan_pago.nombre }}
+                                        {% else %}
+                                        <span class="text-gray-400 italic">No asignado</span>
+                                        {% endif %}
+                                    </p>
+                                </div>
+
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <p class="text-xs text-gray-500 uppercase font-semibold">Día de Pago</p>
+                                        <p class="text-base font-medium text-gray-900">
+                                            Día {{ contrato_financiero.dia_vencimiento_mensual }}</p>
+                                    </div>
+                                    {% if contrato_financiero.tipo == 'FINANCIAMIENTO' %}
+                                    <div>
+                                        <p class="text-xs text-gray-500 uppercase font-semibold">Saldo Pendiente</p>
+                                        <p class="text-base font-bold text-green-700">
+                                            ${{ contrato_financiero.saldo_pendiente|default:"0.00" }}</p>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            {% if contrato_financiero.tipo == 'FINANCIAMIENTO' %}
+                            <div class="col-span-1 md:col-span-2 mt-2 pt-4 border-t border-green-100">
+                                <div class="flex items-center justify-between text-sm">
+                                    <span class="text-gray-600">Progreso de Cuotas:</span>
+                                    <span class="font-bold text-gray-900">{{ contrato_financiero.cuotas_facturadas }} /
+                                        {{ contrato_financiero.numero_cuotas_totales|default:"?" }}</span>
+                                </div>
+                                <div class="w-full bg-green-200 rounded-full h-2.5 mt-2">
+                                    {% widthratio contrato_financiero.cuotas_facturadas
+                                    contrato_financiero.numero_cuotas_totales|default:1 100 as progress %}
+                                    <div class="bg-green-600 h-2.5 rounded-full" style="width: {{ progress }}%"></div>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+
                     <div class="mt-8 flex items-center justify-between pt-6 border-t border-gray-100">
-                        <button type="button" onclick="if(confirm('¿Estás seguro de que deseas eliminar este contrato permanentemente? Esta acción no se puede deshacer.')) { document.getElementById('delete-form').submit(); }" class="px-6 py-2.5 text-red-600 font-medium hover:bg-red-50 rounded-xl transition-colors">
+                        <button type="button"
+                            onclick="if(confirm('¿Estás seguro de que deseas eliminar este contrato permanentemente? Esta acción no se puede deshacer.')) { document.getElementById('delete-form').submit(); }"
+                            class="px-6 py-2.5 text-red-600 font-medium hover:bg-red-50 rounded-xl transition-colors">
                             <i class="fa-solid fa-trash-can mr-2"></i> Eliminar Contrato
                         </button>
-                        <a href="{% url 'editar_contrato' contrato.id %}" class="px-6 py-2.5 bg-blue-600 text-white font-semibold rounded-xl shadow-lg shadow-blue-200 hover:bg-blue-700 hover:shadow-blue-300 transition-all transform hover:-translate-y-0.5">
+                        <a href="{% url 'editar_contrato' contrato.id %}"
+                            class="px-6 py-2.5 bg-blue-600 text-white font-semibold rounded-xl shadow-lg shadow-blue-200 hover:bg-blue-700 hover:shadow-blue-300 transition-all transform hover:-translate-y-0.5">
                             <i class="fa-solid fa-pen-to-square mr-2"></i>Editar Contrato
                         </a>
                     </div>
-                    
-                    <form id="delete-form" action="{% url 'eliminar_contrato' contrato.id %}" method="POST" class="hidden">
+
+                    <form id="delete-form" action="{% url 'eliminar_contrato' contrato.id %}" method="POST"
+                        class="hidden">
                         {% csrf_token %}
                     </form>
                 </div>

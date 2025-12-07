@@ -8,6 +8,9 @@ from visitas.models import PreAutorizacion
 from django.core.validators import RegexValidator
 
 
+from finanzas.models import PlanCuota, ContratoFinanciero
+from django.db import transaction
+
 class UserChoiceField(forms.ModelChoiceField):
     def label_from_instance(self, obj):
         return obj.persona.__str__() if obj.persona else obj.email
@@ -60,7 +63,7 @@ class EditarPropiedadForm(forms.ModelForm):
         return self.cleaned_data
 
 class PropiedadPersonaForm(forms.ModelForm):
-    porcentaje_propiedad = forms.DecimalField(max_digits=5, decimal_places=2, widget=forms.TextInput(attrs={'readonly': 'readonly'}))
+    porcentaje_propiedad = forms.DecimalField(max_digits=5, decimal_places=2, required=False, widget=forms.TextInput(attrs={'readonly': 'readonly'}))
 
     def __init__(self, *args, **kwargs):
         self.propiedad = kwargs.pop('propiedad', None)
@@ -100,7 +103,7 @@ class PropiedadPersonaForm(forms.ModelForm):
 
     class Meta:
         model = PropiedadPersona
-        fields = ['tipo_relacion', 'porcentaje_propiedad', 'fecha_inicio', 'fecha_fin', 'estado']
+        fields = ['propiedad', 'persona', 'tipo_relacion', 'porcentaje_propiedad', 'fecha_inicio', 'fecha_fin', 'estado']
         widgets = {
             'fecha_inicio': forms.DateInput(attrs={'type': 'date'}),
             'fecha_fin': forms.DateInput(attrs={'type': 'date'}),
@@ -244,6 +247,13 @@ class GlobalContratoForm(forms.ModelForm):
         return cleaned_data
 
 class EditarContratoForm(forms.ModelForm):
+    finanzas_plan = forms.ModelChoiceField(
+        queryset=PlanCuota.objects.filter(activo=True),
+        label="Plan de Pago / Cuota",
+        required=False,
+        help_text="Modificar el plan financiero asignado."
+    )
+
     class Meta:
         model = PropiedadPersona
         fields = ['fecha_fin', 'estado']
@@ -253,6 +263,15 @@ class EditarContratoForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        
+        # Initialize financial plan if exists
+        if self.instance.pk:
+            try:
+                contrato_financiero = self.instance.contrato_financiero
+                self.fields['finanzas_plan'].initial = contrato_financiero.plan_pago
+            except Exception:
+                pass # No financial contract
+
         for field_name, field in self.fields.items():
             base_classes = "w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all text-sm"
             
@@ -260,6 +279,22 @@ class EditarContratoForm(forms.ModelForm):
                 field.widget.attrs['class'] = f"{base_classes} appearance-none"
             else:
                 field.widget.attrs['class'] = base_classes
+
+    def save(self, commit=True):
+        instance = super().save(commit=commit)
+        
+        # Save financial plan changes
+        finanzas_plan = self.cleaned_data.get('finanzas_plan')
+        if instance.pk:
+            try:
+                contrato_financiero = instance.contrato_financiero
+                if contrato_financiero:
+                    contrato_financiero.plan_pago = finanzas_plan
+                    contrato_financiero.save()
+            except Exception:
+                pass
+        
+        return instance
 
 class ReservaForm(forms.ModelForm):
     class Meta:
@@ -530,3 +565,57 @@ class ResidentePreAutorizacionForm(forms.ModelForm):
         if commit:
             instance.save()
         return instance
+
+class ContratoUnificadoForm(PropiedadPersonaForm):
+    # Campos extra para la parte financiera
+    finanzas_tipo = forms.ChoiceField(
+        choices=ContratoFinanciero.TIPO_CHOICES, 
+        label="Tipo de Contrato Financiero",
+        required=True
+    )
+    finanzas_plan = forms.ModelChoiceField(
+        queryset=PlanCuota.objects.filter(activo=True),
+        label="Plan de Pago / Cuota",
+        required=False,
+        help_text="Seleccione qué plan define el monto a cobrar."
+    )
+    finanzas_dia_vencimiento = forms.IntegerField(
+        min_value=1, max_value=28, initial=5,
+        label="Día de Vencimiento Mensual"
+    )
+    finanzas_cuotas = forms.IntegerField(
+        min_value=1, required=False, 
+        label="Número de Cuotas (Solo para Compra)",
+        help_text="Ej: 12, 24, 36. Deje vacío para alquiler indefinido."
+    )
+    finanzas_saldo = forms.DecimalField(
+        max_digits=12, decimal_places=2, required=False,
+        label="Saldo Pendiente (Solo para Compra)",
+        help_text="Monto total de la deuda a financiar."
+    )
+
+    class Meta(PropiedadPersonaForm.Meta):
+        fields = PropiedadPersonaForm.Meta.fields + ['propiedad']
+
+    def save(self, commit=True):
+        # Usamos una transacción para asegurar que ambos se creen o ninguno
+        with transaction.atomic():
+            # 1. Guardar la parte de PropiedadPersona (Legal)
+            propiedad_persona = super().save(commit=True)
+
+            # 2. Guardar la parte de ContratoFinanciero (Financiera)
+            fin_tipo = self.cleaned_data.get('finanzas_tipo')
+            
+            # Crear contrato financiero vinculado
+            ContratoFinanciero.objects.create(
+                propiedad_persona=propiedad_persona,
+                tipo=fin_tipo,
+                plan_pago=self.cleaned_data.get('finanzas_plan'),
+                fecha_inicio_pago=propiedad_persona.fecha_inicio,
+                dia_vencimiento_mensual=self.cleaned_data.get('finanzas_dia_vencimiento'),
+                numero_cuotas_totales=self.cleaned_data.get('finanzas_cuotas'),
+                saldo_pendiente=self.cleaned_data.get('finanzas_saldo'),
+                estado='ACTIVO'
+            )
+            
+            return propiedad_persona

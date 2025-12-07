@@ -6,12 +6,15 @@ from finanzas.models import Factura, ConfiguracionFinanciera
 from .forms import (
     ComplejoForm, PropiedadForm, CrearPropiedadesMultiplesForm, EditarPropiedadForm, 
     PropiedadPersonaForm, GlobalContratoForm, ReservaForm, AmenidadForm, 
-    AdminReservaForm, BloquearHorarioForm, EditarContratoForm, ResidentePreAutorizacionForm
+    AdminReservaForm, BloquearHorarioForm, EditarContratoForm, ResidentePreAutorizacionForm,
+    ContratoUnificadoForm
 )
 from users.views import es_admin
 from django.contrib.auth import get_user_model
 from users.models import CustomUser
 from django.db import models, transaction
+from django.db.models import ProtectedError
+from django.contrib import messages
 from django.utils import timezone
 from collections import defaultdict
 from visitas.models import PreAutorizacion
@@ -368,16 +371,22 @@ def cancelar_contrato(request, propiedad_id, propiedad_persona_id):
 @user_passes_test(es_admin, login_url='/')
 def editar_contrato(request, contrato_id):
     contrato = get_object_or_404(PropiedadPersona, id=contrato_id)
+    try:
+        contrato_financiero = contrato.contrato_financiero
+    except Exception:
+        contrato_financiero = None
+
     if request.method == 'POST':
         form = EditarContratoForm(request.POST, instance=contrato)
         if form.is_valid():
             form.save()
-            return redirect('seleccionar_propiedad_contrato', complejo_id=contrato.propiedad.complejo.id)
+            return redirect('detalle_contrato', contrato_id=contrato.id)
     else:
         form = EditarContratoForm(instance=contrato)
     
     context = {
         'form': form,
+        'contrato_financiero': contrato_financiero,
     }
     return render(request, 'complejos/editar_contrato.html', context)
 
@@ -829,50 +838,56 @@ def crear_contrato_global(request):
     
     if propiedad_id:
         propiedad_preseleccionada = get_object_or_404(Propiedad, id=propiedad_id)
+        # Pre-fill data for the unify form if needed, e.g. propiedad
         initial_data['propiedad'] = propiedad_preseleccionada
 
     if request.method == 'POST':
-        form = GlobalContratoForm(request.POST)
+        form = ContratoUnificadoForm(request.POST, propiedad=propiedad_preseleccionada) # Use unified form
         if form.is_valid():
-            propiedad = form.cleaned_data['propiedad']
-            tipo_relacion_form = form.cleaned_data['tipo_relacion']
+            # The form.save() method now handles atomic creation of both PropiedadPersona and ContratoFinanciero
+            propiedad_persona = form.save()
+            print("--- CONTRATO GUARDADO EXITOSAMENTE ---")
+        else:
+            print("--- ERRORES EN EL FORMULARIO ---")
+            print(form.errors)
+            print(form.non_field_errors())
+            print("--------------------------------")
+
+            # Handle second person manually if needed (logic not in unified form yet, or reuse existing logic?)
+            # The unified form inherits from PropiedadPersonaForm, which handles single person.
+            # If we need to keep the 'second person' logic, we might need to adapt it. 
+            # However, looking at the previous code, it handled 'persona2' manually.
+            # The Unified Contract seems focused on the primary financial responsibility.
+            # Let's keep the second person logic but we need to check if 'persona2' is in cleaned_data
             
-            if tipo_relacion_form == 'co-propietario':
-                first_person_role = 'propietario'
-                second_person_role = 'co-propietario'
-            elif tipo_relacion_form == 'co-inquilino':
-                first_person_role = 'inquilino'
-                second_person_role = 'co-inquilino'
-            else:
-                first_person_role = tipo_relacion_form
-                second_person_role = None
+            # Note: ContratoUnificadoForm inherits PropiedadPersonaForm. 
+            # We need to see if PropiedadPersonaForm has 'persona2'. Yes it does.
+            
+            persona2 = form.cleaned_data.get('persona2')
+            if persona2:
+                tipo_relacion_form = form.cleaned_data['tipo_relacion']
+                if tipo_relacion_form == 'propietario':
+                    role2 = 'co-propietario'
+                elif tipo_relacion_form == 'inquilino':
+                    role2 = 'co-inquilino'
+                else:
+                    role2 = 'co-' + tipo_relacion_form # Fallback
 
-            propiedad_persona = PropiedadPersona(
-                propiedad=propiedad,
-                persona=form.cleaned_data['persona'],
-                tipo_relacion=first_person_role,
-                fecha_inicio=form.cleaned_data['fecha_inicio'],
-                fecha_fin=form.cleaned_data['fecha_fin'],
-                es_principal=True,
-                estado=form.cleaned_data['estado']
-            )
-            propiedad_persona.save()
-
-            if second_person_role:
-                asignacion2 = PropiedadPersona(
-                    propiedad=propiedad,
-                    persona=form.cleaned_data['persona2'],
-                    tipo_relacion=second_person_role,
-                    fecha_inicio=form.cleaned_data['fecha_inicio'],
-                    fecha_fin=form.cleaned_data['fecha_fin'],
+                PropiedadPersona.objects.create(
+                    propiedad=propiedad_persona.propiedad,
+                    persona=persona2,
+                    tipo_relacion=role2,
+                    fecha_inicio=propiedad_persona.fecha_inicio,
+                    fecha_fin=propiedad_persona.fecha_fin,
                     es_principal=False,
-                    estado=form.cleaned_data['estado']
+                    estado=propiedad_persona.estado
                 )
-                asignacion2.save()
             
-            return redirect('seleccionar_propiedad_contrato', complejo_id=propiedad.complejo.id)
+            return redirect('detalle_contrato', contrato_id=propiedad_persona.id)
     else:
-        form = GlobalContratoForm(initial=initial_data)
+        if propiedad_preseleccionada:
+            initial_data['propiedad'] = propiedad_preseleccionada.id
+        form = ContratoUnificadoForm(propiedad=propiedad_preseleccionada, initial=initial_data)
     
     context = {
         'form': form,
@@ -945,8 +960,14 @@ def seleccionar_propiedad_contrato(request, complejo_id):
 @login_required
 def detalle_contrato(request, contrato_id):
     contrato = get_object_or_404(PropiedadPersona, id=contrato_id)
+    try:
+        contrato_financiero = contrato.contrato_financiero
+    except Exception:
+        contrato_financiero = None
+
     context = {
         'contrato': contrato,
+        'contrato_financiero': contrato_financiero,
     }
     return render(request, 'complejos/detalle_contrato.html', context)
 
@@ -957,8 +978,16 @@ def eliminar_contrato(request, contrato_id):
     complejo_id = contrato.propiedad.complejo.id
     
     if request.method == 'POST':
-        contrato.delete()
-        return redirect('seleccionar_propiedad_contrato', complejo_id=complejo_id)
+        try:
+            contrato.delete()
+            messages.success(request, 'El contrato ha sido eliminado exitosamente.')
+            return redirect('seleccionar_propiedad_contrato', complejo_id=complejo_id)
+        except ProtectedError:
+            messages.error(request, 'No se puede eliminar el contrato porque tiene registros financieros (facturas o recaudos) asociados. Debes anular o eliminar esos registros primero.')
+            return redirect('detalle_contrato', contrato_id=contrato_id)
+        except Exception as e:
+            messages.error(request, f'Ocurrió un error inesperado al eliminar el contrato: {str(e)}')
+            return redirect('detalle_contrato', contrato_id=contrato_id)
     
     # If GET, redirect back to edit page (safety fallback)
     return redirect('editar_contrato', contrato_id=contrato_id)
