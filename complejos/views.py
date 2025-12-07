@@ -9,43 +9,30 @@ from .forms import (
     AdminReservaForm, BloquearHorarioForm, EditarContratoForm, ResidentePreAutorizacionForm,
     ContratoUnificadoForm
 )
-from users.views import es_admin, es_admin_o_gerente
+from users.views import es_admin
 from django.contrib.auth import get_user_model
 from users.models import CustomUser
 from django.db import models, transaction
+from django.db.models import ProtectedError
+from django.contrib import messages
 from django.utils import timezone
 from collections import defaultdict
 from visitas.models import PreAutorizacion
 
 
-@user_passes_test(es_admin_o_gerente, login_url='/')
+@user_passes_test(es_admin, login_url='/')
 def gestionar_amenidades_view(request):
-    amenidades = Amenidad.objects.prefetch_related(
-        models.Prefetch('reservas', queryset=Reserva.objects.filter(estado='bloqueada'), to_attr='bloqueos')
-    ).all()
-
-    # Filter for Manager
-    if request.user.rol == CustomUser.Rol.GERENTE:
-        if request.user.complejo_asignado:
-            amenidades = amenidades.filter(complejo=request.user.complejo_asignado)
-        else:
-            amenidades = Amenidad.objects.none()
-
     if request.method == 'POST':
         form = AmenidadForm(request.POST)
-        # Validation for Manager creating amenity
-        if request.user.rol == CustomUser.Rol.GERENTE:
-             # Ensure complex consistency if form has field, or set it automatically
-             pass 
-
         if form.is_valid():
-            amenidad = form.save(commit=False)
-            if request.user.rol == CustomUser.Rol.GERENTE and request.user.complejo_asignado:
-                amenidad.complejo = request.user.complejo_asignado
-            amenidad.save()
+            form.save()
             return redirect('gestionar_amenidades')
     else:
         form = AmenidadForm()
+    
+    amenidades = Amenidad.objects.prefetch_related(
+        models.Prefetch('reservas', queryset=Reserva.objects.filter(estado='bloqueada'), to_attr='bloqueos')
+    ).all()
 
     context = {
         'form': form,
@@ -53,14 +40,9 @@ def gestionar_amenidades_view(request):
     }
     return render(request, 'complejos/gestionar_amenidades.html', context)
 
-@user_passes_test(es_admin_o_gerente, login_url='/')
+@user_passes_test(es_admin, login_url='/')
 def editar_amenidad_view(request, amenidad_id):
     amenidad = get_object_or_404(Amenidad, id=amenidad_id)
-    
-    # Manager permission check
-    if request.user.rol == CustomUser.Rol.GERENTE:
-        if not request.user.complejo_asignado or amenidad.complejo != request.user.complejo_asignado:
-             return redirect('gestionar_amenidades')
     if request.method == 'POST':
         form = AmenidadForm(request.POST, instance=amenidad)
         if form.is_valid():
@@ -75,14 +57,9 @@ def editar_amenidad_view(request, amenidad_id):
     }
     return render(request, 'complejos/editar_amenidad.html', context)
 
-@user_passes_test(es_admin_o_gerente, login_url='/')
+@user_passes_test(es_admin, login_url='/')
 def eliminar_amenidad_view(request, amenidad_id):
     amenidad = get_object_or_404(Amenidad, id=amenidad_id)
-    
-    # Manager permission check
-    if request.user.rol == CustomUser.Rol.GERENTE:
-        if not request.user.complejo_asignado or amenidad.complejo != request.user.complejo_asignado:
-             return redirect('gestionar_amenidades')
     if request.method == 'POST':
         amenidad.delete()
         return redirect('gestionar_amenidades')
@@ -93,14 +70,9 @@ def eliminar_amenidad_view(request, amenidad_id):
     return render(request, 'complejos/eliminar_amenidad.html', context)
 
 
-@user_passes_test(es_admin_o_gerente, login_url='/')
+@user_passes_test(es_admin, login_url='/')
 def bloquear_horario_view(request, amenidad_id):
     amenidad = get_object_or_404(Amenidad, id=amenidad_id)
-
-    # Manager permission check
-    if request.user.rol == CustomUser.Rol.GERENTE:
-        if not request.user.complejo_asignado or amenidad.complejo != request.user.complejo_asignado:
-             return redirect('gestionar_amenidades')
     if request.method == 'POST':
         form = BloquearHorarioForm(request.POST, amenidad=amenidad)
         if form.is_valid():
@@ -128,7 +100,7 @@ def bloquear_horario_view(request, amenidad_id):
     return render(request, 'complejos/bloquear_horario.html', context)
 
 
-@user_passes_test(es_admin_o_gerente, login_url='/')
+@user_passes_test(es_admin, login_url='/')
 def unblock_horario_view(request, reserva_id):
     reserva = get_object_or_404(Reserva, id=reserva_id)
     if reserva.estado == 'bloqueada':
@@ -399,16 +371,22 @@ def cancelar_contrato(request, propiedad_id, propiedad_persona_id):
 @user_passes_test(es_admin, login_url='/')
 def editar_contrato(request, contrato_id):
     contrato = get_object_or_404(PropiedadPersona, id=contrato_id)
+    try:
+        contrato_financiero = contrato.contrato_financiero
+    except Exception:
+        contrato_financiero = None
+
     if request.method == 'POST':
         form = EditarContratoForm(request.POST, instance=contrato)
         if form.is_valid():
             form.save()
-            return redirect('seleccionar_propiedad_contrato', complejo_id=contrato.propiedad.complejo.id)
+            return redirect('detalle_contrato', contrato_id=contrato.id)
     else:
         form = EditarContratoForm(instance=contrato)
     
     context = {
         'form': form,
+        'contrato_financiero': contrato_financiero,
     }
     return render(request, 'complejos/editar_contrato.html', context)
 
@@ -518,6 +496,8 @@ def ver_disponibilidad_view(request, amenidad_id):
     }
     return render(request, 'complejos/ver_disponibilidad.html', context)
 
+def es_admin_o_gerente(user):
+    return user.is_authenticated and (user.rol == CustomUser.Rol.ADMIN or user.rol == CustomUser.Rol.GERENTE)
 
 @user_passes_test(es_admin_o_gerente, login_url='/')
 def admin_reservas_view(request):
@@ -862,10 +842,16 @@ def crear_contrato_global(request):
         initial_data['propiedad'] = propiedad_preseleccionada
 
     if request.method == 'POST':
-        form = ContratoUnificadoForm(request.POST) # Use unified form
+        form = ContratoUnificadoForm(request.POST, propiedad=propiedad_preseleccionada) # Use unified form
         if form.is_valid():
             # The form.save() method now handles atomic creation of both PropiedadPersona and ContratoFinanciero
             propiedad_persona = form.save()
+            print("--- CONTRATO GUARDADO EXITOSAMENTE ---")
+        else:
+            print("--- ERRORES EN EL FORMULARIO ---")
+            print(form.errors)
+            print(form.non_field_errors())
+            print("--------------------------------")
 
             # Handle second person manually if needed (logic not in unified form yet, or reuse existing logic?)
             # The unified form inherits from PropiedadPersonaForm, which handles single person.
@@ -897,9 +883,11 @@ def crear_contrato_global(request):
                     estado=propiedad_persona.estado
                 )
             
-            return redirect('seleccionar_propiedad_contrato', complejo_id=propiedad_persona.propiedad.complejo.id)
+            return redirect('detalle_contrato', contrato_id=propiedad_persona.id)
     else:
-        form = ContratoUnificadoForm(initial=initial_data)
+        if propiedad_preseleccionada:
+            initial_data['propiedad'] = propiedad_preseleccionada.id
+        form = ContratoUnificadoForm(propiedad=propiedad_preseleccionada, initial=initial_data)
     
     context = {
         'form': form,
@@ -972,8 +960,14 @@ def seleccionar_propiedad_contrato(request, complejo_id):
 @login_required
 def detalle_contrato(request, contrato_id):
     contrato = get_object_or_404(PropiedadPersona, id=contrato_id)
+    try:
+        contrato_financiero = contrato.contrato_financiero
+    except Exception:
+        contrato_financiero = None
+
     context = {
         'contrato': contrato,
+        'contrato_financiero': contrato_financiero,
     }
     return render(request, 'complejos/detalle_contrato.html', context)
 
@@ -984,8 +978,16 @@ def eliminar_contrato(request, contrato_id):
     complejo_id = contrato.propiedad.complejo.id
     
     if request.method == 'POST':
-        contrato.delete()
-        return redirect('seleccionar_propiedad_contrato', complejo_id=complejo_id)
+        try:
+            contrato.delete()
+            messages.success(request, 'El contrato ha sido eliminado exitosamente.')
+            return redirect('seleccionar_propiedad_contrato', complejo_id=complejo_id)
+        except ProtectedError:
+            messages.error(request, 'No se puede eliminar el contrato porque tiene registros financieros (facturas o recaudos) asociados. Debes anular o eliminar esos registros primero.')
+            return redirect('detalle_contrato', contrato_id=contrato_id)
+        except Exception as e:
+            messages.error(request, f'Ocurrió un error inesperado al eliminar el contrato: {str(e)}')
+            return redirect('detalle_contrato', contrato_id=contrato_id)
     
     # If GET, redirect back to edit page (safety fallback)
     return redirect('editar_contrato', contrato_id=contrato_id)
