@@ -18,7 +18,11 @@
 <div class="dashboard-container">
 
     {% if user.is_staff %}
-        {% include 'includes/admin_sidebar.html' %}
+        {% if request.user.rol == 'GERENTE' %}
+            {% include 'includes/manager_sidebar.html' %}
+        {% else %}
+            {% include 'includes/admin_sidebar.html' %}
+        {% endif %}
     {% else %}
         {% include 'includes/resident_sidebar.html' %}
     {% endif %}

@@ -169,7 +169,8 @@ class ConfiguracionFinanciera(models.Model):
     Define las "Reglas de Juego" automáticas para cada complejo.
     Centraliza la configuración para no tener números mágicos en el código.
     """
-    complejo = models.OneToOneField(Complejo, on_delete=models.CASCADE, related_name='configuracion_financiera')
+    complejo = models.ForeignKey(Complejo, on_delete=models.CASCADE, related_name='configuraciones_financieras')
+    propiedad = models.OneToOneField(Propiedad, on_delete=models.CASCADE, null=True, blank=True, related_name='configuracion_financiera_especifica')
     
     # Automatización de Fechas
     dia_corte = models.PositiveIntegerField(default=1, help_text="Día del mes en que se generan las facturas automáticamente (1-28)")
@@ -190,7 +191,8 @@ class ConfiguracionFinanciera(models.Model):
     )
 
     def __str__(self):
-        return f"Configuración Financiera - {self.complejo.nombre}"
+        tipo = f"Específica para {self.propiedad}" if self.propiedad else "Global del Complejo"
+        return f"Configuración Financiera ({tipo}) - {self.complejo.nombre}"
 
 
 class ContratoFinanciero(models.Model):
@@ -211,13 +213,13 @@ class ContratoFinanciero(models.Model):
     ]
 
     # Relación con el contrato legal existente
-    propiedad_persona = models.ForeignKey(PropiedadPersona, on_delete=models.CASCADE, related_name='contratos_financieros')
+    propiedad_persona = models.OneToOneField(PropiedadPersona, on_delete=models.CASCADE, related_name='contrato_financiero')
     
     tipo = models.CharField(max_length=20, choices=TIPO_CHOICES)
     estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='ACTIVO')
     
-    # Cuánto debe pagar
-    monto_cuota = models.DecimalField(max_digits=12, decimal_places=2, help_text="Monto a cobrar en cada periodo")
+    # Cuánto debe pagar (Definido por un Plan de Cuota)
+    plan_pago = models.ForeignKey('PlanCuota', on_delete=models.PROTECT, related_name='contratos_financieros', null=True, blank=True)
     
     # Reglas de Tiempo
     fecha_inicio_pago = models.DateField(help_text="Fecha desde la cual se empieza a facturar")
@@ -239,3 +241,21 @@ class ContratoFinanciero(models.Model):
         if self.tipo == 'FINANCIAMIENTO' and self.numero_cuotas_totales and self.cuotas_facturadas >= self.numero_cuotas_totales:
             return False
         return True
+
+class CargoAdicional(models.Model):
+    """
+    Cargos extra puntuales (Multas, Reservas manuales, Servicios extra)
+    que se agregan a la próxima factura.
+    """
+    propiedad = models.ForeignKey(Propiedad, on_delete=models.CASCADE, related_name='cargos_adicionales')
+    concepto = models.ForeignKey(ConceptoCobro, on_delete=models.PROTECT)
+    monto = models.DecimalField(max_digits=10, decimal_places=2)
+    
+    fecha_registro = models.DateTimeField(auto_now_add=True)
+    observaciones = models.TextField(blank=True, null=True)
+    
+    procesado = models.BooleanField(default=False, help_text="True si ya fue incluido en una factura")
+    factura_asociada = models.ForeignKey(Factura, on_delete=models.SET_NULL, null=True, blank=True, related_name='cargos_origen')
+
+    def __str__(self):
+        return f"Cargo: {self.concepto.nombre} - {self.propiedad} (${self.monto})"
