@@ -56,17 +56,6 @@
 
             <div id="finanzas-menu"
                 class="max-h-0 opacity-0 overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] pl-4 space-y-1">
-                <a href="{% url 'lista_planes_cuota' %}"
-                    class="flex items-center gap-3 px-4 py-2 rounded-lg transition-colors {% if 'planes_cuota' in request.resolver_match.url_name %}bg-blue-50 text-blue-600{% else %}text-gray-600 hover:bg-gray-50{% endif %}">
-                    <i class="fa-solid fa-file-invoice-dollar w-5 text-center text-xs"></i>
-                    <span class="text-sm whitespace-nowrap">Planes de Cuota</span>
-                </a>
-
-                <a href="{% url 'lista_conceptos_cobro' %}"
-                    class="flex items-center gap-3 px-4 py-2 rounded-lg transition-colors {% if 'conceptos_cobro' in request.resolver_match.url_name %}bg-blue-50 text-blue-600{% else %}text-gray-600 hover:bg-gray-50{% endif %}">
-                    <i class="fa-solid fa-tags w-5 text-center text-xs"></i>
-                    <span class="text-sm whitespace-nowrap">Conceptos de Cobro</span>
-                </a>
 
                 <a href="{% url 'lista_metodos_pago' %}"
                     class="flex items-center gap-3 px-4 py-2 rounded-lg transition-colors {% if 'metodos_pago' in request.resolver_match.url_name %}bg-blue-50 text-blue-600{% else %}text-gray-600 hover:bg-gray-50{% endif %}">
@@ -132,15 +121,14 @@
 
         // Auto-open if we're on a finanzas page
         document.addEventListener('DOMContentLoaded', function () {
-            const finanzasPages = ['planes_cuota', 'conceptos_cobro', 'metodos_pago', 'facturas', 'reporte_cobranza'];
-            const currentUrl = window.location.pathname;
+            const finanzasMenu = document.getElementById('finanzas-menu');
+            const finanzasIcon = document.getElementById('finanzas-icon');
+            const hasActiveLink = finanzasMenu.querySelector('.bg-blue-50');
 
-            if (finanzasPages.some(page => currentUrl.includes(page))) {
-                const menu = document.getElementById('finanzas-menu');
-                const icon = document.getElementById('finanzas-icon');
-                menu.classList.remove('max-h-0', 'opacity-0');
-                menu.classList.add('max-h-[400px]', 'opacity-100');
-                icon.classList.add('rotate-180');
+            if (hasActiveLink) {
+                finanzasMenu.classList.remove('max-h-0', 'opacity-0');
+                finanzasMenu.classList.add('max-h-[400px]', 'opacity-100');
+                finanzasIcon.classList.add('rotate-180');
             }
         });
     </script>
