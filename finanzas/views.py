@@ -268,15 +268,57 @@ class FacturaListView(LoginRequiredMixin, GerenteRequiredMixin, ListView):
 
     def get_queryset(self):
         user = self.request.user
-        if user.rol == 'GERENTE':
-            return Factura.objects.filter(propiedad__complejo=user.complejo_asignado)
-        return Factura.objects.none()
+        queryset = Factura.objects.select_related('propiedad__complejo', 'plan_cuota')
+
+        if user.rol == 'ADMIN':
+            # Start with all invoices for Admin
+            queryset = queryset.all()
+            
+            # Get filter params
+            complejo_id = self.request.GET.get('complejo')
+            estado = self.request.GET.get('estado')
+
+            if complejo_id:
+                queryset = queryset.filter(propiedad__complejo__id=complejo_id)
+            if estado:
+                queryset = queryset.filter(estado=estado)
+
+        elif user.rol == 'GERENTE':
+            # Gerente can only see their own complex's invoices
+            queryset = queryset.filter(propiedad__complejo=user.complejo_asignado)
+            
+            # They can also filter by status
+            estado = self.request.GET.get('estado')
+            if estado:
+                queryset = queryset.filter(estado=estado)
+        else:
+            queryset = Factura.objects.none()
+
+        return queryset.order_by('-fecha_emision') # Add ordering
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user = self.request.user
+        
+        # Add filter data to context for the template
+        if user.rol == 'ADMIN':
+            context['complejos'] = Complejo.objects.all()
+            context['selected_complejo'] = self.request.GET.get('complejo', '')
+        
+        context['estados'] = Factura.Estado.choices
+        context['selected_estado'] = self.request.GET.get('estado', '')
+        return context
 
 class FacturaCreateView(LoginRequiredMixin, GerenteRequiredMixin, CreateView):
     model = Factura
     form_class = FacturaForm
     template_name = 'finanzas/crear_factura.html'
     success_url = reverse_lazy('lista_facturas')
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated or request.user.rol != 'GERENTE':
+            return self.handle_no_permission()
+        return super().dispatch(request, *args, **kwargs)
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
@@ -326,6 +368,11 @@ class FacturaUpdateView(LoginRequiredMixin, GerenteRequiredMixin, UpdateView):
     form_class = FacturaForm
     template_name = 'finanzas/editar_factura.html'
     success_url = reverse_lazy('lista_facturas')
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated or request.user.rol != 'GERENTE':
+            return self.handle_no_permission()
+        return super().dispatch(request, *args, **kwargs)
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()

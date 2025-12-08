@@ -24,33 +24,71 @@
                 <h1 class="text-3xl font-bold text-gray-900"><i class="fa-solid fa-file-invoice text-blue-600"></i> Gestión de Facturas</h1>
                 <p class="text-gray-600 mt-1">Administra las facturas del sistema</p>
             </div>
-            <div class="flex gap-2">
-                <a href="{% url 'crear_factura' %}" class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                    <i class="fa-solid fa-plus"></i> Crear Nueva Factura
-                </a>
+            {% if request.user.rol == 'GERENTE' %}
                 <div class="flex gap-2">
-                    <form action="{% url 'generar_facturas_automatico' %}" method="post">
-                        {% csrf_token %}
-                        <button type="submit" class="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors" title="Crea facturas del mes actual">
-                            <i class="fa-solid fa-robot"></i> Generar Facturas
-                        </button>
-                    </form>
+                    <a href="{% url 'crear_factura' %}" class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                        <i class="fa-solid fa-plus"></i> Crear Nueva Factura
+                    </a>
+                    <div class="flex gap-2">
+                        <form action="{% url 'generar_facturas_automatico' %}" method="post">
+                            {% csrf_token %}
+                            <button type="submit" class="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors" title="Crea facturas del mes actual">
+                                <i class="fa-solid fa-robot"></i> Generar Facturas
+                            </button>
+                        </form>
 
-                    <form action="{% url 'actualizar_estados_financieros' %}" method="post">
-                        {% csrf_token %}
-                        <button type="submit" class="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors" title="Calcula moras y vence facturas antiguas">
-                            <i class="fa-solid fa-clock-rotate-left"></i> Actualizar Estados
-                        </button>
-                    </form>
+                        <form action="{% url 'actualizar_estados_financieros' %}" method="post">
+                            {% csrf_token %}
+                            <button type="submit" class="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors" title="Calcula moras y vence facturas antiguas">
+                                <i class="fa-solid fa-clock-rotate-left"></i> Actualizar Estados
+                            </button>
+                        </form>
+                    </div>
                 </div>
-            </div>
+            {% endif %}
+        </div>
+
+        <!-- Filter Form -->
+        <div class="mb-6 p-4 bg-white rounded-lg shadow-sm border border-gray-100">
+            <form method="get" action="{% url 'lista_facturas' %}">
+                <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    
+                    {% if request.user.rol == 'ADMIN' %}
+                    <div>
+                        <label for="complejo" class="block text-sm font-medium text-gray-700">Complejo</label>
+                        <select name="complejo" id="complejo" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
+                            <option value="">Todos</option>
+                            {% for c in complejos %}
+                                <option value="{{ c.id }}" {% if c.id|stringformat:"s" == selected_complejo %}selected{% endif %}>{{ c.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    {% endif %}
+
+                    <div>
+                        <label for="estado" class="block text-sm font-medium text-gray-700">Estado</label>
+                        <select name="estado" id="estado" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
+                            <option value="">Todos</option>
+                            {% for val, name in estados %}
+                                <option value="{{ val }}" {% if val == selected_estado %}selected{% endif %}>{{ name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="flex items-end">
+                        <button type="submit" class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                            <i class="fa-solid fa-filter"></i> Filtrar
+                        </button>
+                    </div>
+                </div>
+            </form>
         </div>
 
         <!-- Content Container -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
             {% if facturas %}
                 <div class="overflow-x-auto">
-                    <table class="w-full">
+                    <table class="w-full table-auto">
                         <thead class="bg-gray-50 border-b border-gray-200">
                             <tr>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nº Factura</th>
@@ -86,17 +124,8 @@
                                             <a href="{% url 'detalle_factura' factura.id %}" class="px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700">
                                                 <i class="fa-solid fa-eye"></i>
                                             </a>
-                                            <a href="{% url 'editar_factura' factura.id %}" class="px-2 py-1 bg-yellow-600 text-white rounded hover:bg-yellow-700">
-                                                <i class="fa-solid fa-pencil"></i>
-                                            </a>
-                                            {% if factura.estado == 'PENDIENTE' or factura.estado == 'VENCIDA' %}
-                                                <a href="{% url 'registrar_pago' factura.id %}" class="px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700">
-                                                    <i class="fa-solid fa-hand-holding-dollar"></i>
-                                                </a>
-                                            {% endif %}
                                         </div>
-                                    </td>
-                                </tr>
+                                    </td>                                </tr>
                             {% endfor %}
                         </tbody>
                     </table>
