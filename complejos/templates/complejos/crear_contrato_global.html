@@ -13,11 +13,13 @@
             extend: {
                 colors: {
                     primary: '#3b82f6',
+                    secondary: '#10b981',
                 }
             }
         }
     }
 </script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
 {% endblock %}
 
 {% block content %}
@@ -26,380 +28,664 @@
     {% include 'includes/admin_sidebar.html' %}
 
     <main class="flex-1 lg:ml-64 p-8 h-screen overflow-y-auto">
-        <div class="max-w-4xl mx-auto">
+        <div class="max-w-5xl mx-auto">
             <!-- Header -->
-            <div class="mb-8">
-                <a href="javascript:history.back()"
-                    class="inline-flex items-center text-gray-500 hover:text-blue-600 mb-4 transition-colors">
-                    <i class="fa-solid fa-arrow-left mr-2"></i> Volver atrás
-                </a>
-                <h1 class="text-3xl font-bold text-gray-900">Crear Nuevo Contrato</h1>
-                <p class="text-gray-500 mt-1">Registra un nuevo contrato para una propiedad</p>
+            <div class="mb-8 flex justify-between items-center">
+                <div>
+                    <a href="javascript:history.back()"
+                        class="inline-flex items-center text-gray-500 hover:text-blue-600 mb-2 transition-colors">
+                        <i class="fa-solid fa-arrow-left mr-2"></i> Cancelar
+                    </a>
+                    <h1 class="text-3xl font-bold text-gray-900">Nuevo Contrato</h1>
+                    <p class="text-gray-500">Configura los términos legales y financieros de la residencia.</p>
+                </div>
+                <!-- Step Indicator -->
+                <div class="flex items-center gap-4">
+                    <div id="step-1-indicator" class="flex items-center gap-2 text-blue-600 font-semibold">
+                        <div
+                            class="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm">
+                            1</div>
+                        <span>Legal</span>
+                    </div>
+                    <div class="w-12 h-0.5 bg-gray-300"></div>
+                    <div id="step-2-indicator" class="flex items-center gap-2 text-gray-400">
+                        <div
+                            class="w-8 h-8 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center text-sm">
+                            2</div>
+                        <span>Financiero</span>
+                    </div>
+                    <div class="w-12 h-0.5 bg-gray-300"></div>
+                    <div id="step-3-indicator" class="flex items-center gap-2 text-gray-400">
+                        <div
+                            class="w-8 h-8 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center text-sm">
+                            3</div>
+                        <span>Confirmar</span>
+                    </div>
+                </div>
             </div>
 
-            <!-- Form Card -->
-            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-                <div class="h-2 bg-gradient-to-r from-blue-500 to-indigo-600"></div>
+            <!-- Form Container -->
+            <form method="post" id="wizardForm"
+                class="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+                {% csrf_token %}
 
-                <div class="p-8">
-                    <form method="post" class="space-y-6">
-                        {% csrf_token %}
+                {% if form.non_field_errors %}
+                <div class="p-4 bg-red-50 border-l-4 border-red-500 text-red-700">
+                    {{ form.non_field_errors }}
+                </div>
+                {% endif %}
 
-                        {% if form.non_field_errors %}
-                        <div class="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-r">
-                            {{ form.non_field_errors }}
+                <!-- STEP 1: LEGAL INFO -->
+                <div id="step-1" class="p-8">
+                    <h3 class="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2 border-b pb-4">
+                        <i class="fa-solid fa-scale-balanced text-primary"></i> Información Legal
+                    </h3>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        {% if propiedad_preseleccionada %}
+                        <!-- Visual Property Card -->
+                        <div
+                            class="col-span-2 flex items-center gap-4 p-4 bg-blue-50/50 rounded-xl border border-blue-100">
+                            <div
+                                class="w-16 h-16 bg-white rounded-lg shadow-sm flex items-center justify-center text-2xl text-blue-600">
+                                <i class="fa-solid fa-house-chimney"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs font-bold text-blue-600 uppercase tracking-wider">Propiedad</p>
+                                <h2 class="text-xl font-bold text-gray-900">
+                                    {{ propiedad_preseleccionada.numero_identificador }}</h2>
+                                <p class="text-sm text-gray-600">
+                                    {{ propiedad_preseleccionada.complejo.nombre }} -
+                                    {{ propiedad_preseleccionada.get_tipo_display }}
+                                </p>
+                                <!-- Hidden input for logic -->
+                                <input type="hidden" id="prop_valor_estimado"
+                                    value="{{ propiedad_preseleccionada.valor_estimado|default_if_none:0 }}">
+                            </div>
+                            <div class="ml-auto text-right">
+                                <p class="text-xs text-gray-400 uppercase">Valor Referencial</p>
+                                <p class="text-lg font-bold text-gray-800">
+                                    ${{ propiedad_preseleccionada.valor_estimado|default_if_none:"0.00" }}</p>
+                            </div>
+                            <input type="hidden" name="propiedad" value="{{ propiedad_preseleccionada.id }}">
+                        </div>
+                        {% else %}
+                        <div class="form-group col-span-2">
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Seleccionar Propiedad</label>
+                            {{ form.propiedad }}
                         </div>
                         {% endif %}
 
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-                            {% if propiedad_preseleccionada %}
-                            <!-- Static Property Info (Premium Design) -->
-                            <div
-                                class="col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex relative group hover:shadow-md transition-all duration-300">
-                                <div class="w-1.5 bg-gradient-to-b from-blue-500 to-indigo-600"></div>
-                                <div class="p-5 flex-1 flex items-center justify-between">
-                                    <div class="flex items-center gap-5">
-                                        <div
-                                            class="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600 shadow-sm group-hover:scale-110 transition-transform duration-300">
-                                            <i class="fa-solid fa-house text-xl"></i>
-                                        </div>
-                                        <div>
-                                            <p class="text-xs text-blue-600 font-bold uppercase tracking-wider mb-0.5">
-                                                Propiedad Seleccionada</p>
-                                            <h3 class="text-xl font-bold text-gray-900">
-                                                {{ propiedad_preseleccionada.numero_identificador }}
-                                            </h3>
-                                        </div>
-                                    </div>
-                                    <div class="flex items-center gap-6 border-l border-gray-100 pl-6">
-                                        <div class="text-right">
-                                            <p class="text-xs text-gray-400 uppercase font-medium mb-0.5">Complejo</p>
-                                            <p class="text-sm font-semibold text-gray-700">
-                                                {{propiedad_preseleccionada.complejo.nombre }}
-                                            </p>
-                                        </div>
-                                        <div class="text-right">
-                                            <p class="text-xs text-gray-400 uppercase font-medium mb-0.5">Tipo</p>
-                                            <p class="text-sm font-semibold text-gray-700">
-                                                {{ propiedad_preseleccionada.get_tipo_display|title }}
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-                                <input type="hidden" name="propiedad" value="{{ propiedad_preseleccionada.id }}">
-                            </div>
-                            {% endif %}
+                        <!-- Resident Selection -->
+                        <div class="form-group">
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Residente Principal</label>
+                            {{ form.persona }}
+                        </div>
 
-                            <!-- 1. Información Legal -->
-                            <div class="col-span-2">
-                                <h3 class="text-xl font-bold text-gray-800 mb-4 border-b pb-2 flex items-center gap-2">
-                                    <i class="fa-solid fa-file-contract text-blue-600"></i> Información Legal
-                                </h3>
-                                <div
-                                    class="grid grid-cols-1 md:grid-cols-2 gap-6 bg-gray-50 p-6 rounded-xl border border-gray-100">
-                                    {% if not propiedad_preseleccionada %}
-                                    <div class="form-group col-span-2">
-                                        <label class="block text-sm font-semibold text-gray-700 mb-1">Propiedad</label>
-                                        <div class="relative">
-                                            <div
-                                                class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                                                <i class="fa-solid fa-house"></i>
-                                            </div>
-                                            {{ form.propiedad }}
-                                        </div>
-                                        {{ form.propiedad.errors }}
-                                    </div>
-                                    {% endif %}
+                        <!-- Relation Type -->
+                        <div class="form-group">
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Tipo de Relación</label>
+                            {{ form.tipo_relacion }}
+                        </div>
 
-                                    <div class="form-group">
-                                        <label class="block text-sm font-semibold text-gray-700 mb-1">Residente
-                                            (Persona)</label>
-                                        <div class="relative">
-                                            <div
-                                                class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                                                <i class="fa-solid fa-user"></i>
-                                            </div>
-                                            {{ form.persona }}
-                                        </div>
-                                        {{ form.persona.errors }}
-                                    </div>
+                        <!-- Dates -->
+                        <div class="form-group">
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Fecha de Inicio</label>
+                            {{ form.fecha_inicio }}
+                        </div>
+                        <div class="form-group" id="container_fecha_fin">
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Fecha Fin
+                                (Vencimiento)</label>
+                            {{ form.fecha_fin }}
+                            <p class="text-xs text-gray-400 mt-1">Opcional para propietarios</p>
+                        </div>
 
-                                    <div class="form-group">
-                                        <label class="block text-sm font-semibold text-gray-700 mb-1">Tipo de
-                                            Relación</label>
-                                        <div class="relative">
-                                            <div
-                                                class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                                                <i class="fa-solid fa-users"></i>
-                                            </div>
-                                            {{ form.tipo_relacion }}
-                                        </div>
-                                        {{ form.tipo_relacion.errors }}
-                                    </div>
-
-                                    <div class="form-group" id="div_id_persona2">
-                                        <label class="block text-sm font-semibold text-gray-700 mb-1">Segunda Persona
-                                            (Co-titular)</label>
-                                        <div class="relative">
-                                            <div
-                                                class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                                                <i class="fa-solid fa-user-group"></i>
-                                            </div>
-                                            {{ form.persona2 }}
-                                        </div>
-                                        <p class="text-xs text-gray-500 mt-1">Solo si aplica co-propiedad o co-alquiler
-                                        </p>
-                                        {{ form.persona2.errors }}
-                                    </div>
-
-                                    <div class="form-group">
-                                        <label class="block text-sm font-semibold text-gray-700 mb-1">Fecha
-                                            Inicio</label>
-                                        <div class="relative">
-                                            <div
-                                                class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                                                <i class="fa-solid fa-calendar-plus"></i>
-                                            </div>
-                                            {{ form.fecha_inicio }}
-                                        </div>
-                                        {{ form.fecha_inicio.errors }}
-                                    </div>
-
-                                    <div class="form-group" id="div_id_fecha_fin">
-                                        <label class="block text-sm font-semibold text-gray-700 mb-1">Fecha Fin
-                                            (Vencimiento Contrato)</label>
-                                        <div class="relative">
-                                            <div
-                                                class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                                                <i class="fa-solid fa-calendar-minus"></i>
-                                            </div>
-                                            {{ form.fecha_fin }}
-                                        </div>
-                                        {{ form.fecha_fin.errors }}
-                                    </div>
-
-                                    <div class="form-group">
-                                        <label class="block text-sm font-semibold text-gray-700 mb-1">Estado
-                                            Legal</label>
-                                        <div class="relative">
-                                            <div
-                                                class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                                                <i class="fa-solid fa-toggle-on"></i>
-                                            </div>
-                                            {{ form.estado }}
-                                        </div>
-                                        {{ form.estado.errors }}
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- 2. Información Financiera (NUEVA SECCIÓN) -->
-                            <div class="col-span-2 mt-4">
-                                <h3 class="text-xl font-bold text-gray-800 mb-4 border-b pb-2 flex items-center gap-2">
-                                    <i class="fa-solid fa-sack-dollar text-green-600"></i> Términos Financieros
-                                </h3>
-                                <div
-                                    class="bg-gradient-to-br from-green-50 to-white p-6 rounded-xl border border-green-100 shadow-sm grid grid-cols-1 md:grid-cols-2 gap-6">
-
-                                    <div class="form-group">
-                                        <label class="block text-sm font-semibold text-gray-800 mb-1">Tipo de
-                                            Operación</label>
-                                        <div class="relative">
-                                            <div
-                                                class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                                                <i class="fa-solid fa-hand-holding-dollar"></i>
-                                            </div>
-                                            {{ form.finanzas_tipo }}
-                                        </div>
-                                        {{ form.finanzas_tipo.errors }}
-                                    </div>
-
-                                    <div class="form-group">
-                                        <label class="block text-sm font-semibold text-gray-800 mb-1">Plan de Cuotas /
-                                            Pago</label>
-                                        <div class="relative">
-                                            <div
-                                                class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                                                <i class="fa-solid fa-file-invoice"></i>
-                                            </div>
-                                            {{ form.finanzas_plan }}
-                                        </div>
-                                        <p class="text-xs text-gray-500 mt-1">{{ form.finanzas_plan.help_text }}</p>
-                                        {{ form.finanzas_plan.errors }}
-                                    </div>
-
-                                    <div class="form-group">
-                                        <label class="block text-sm font-semibold text-gray-800 mb-1">Día de Pago
-                                            Mensual</label>
-                                        <div class="relative">
-                                            <div
-                                                class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                                                <i class="fa-solid fa-calendar-day"></i>
-                                            </div>
-                                            {{ form.finanzas_dia_vencimiento }}
-                                        </div>
-                                        {{ form.finanzas_dia_vencimiento.errors }}
-                                    </div>
-
-                                    <!-- Campos exclusivos de financiamiento -->
-                                    <div
-                                        class="col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6 p-4 bg-green-100/50 rounded-lg border border-green-200">
-                                        <div class="form-group">
-                                            <label class="block text-sm font-bold text-gray-700 mb-1">Cuotas Totales
-                                                (Solo Compra)</label>
-                                            {{ form.finanzas_cuotas }}
-                                            <p class="text-xs text-gray-500 mt-1">Ej: 12, 24, 60.</p>
-                                        </div>
-                                        <div class="form-group">
-                                            <label class="block text-sm font-bold text-gray-700 mb-1">Saldo Total a
-                                                Financiar ($)</label>
-                                            <div class="relative">
-                                                <div
-                                                    class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-500 font-bold">
-                                                    $
-                                                </div>
-                                                {{ form.finanzas_saldo }}
-                                            </div>
-                                        </div>
-                                    </div>
-
+                        <!-- Co-titular Section -->
+                        <div class="col-span-2 border-t pt-6 mt-2" id="section_co_titular" style="display:none;">
+                            <h4 class="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
+                                <i class="fa-solid fa-user-group text-gray-400"></i> Co-Titular / Garante
+                            </h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div class="form-group">
+                                    <label class="block text-sm font-medium text-gray-600 mb-1">Segunda Persona</label>
+                                    {{ form.persona2 }}
                                 </div>
                             </div>
                         </div>
-
-                        <div class="mt-8 flex items-center justify-end gap-4 pt-6 border-t border-gray-100">
-                            <button type="button" onclick="history.back()"
-                                class="px-6 py-2.5 text-gray-700 font-medium hover:bg-gray-100 rounded-xl transition-colors">
-                                Cancelar
-                            </button>
-                            <button type="submit"
-                                class="px-8 py-2.5 bg-blue-600 text-white font-semibold rounded-xl shadow-lg shadow-blue-200 hover:bg-blue-700 hover:shadow-blue-300 transition-all transform hover:-translate-y-0.5">
-                                <i class="fa-solid fa-save mr-2"></i>Guardar Contrato
-                            </button>
-                        </div>
-                    </form>
+                    </div>
                 </div>
-            </div>
+
+                <!-- STEP 2: FINANCIAL INFO -->
+                <div id="step-2" class="p-8 hidden">
+                    <h3 class="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2 border-b pb-4">
+                        <i class="fa-solid fa-coins text-secondary"></i> Configuración Financiera
+                    </h3>
+
+                    <div class="bg-gray-50 rounded-xl p-6 border border-gray-200 mb-8">
+                        <h4 class="font-bold text-gray-800 mb-4">Condiciones de Pago</h4>
+
+                        <!-- SECTION: PURCHASE (Only visible if Propietario) -->
+                        <div id="finance-purchase-section" class="mb-6 pb-6 border-b border-gray-200"
+                            style="display:none;">
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Pago Inicial
+                                        (Adelanto)</label>
+                                    <div class="relative">
+                                        <div
+                                            class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-500 font-bold">
+                                            $</div>
+                                        {{ form.finanzas_adelanto }}
+                                    </div>
+                                </div>
+                                <div class="md:col-span-2 flex items-center pt-6">
+                                    <label class="flex items-center gap-3 cursor-pointer">
+                                        {{ form.finanzas_es_contado }}
+                                        <div>
+                                            <span class="block text-sm font-bold text-gray-800">Pago al Contado</span>
+                                            <span class="block text-xs text-gray-500">El residente cancela el total
+                                                restante en un solo pago.</span>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Installments info (Hidden if Cash) -->
+                            <div id="finance-installments-row"
+                                class="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-100 grid grid-cols-1 md:grid-cols-2 gap-6 transition-all">
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1">Cuotas Totales</label>
+                                    {{ form.finanzas_cuotas }}
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1">Monto Pendiente
+                                        (Estimado)</label>
+                                    <input type="text" id="display_monto_pendiente" readonly
+                                        class="w-full bg-transparent font-bold text-gray-900 border-none p-0 text-xl focus:ring-0"
+                                        value="$0.00">
+                                    <p class="text-xs text-gray-500">Valor Propiedad - Adelanto</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- OVERRIDES TOGGLE -->
+                        <div class="mb-6 pb-6 border-b border-gray-200">
+                            <label
+                                class="flex items-start gap-3 cursor-pointer p-3 bg-gray-100/50 rounded-lg hover:bg-gray-100 transition-colors">
+                                <div class="flex items-center h-5">
+                                    {{ form.configuracion_personalizada }}
+                                </div>
+                                <div>
+                                    <span class="block text-sm font-bold text-gray-800">Habilitar Reglas Financieras
+                                        Personalizadas</span>
+                                    <span class="block text-xs text-gray-500">
+                                        Active esta opción si desea anular las reglas por defecto del complejo (Día de
+                                        corte, Mora, Vencimiento) para este contrato específico.
+                                    </span>
+                                </div>
+                            </label>
+
+                            <div id="financial-overrides-container"
+                                class="mt-4 p-4 bg-purple-50 rounded-lg border border-purple-100 grid grid-cols-1 md:grid-cols-3 gap-6 transition-all hidden">
+                                <div>
+                                    <label class="block text-xs font-bold text-purple-700 uppercase mb-1">Día de Corte
+                                        Mensual</label>
+                                    {{ form.finanzas_dia_corte }}
+                                    <p class="text-[10px] text-gray-500 mt-1">Día (1-28) para generar deuda.</p>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-purple-700 uppercase mb-1">Días para
+                                        Vencimiento</label>
+                                    {{ form.finanzas_dias_vencimiento }}
+                                    <p class="text-[10px] text-gray-500 mt-1">Días de gracia tras el corte.</p>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-purple-700 uppercase mb-1">Tasa de Mora
+                                        (%)</label>
+                                    <div class="relative">
+                                        {{ form.finanzas_tasa_mora }}
+                                        <div
+                                            class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-gray-500 font-bold">
+                                            %</div>
+                                    </div>
+                                    <p class="text-[10px] text-gray-500 mt-1">Penalidad por atraso.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- DYNAMIC CONCEPTS TABLE -->
+                        <div id="custom-finance-container" class="mt-6">
+                            <label class="block text-sm font-bold text-gray-700 mb-3">Desglose de Conceptos de
+                                Cobro</label>
+
+                            <table class="w-full text-sm text-left text-gray-500 border rounded-lg overflow-hidden">
+                                <thead class="text-xs text-gray-700 uppercase bg-gray-100">
+                                    <tr>
+                                        <th class="px-4 py-3">Concepto</th>
+                                        <th class="px-4 py-3">Monto Mensual ($)</th>
+                                        <th class="px-4 py-3 text-center">Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="concepts-table-body" class="bg-white divide-y divide-gray-200">
+                                    <!-- Rows added via JS -->
+                                </tbody>
+                                <tfoot class="bg-gray-50">
+                                    <tr>
+                                        <td colspan="3" class="px-4 py-2">
+                                            <button type="button" id="btn-add-concept"
+                                                class="text-blue-600 hover:text-blue-800 text-xs font-bold uppercase flex items-center gap-1">
+                                                <i class="fa-solid fa-plus-circle"></i> Agregar Concepto
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+
+                            <!-- Hidden Template for Rows -->
+                            <template id="concept-row-template">
+                                <tr class="hover:bg-gray-50 transition-colors">
+                                    <td class="px-4 py-2">
+                                        <select name="concepto_id[]"
+                                            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm bg-gray-50">
+                                            <option value="">Seleccione...</option>
+                                            {% for c in conceptos_disponibles %}
+                                            <option value="{{ c.id }}">{{ c.nombre }} ({{ c.get_tipo_display }})
+                                            </option>
+                                            {% endfor %}
+                                        </select>
+                                    </td>
+                                    <td class="px-4 py-2">
+                                        <input type="number" name="concepto_monto[]" step="0.01" placeholder="0.00"
+                                            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                                    </td>
+                                    <td class="px-4 py-2 text-center">
+                                        <button type="button" class="text-red-500 hover:text-red-700 btn-remove-row">
+                                            <i class="fa-solid fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STEP 3: PREVIEW & CONFIRM -->
+                <div id="step-3" class="p-8 hidden">
+                    <h3 class="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2 border-b pb-4">
+                        <i class="fa-solid fa-signature text-purple-600"></i> Vista Previa del Contrato
+                    </h3>
+
+                    <div class="bg-white p-8 border border-gray-300 shadow-md max-w-3xl mx-auto"
+                        style="min-height: 600px; font-family: 'Times New Roman', serif;">
+
+                        <div class="text-center mb-8">
+                            <h2
+                                class="text-2xl font-bold uppercase tracking-widest border-b-2 border-black inline-block pb-1">
+                                Contrato de Residencia</h2>
+                            <p class="text-sm mt-2 text-gray-500">Ref: <span id="preview-id-propiedad"
+                                    class="font-mono">{{ propiedad_preseleccionada.numero_identificador }}</span></p>
+                        </div>
+
+                        <div class="space-y-6 text-justify text-gray-800 leading-relaxed">
+                            <p>
+                                En la ciudad de <strong>
+                                    {{ propiedad_preseleccionada.complejo.ciudad|default:"[CIUDAD]"}}</strong>, a los
+                                <strong id="preview-today"></strong>
+                                días del mes en curso, se celebra el presente contrato entre
+                                <strong class="uppercase text-black">La Administración del Complejo</strong> y el
+                                Sr/Sra. <strong id="preview-resident"
+                                    class="uppercase text-black decoration-dotted underline"></strong>,
+                                en adelante "El Residente".
+                            </p>
+
+                            <p>
+                                <strong>PRIMERO (Objeto):</strong> El presente contrato tiene por objeto regular la
+                                ocupación y uso de la unidad identificada como
+                                <strong>{{ propiedad_preseleccionada.numero_identificador }}</strong> ubicada dentro del
+                                complejo habitacional <strong>{{ propiedad_preseleccionada.complejo.nombre }}</strong>.
+                            </p>
+
+                            <p>
+                                <strong>SEGUNDO (Vigencia):</strong> La relación contractual iniciará el día <strong
+                                    id="preview-start-date">DD/MM/AAAA</strong>
+                                <span id="preview-end-clause"> y finalizará el día <strong
+                                        id="preview-end-date">DD/MM/AAAA</strong></span>.
+                            </p>
+
+                            <p>
+                                <strong>TERCERO (Compromiso Financiero):</strong> El Residente se compromete a cumplir
+                                con las obligaciones financieras establecidas:
+                            </p>
+
+                            <!-- Financial Summary Box -->
+                            <div class="bg-gray-50 p-4 border border-gray-200 text-sm font-sans mx-8">
+                                <ul class="list-disc pl-5 space-y-1">
+                                    <li><strong>Modalidad:</strong> <span id="preview-mode">Alquiler</span></li>
+                                    <li id="preview-li-adelanto" style="display:none;"><strong>Pago Inicial:</strong>
+                                        $<span id="preview-adelanto">0.00</span></li>
+                                    <li id="preview-li-saldo" style="display:none;"><strong>Saldo a Financiar:</strong>
+                                        $<span id="preview-saldo">0.00</span> en <span id="preview-cuotas">X</span>
+                                        cuotas.</li>
+                                    <li><strong>Cargos Mensuales Recurrentes:</strong></li>
+                                    <ul id="preview-concepts-list" class="list-none pl-4 text-gray-600 italic">
+                                        <li>(Según configuración estándar del complejo)</li>
+                                    </ul>
+                                </ul>
+                            </div>
+
+                            <p class="text-xs text-gray-500 mt-8">
+                                * Este documento es un borrador digital generado automáticamente por el sistema de
+                                gestión. Al confirmar, se registrarán las obligaciones legales y financieras en la base
+                                de datos.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer Actions -->
+                <div class="bg-gray-50 p-6 flex justify-between items-center border-t border-gray-200">
+                    <button type="button" id="btn-prev"
+                        class="px-6 py-2.5 rounded-xl border border-gray-300 text-gray-700 font-medium hover:bg-gray-100 hidden">
+                        Atrás
+                    </button>
+
+                    <div class="ml-auto">
+                        <button type="button" id="btn-next"
+                            class="px-8 py-2.5 rounded-xl bg-blue-600 text-white font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all">
+                            Continuar <i class="fa-solid fa-arrow-right ml-2"></i>
+                        </button>
+
+                        <button type="submit" id="btn-submit"
+                            class="px-8 py-2.5 rounded-xl bg-green-600 text-white font-bold shadow-lg shadow-green-200 hover:bg-green-700 transition-all hidden">
+                            Confirmar Contrato <i class="fa-solid fa-check ml-2"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Hidden Input for overall validation or state -->
+                <input type="hidden" name="estado" value="activo">
+            </form>
         </div>
     </main>
 </div>
-{% endblock %}
 
-{% block extra_js %}
-<style>
-    /* Custom styles for form inputs to match Tailwind (copied from crear_complejo.html) */
-    input[type="text"],
-    input[type="number"],
-    input[type="date"],
-    input[type="email"],
-    select,
-    textarea {
-        width: 100%;
-        padding-left: 2.5rem;
-        /* Space for icon */
-        padding-right: 1rem;
-        padding-top: 0.625rem;
-        padding-bottom: 0.625rem;
-        border-radius: 0.75rem;
-        border: 1px solid #e5e7eb;
-        background-color: #f9fafb;
-        font-size: 0.875rem;
-        transition: all 0.2s;
-    }
-
-    input[type="text"]:focus,
-    input[type="number"]:focus,
-    input[type="date"]:focus,
-    input[type="email"]:focus,
-    select:focus,
-    textarea:focus {
-        outline: none;
-        border-color: #3b82f6;
-        background-color: #ffffff;
-        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-    }
-
-    input[type="checkbox"]:focus {
-        outline: none;
-        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5);
-    }
-</style>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        const tipoRelacionField = document.getElementById('id_tipo_relacion');
-        const finanzasTipoField = document.getElementById('id_finanzas_tipo');
-        const divIdPersona2 = document.getElementById('div_id_persona2'); // Field container for Person 2
-        const divIdFechaFin = document.getElementById('div_id_fecha_fin'); // Field container for End Date
+        // --- WIZARD LOGIC ---
+        let currentStep = 1;
+        const totalSteps = 3;
 
-        // Helper to find container (Tailwind/DaisyUI structure dependent)
-        // Adjust standard form-group selector if needed
-        function getContainer(fieldId) {
-            const field = document.getElementById(fieldId);
-            return field ? field.closest('.form-group') : null;
+        const btnNext = document.getElementById('btn-next');
+        const btnPrev = document.getElementById('btn-prev');
+        const btnSubmit = document.getElementById('btn-submit');
+
+        function showStep(step) {
+            // Hide all
+            for (let i = 1; i <= totalSteps; i++) {
+                document.getElementById(`step-${i}`).classList.add('hidden');
+                // Indicators
+                const ind = document.getElementById(`step-${i}-indicator`);
+                if (i === step) {
+                    ind.className = "flex items-center gap-2 text-blue-600 font-semibold";
+                    ind.querySelector('div').className = "w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm";
+                } else if (i < step) {
+                    ind.className = "flex items-center gap-2 text-green-600 font-medium";
+                    ind.querySelector('div').className = "w-8 h-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center text-sm";
+                    ind.querySelector('div').innerHTML = '<i class="fa-solid fa-check"></i>';
+                } else {
+                    ind.className = "flex items-center gap-2 text-gray-400";
+                    ind.querySelector('div').className = "w-8 h-8 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center text-sm";
+                    ind.querySelector('div').innerText = i;
+                }
+            }
+            // Show current
+            document.getElementById(`step-${step}`).classList.remove('hidden');
+
+            // Buttons
+            btnPrev.classList.toggle('hidden', step === 1);
+            btnNext.classList.toggle('hidden', step === totalSteps);
+            btnSubmit.classList.toggle('hidden', step !== totalSteps);
+
+            if (step === 3) updatePreview();
         }
 
-        const finanzasCuotasContainer = getContainer('id_finanzas_cuotas');
-        const finanzasSaldoContainer = getContainer('id_finanzas_saldo');
-
-        function toggleFields() {
-            if (!tipoRelacionField) return;
-
-            const tipo = tipoRelacionField.value;
-
-            // 1. Logic for Co-Owner / Second Person
-            if (divIdPersona2) {
-                if (tipo === 'co-propietario' || tipo === 'co-inquilino') {
-                    divIdPersona2.style.display = 'block';
-                } else {
-                    divIdPersona2.style.display = 'none';
+        btnNext.addEventListener('click', () => {
+            // Validate Step 1 before moving
+            if (currentStep === 1) {
+                const persona = document.querySelector('[name="persona"]');
+                const fecha = document.querySelector('[name="fecha_inicio"]');
+                if (!persona.value || !fecha.value) {
+                    alert("Por favor completa los campos obligatorios del residente y fecha.");
+                    return;
                 }
             }
 
-            // 2. Logic for Financial Fields (Owner vs Tenant)
-            if (finanzasTipoField) {
-                // Check both uppercase and lowercase just in case
-                if (tipo === 'INQUILINO' || tipo === 'inquilino') {
-                    finanzasTipoField.value = 'ALQUILER';
-                    if (finanzasCuotasContainer) finanzasCuotasContainer.style.display = 'none';
-                    if (finanzasSaldoContainer) finanzasSaldoContainer.style.display = 'none';
+            // Validate Step 2
+            if (currentStep === 2) {
+                const isProp = (tipoRelacion.value === 'propietario' || tipoRelacion.value === 'co-propietario');
+                const isContado = checkContado.checked;
 
-                    // Show End Date for Tenant
-                    if (divIdFechaFin) divIdFechaFin.style.display = 'block';
-
-                } else if (tipo === 'PROPIETARIO' || tipo === 'propietario') {
-                    finanzasTipoField.value = 'FINANCIAMIENTO';
-                    if (finanzasCuotasContainer) finanzasCuotasContainer.style.display = 'block';
-                    if (finanzasSaldoContainer) finanzasSaldoContainer.style.display = 'block';
-
-                    // Hide End Date for Owner (Indefinite)
-                    if (divIdFechaFin) divIdFechaFin.style.display = 'none';
-                } else {
-                    if (finanzasCuotasContainer) finanzasCuotasContainer.style.display = 'block';
-                    if (finanzasSaldoContainer) finanzasSaldoContainer.style.display = 'block';
-                    if (divIdFechaFin) divIdFechaFin.style.display = 'block';
+                if (isProp && !isContado) {
+                    const cuotas = document.querySelector('[name="finanzas_cuotas"]').value;
+                    if (!cuotas) {
+                        alert("Si no es pago al contado, debe especificar el número de cuotas.");
+                        return;
+                    }
                 }
+
+                // Validate Concepts
+                const rows = document.getElementById('concepts-table-body').querySelectorAll('tr');
+                let validConcepts = true;
+                rows.forEach(row => {
+                    const sel = row.querySelector('select');
+                    const amt = row.querySelector('input[type="number"]');
+                    if (!sel.value || !amt.value) validConcepts = false;
+                });
+                if (!validConcepts) {
+                    alert("Por favor complete todos los campos de la tabla de conceptos (seleccione concepto y monto).");
+                    return;
+                }
+            }
+
+            if (currentStep < totalSteps) {
+                currentStep++;
+                showStep(currentStep);
+            }
+        });
+
+        btnPrev.addEventListener('click', () => {
+            if (currentStep > 1) {
+                currentStep--;
+                showStep(currentStep);
+            }
+        });
+
+        // --- FIELD LOGIC ---
+        const tipoRelacion = document.querySelector('[name="tipo_relacion"]');
+        const purchaseSection = document.getElementById('finance-purchase-section');
+        const containerFechaFin = document.getElementById('container_fecha_fin');
+        // const customConfigCheck = document.querySelector('[name="configuracion_personalizada"]');
+        const customContainer = document.getElementById('custom-finance-container');
+        const coTitularSection = document.getElementById('section_co_titular');
+
+        // Purchase fields
+        const inputAdelanto = document.querySelector('[name="finanzas_adelanto"]');
+        const checkContado = document.querySelector('[name="finanzas_es_contado"]');
+        const rowCuotas = document.getElementById('finance-installments-row');
+        const propValor = parseFloat(document.getElementById('prop_valor_estimado')?.value || 0);
+
+        function updateFinanceFields() {
+            const tipo = tipoRelacion.value;
+
+            // Co-Titular Logic
+            if (tipo === 'co-propietario' || tipo === 'co-inquilino') {
+                coTitularSection.style.display = 'block';
+            } else {
+                coTitularSection.style.display = 'none';
+            }
+
+            // Fecha Fin visibility (Only for Tenant)
+            if (tipo === 'inquilino' || tipo === 'co-inquilino') {
+                containerFechaFin.style.display = 'block';
+            } else {
+                containerFechaFin.style.display = 'none';
+            }
+
+            // Purchase Logic
+            if (tipo === 'propietario' || tipo === 'co-propietario') {
+                purchaseSection.style.display = 'block';
+                // Hide End Date for owners usually, but let's keep it optional
+            } else {
+                purchaseSection.style.display = 'none';
             }
         }
 
-        // Initialize and Listen
-        if (tipoRelacionField) {
-            toggleFields();
-            tipoRelacionField.addEventListener('change', toggleFields);
+        function calculatePending() {
+            const adelanto = parseFloat(inputAdelanto.value || 0);
+            const pendiente = Math.max(0, propValor - adelanto);
+            document.getElementById('display_monto_pendiente').value = "$" + pendiente.toLocaleString('en-US', { minimumFractionDigits: 2 });
         }
 
-        // Also listen to manual changes on Financial Type (if user overrides)
-        if (finanzasTipoField) {
-            finanzasTipoField.addEventListener('change', function () {
-                const fTipo = this.value;
-                if (fTipo === 'ALQUILER') {
-                    if (finanzasCuotasContainer) finanzasCuotasContainer.style.display = 'none';
-                    if (finanzasSaldoContainer) finanzasSaldoContainer.style.display = 'none';
+        tipoRelacion.addEventListener('change', updateFinanceFields);
+        inputAdelanto.addEventListener('input', calculatePending);
+
+        checkContado.addEventListener('change', function () {
+            if (this.checked) {
+                // Disable Installments
+                rowCuotas.style.opacity = '0.3';
+                rowCuotas.style.pointerEvents = 'none';
+                document.querySelector('[name="finanzas_cuotas"]').value = '';
+
+                // Disable Adelanto (as requested)
+                inputAdelanto.disabled = true;
+                inputAdelanto.parentElement.style.opacity = '0.5';
+                inputAdelanto.value = ''; // Optional: clear it or keep it? Clearing seems safer if disabled.
+                calculatePending(); // Update pending amount
+            } else {
+                // Enable Installments
+                rowCuotas.style.opacity = '1';
+                rowCuotas.style.pointerEvents = 'all';
+
+                // Enable Adelanto
+                inputAdelanto.disabled = false;
+                inputAdelanto.parentElement.style.opacity = '1';
+            }
+        });
+
+        // Custom Config Logic (Overrides)
+        const customConfigCheck = document.querySelector('[name="configuracion_personalizada"]');
+        const overridesContainer = document.getElementById('financial-overrides-container');
+
+        if (customConfigCheck && overridesContainer) {
+            customConfigCheck.addEventListener('change', function () {
+                overridesContainer.style.display = this.checked ? 'grid' : 'none';
+                if (this.checked) {
+                    overridesContainer.classList.remove('hidden');
                 } else {
-                    if (finanzasCuotasContainer) finanzasCuotasContainer.style.display = 'block';
-                    if (finanzasSaldoContainer) finanzasSaldoContainer.style.display = 'block';
+                    overridesContainer.classList.add('hidden');
                 }
             });
         }
+
+        // Dynamic Table Logic
+        const btnAddConcept = document.getElementById('btn-add-concept');
+        const tableBody = document.getElementById('concepts-table-body');
+        const rowTemplate = document.getElementById('concept-row-template');
+
+        btnAddConcept.addEventListener('click', () => {
+            const clone = rowTemplate.content.cloneNode(true);
+            tableBody.appendChild(clone);
+        });
+
+        tableBody.addEventListener('click', (e) => {
+            if (e.target.closest('.btn-remove-row')) {
+                e.target.closest('tr').remove();
+            }
+        });
+
+        // --- PREVIEW LOGIC ---
+        function updatePreview() {
+            // General
+            const today = new Date();
+            document.getElementById('preview-today').innerText = today.toLocaleDateString();
+
+            const selPersona = document.querySelector('[name="persona"] option:checked');
+            document.getElementById('preview-resident').innerText = selPersona ? selPersona.text : '-----';
+
+            document.getElementById('preview-start-date').innerText = document.querySelector('[name="fecha_inicio"]').value || '----';
+            const fFin = document.querySelector('[name="fecha_fin"]').value;
+            if (fFin) {
+                document.getElementById('preview-end-clause').style.display = 'inline';
+                document.getElementById('preview-end-date').innerText = fFin;
+            } else {
+                document.getElementById('preview-end-clause').style.display = 'none';
+            }
+
+            // Financial Mode
+            const tipo = tipoRelacion.value;
+            let modeText = "Arrendamiento / Alquiler";
+            if (tipo === 'propietario' || tipo === 'co-propietario') modeText = "Compra-Venta Inmobiliaria";
+            document.getElementById('preview-mode').innerText = modeText;
+
+            // Purchase details
+            if (tipo === 'propietario' || tipo === 'co-propietario') {
+                document.getElementById('preview-li-adelanto').style.display = 'list-item';
+                document.getElementById('preview-adelanto').innerText = inputAdelanto.value || '0.00';
+
+                if (!checkContado.checked) {
+                    document.getElementById('preview-li-saldo').style.display = 'list-item';
+                    document.getElementById('preview-saldo').innerText = document.getElementById('display_monto_pendiente').value.replace('$', '');
+                    document.getElementById('preview-cuotas').innerText = document.querySelector('[name="finanzas_cuotas"]').value || 'N/A';
+                } else {
+                    document.getElementById('preview-li-saldo').style.display = 'none';
+                }
+            } else {
+                document.getElementById('preview-li-adelanto').style.display = 'none';
+                document.getElementById('preview-li-saldo').style.display = 'none';
+            }
+
+            // Concepts List
+            const listContainer = document.getElementById('preview-concepts-list');
+            listContainer.innerHTML = '';
+
+            // ALWAYS SHOW CONCEPTS (Check removed)
+            const rows = tableBody.querySelectorAll('tr');
+            if (rows.length === 0) {
+                listContainer.innerHTML = '<li>(Sin conceptos adicionales configurados)</li>';
+            } else {
+                rows.forEach(row => {
+                    const sel = row.querySelector('select option:checked');
+                    const amt = row.querySelector('input[type="number"]').value;
+                    if (sel && sel.value) {
+                        const li = document.createElement('li');
+                        li.innerHTML = `<strong>${sel.text.split('(')[0]}</strong>: $${amt}`;
+                        listContainer.appendChild(li);
+                    }
+                });
+            }
+        }
+
+        // Initialize styling
+        updateFinanceFields();
     });
 </script>
+<style>
+    /* Wizard Extra Styles */
+    .form-group input,
+    .form-group select {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border-radius: 0.5rem;
+        border: 1px solid #e5e7eb;
+        background-color: #f9fafb;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+        background-color: white;
+        border-color: #3b82f6;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+</style>
 {% endblock %}

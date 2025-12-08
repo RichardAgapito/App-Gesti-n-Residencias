@@ -19,7 +19,7 @@ urlpatterns = [
     path('contratos/crear/', views.crear_contrato_global, name='crear_contrato_global'),
     path('contratos/<int:contrato_id>/', views.detalle_contrato, name='detalle_contrato'),
     path('contratos/<int:contrato_id>/eliminar/', views.eliminar_contrato, name='eliminar_contrato'),
-    path('propiedades/contrato/<int:contrato_id>/editar/', views.editar_contrato, name='editar_contrato'),
+    path('contratos/<int:contrato_id>/editar/', views.editar_contrato, name='editar_contrato'),
     path('contratos/<int:contrato_id>/reactivar/', views.reactivar_contrato, name='reactivar_contrato'),
 
     # URLs para el sistema de reservas

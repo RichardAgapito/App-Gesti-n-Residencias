@@ -191,6 +191,18 @@ def crear_complejo(request):
         form = ComplejoForm()
     return render(request, 'complejos/crear_complejo.html', {'form': form})
 
+@user_passes_test(es_admin, login_url='/')
+def editar_complejo(request, complejo_id):
+    complejo = get_object_or_404(Complejo, id=complejo_id)
+    if request.method == 'POST':
+        form = ComplejoForm(request.POST, instance=complejo)
+        if form.is_valid():
+            form.save()
+            return redirect('lista_complejos')
+    else:
+        form = ComplejoForm(instance=complejo)
+    return render(request, 'complejos/editar_complejo.html', {'form': form, 'complejo': complejo})
+
 
 @user_passes_test(es_admin_o_gerente, login_url='/')
 def detalle_complejo(request, complejo_id):
@@ -217,9 +229,13 @@ def detalle_complejo(request, complejo_id):
 
     if banos:
         propiedades_del_complejo = propiedades_del_complejo.filter(numero_banos=banos)
+    
+    # Obtener configuración financiera global
+    config_financiera = ConfiguracionFinanciera.objects.filter(complejo=complejo, propiedad__isnull=True).first()
 
     context = {
         'complejo': complejo,
+        'config_financiera': config_financiera,
         'propiedades': propiedades_del_complejo,
         'query': query,
         'estado_choices': Propiedad.ESTADO_OCUPACION_CHOICES,
@@ -296,27 +312,8 @@ def crear_propiedades_multiples(request, complejo_id):
     return render(request, 'complejos/crear_propiedades_multiples.html', {'form': form, 'complejo': complejo})
 
 @user_passes_test(es_admin, login_url='/')
-def editar_complejo(request, complejo_id):
-    complejo = get_object_or_404(Complejo, id=complejo_id)
-    if request.method == 'POST':
-        form = ComplejoForm(request.POST, instance=complejo)
-        if form.is_valid():
-            form.save()
-            next_url = request.POST.get('next')
-            if next_url:
-                return redirect(next_url)
-            return redirect('detalle_complejo', complejo_id=complejo.id)
-    else:
-        form = ComplejoForm(instance=complejo)
-    return render(request, 'complejos/editar_complejo.html', {'form': form, 'complejo': complejo})
-
-@user_passes_test(es_admin_o_gerente, login_url='/')
 def detalle_propiedad(request, propiedad_id):
     propiedad = get_object_or_404(Propiedad, id=propiedad_id)
-    if request.user.rol == 'GERENTE':
-        if not request.user.complejo_asignado or propiedad.complejo != request.user.complejo_asignado:
-            raise Http404
-
     contratos_activos = propiedad.personas_asociadas.filter(estado='activo').order_by('-fecha_inicio')
 
     context = {
@@ -324,10 +321,6 @@ def detalle_propiedad(request, propiedad_id):
         'contratos_activos': contratos_activos,
     }
     return render(request, 'complejos/detalle_propiedad.html', context)
-
-
-
-
 
 @user_passes_test(es_admin, login_url='/')
 def editar_propiedad(request, propiedad_id):
@@ -385,13 +378,56 @@ def editar_contrato(request, contrato_id):
         form = EditarContratoForm(request.POST, instance=contrato)
         if form.is_valid():
             form.save()
+            
+            # --- CONCEPT RECONCILIATION ---
+            if contrato_financiero:
+                # Refresh to get updated fields like configuracion_personalizada from form.save()
+                contrato_financiero.refresh_from_db()
+                
+                if contrato_financiero.configuracion_personalizada:
+                    conceptos_ids = request.POST.getlist('concepto_cobro_id')
+                    # Fallback for array notation if strictly used (JS usually sends name="foo" repeatedly)
+                    # The template input name is "concepto_cobro_id" (see line 281 in template snippet)
+                    if not conceptos_ids:
+                         conceptos_ids = request.POST.getlist('concepto_cobro_id[]')
+                         
+                    conceptos_montos = request.POST.getlist('concepto_monto')
+                    if not conceptos_montos:
+                        conceptos_montos = request.POST.getlist('concepto_monto[]')
+                    
+                    # Delete existing concepts
+                    from finanzas.models import ConceptoContrato, ConceptoCobro
+                    ConceptoContrato.objects.filter(contrato=contrato_financiero).delete()
+                    
+                    for index, cid in enumerate(conceptos_ids):
+                        try:
+                            monto = conceptos_montos[index]
+                            if cid and monto:
+                                obj_concepto = ConceptoCobro.objects.get(id=cid)
+                                ConceptoContrato.objects.create(
+                                    contrato=contrato_financiero,
+                                    concepto=obj_concepto,
+                                    monto=monto,
+                                    orden=index+1
+                                )
+                        except (IndexError, ConceptoCobro.DoesNotExist, ValueError):
+                            continue
+            
             return redirect('detalle_contrato', contrato_id=contrato.id)
     else:
         form = EditarContratoForm(instance=contrato)
     
+    # Context data for concepts
+    from finanzas.models import ConceptoContrato, ConceptoCobro
+    conceptos_disponibles = ConceptoCobro.objects.filter(complejo=contrato.propiedad.complejo) if contrato_financiero else []
+    conceptos_existentes = ConceptoContrato.objects.filter(contrato=contrato_financiero).order_by('orden') if contrato_financiero else []
+
     context = {
         'form': form,
+        'contrato': contrato,
         'contrato_financiero': contrato_financiero,
+        'conceptos_disponibles': conceptos_disponibles,
+        'conceptos_existentes': conceptos_existentes,
     }
     return render(request, 'complejos/editar_contrato.html', context)
 
@@ -852,22 +888,36 @@ def crear_contrato_global(request):
             # The form.save() method now handles atomic creation of both PropiedadPersona and ContratoFinanciero
             propiedad_persona = form.save()
             print("--- CONTRATO GUARDADO EXITOSAMENTE ---")
-        else:
-            print("--- ERRORES EN EL FORMULARIO ---")
-            print(form.errors)
-            print(form.non_field_errors())
-            print("--------------------------------")
+            
+            # --- PROCESAMIENTO DE CONCEPTOS DINÁMICOS ---
+            # Si se activó configuración personalizada, buscamos los conceptos enviados
+            # Se espera que el frontend envíe inputs con nombre "concepto_id[]" y "concepto_monto[]"
+            # O un JSON string. Vamos a usar el patrón de arrays de inputs HTML.
+            
+            contrato_financiero = getattr(propiedad_persona, 'contrato_financiero', None)
+            
+            if contrato_financiero and contrato_financiero.configuracion_personalizada:
+                conceptos_ids = request.POST.getlist('concepto_id[]')
+                conceptos_montos = request.POST.getlist('concepto_monto[]')
+                
+                # Limpiar conceptos previos si existieran (aunque es creación, asi que no debería haber)
+                from finanzas.models import ConceptoContrato, ConceptoCobro
+                
+                for index, cid in enumerate(conceptos_ids):
+                    try:
+                        monto = conceptos_montos[index]
+                        if cid and monto:
+                            obj_concepto = ConceptoCobro.objects.get(id=cid)
+                            ConceptoContrato.objects.create(
+                                contrato=contrato_financiero,
+                                concepto=obj_concepto,
+                                monto=monto,
+                                orden=index+1
+                            )
+                    except (IndexError, ConceptoCobro.DoesNotExist, ValueError):
+                        continue
 
-            # Handle second person manually if needed (logic not in unified form yet, or reuse existing logic?)
-            # The unified form inherits from PropiedadPersonaForm, which handles single person.
-            # If we need to keep the 'second person' logic, we might need to adapt it. 
-            # However, looking at the previous code, it handled 'persona2' manually.
-            # The Unified Contract seems focused on the primary financial responsibility.
-            # Let's keep the second person logic but we need to check if 'persona2' is in cleaned_data
-            
-            # Note: ContratoUnificadoForm inherits PropiedadPersonaForm. 
-            # We need to see if PropiedadPersonaForm has 'persona2'. Yes it does.
-            
+            # Handle second person manually
             persona2 = form.cleaned_data.get('persona2')
             if persona2:
                 tipo_relacion_form = form.cleaned_data['tipo_relacion']
@@ -894,9 +944,13 @@ def crear_contrato_global(request):
             initial_data['propiedad'] = propiedad_preseleccionada.id
         form = ContratoUnificadoForm(propiedad=propiedad_preseleccionada, initial=initial_data)
     
+    from finanzas.models import ConceptoCobro
+    conceptos_disponibles = ConceptoCobro.objects.filter(complejo=propiedad_preseleccionada.complejo) if propiedad_preseleccionada else ConceptoCobro.objects.none()
+    
     context = {
         'form': form,
         'propiedad_preseleccionada': propiedad_preseleccionada,
+        'conceptos_disponibles': conceptos_disponibles,
     }
     return render(request, 'complejos/crear_contrato_global.html', context)
 
