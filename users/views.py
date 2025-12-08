@@ -3,6 +3,7 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.views.decorators.http import require_POST
 from django.db.models import Q
 from django.utils import timezone
+from datetime import timedelta
 from django.contrib import messages
 from django.views.generic import TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
@@ -15,12 +16,12 @@ from django.http import JsonResponse
 from django.template.loader import render_to_string
 from finanzas.models import Factura, ContratoFinanciero, Recaudo
 
+from django.db.models import Count, Sum
+from visitas.models import Visita
+
 @login_required
 def dashboard(request):
     if request.user.rol == 'ADMIN':
-        from django.db.models import Count, Q, Sum
-        from datetime import timedelta
-        from visitas.models import Visita
         
         # Estadísticas básicas
         total_usuarios = CustomUser.objects.count()
@@ -102,9 +103,100 @@ def dashboard(request):
         return render(request, 'users/dashboard.html', context)
     
     elif request.user.rol == 'GERENTE':
-        context = {
-            'complejo': request.user.complejo_asignado,
-        }
+        complejo = request.user.complejo_asignado
+        context = {}
+        
+        if complejo:
+            # 1. Stats Básicos
+            total_propiedades = complejo.propiedades.count()
+            total_amenidades = complejo.amenidades.count()
+            
+            # 2. Reservas Pendientes
+            # Support both direct FK and legacy relation for robustness
+            reservas_pendientes = Reserva.objects.filter(
+                Q(complejo=complejo) | Q(amenidad__complejo=complejo),
+                estado='pendiente'
+            ).distinct().count()
+
+            # 3. Ocupación
+            occupied_count = 0
+            propiedades = complejo.propiedades.prefetch_related('personas_asociadas').all()
+            for p in propiedades:
+                is_occupied_manual = (p.estado_ocupacion == 'ocupado')
+                has_active_relation = False
+                for relation in p.personas_asociadas.all():
+                    if relation.estado == 'activo' and relation.tipo_relacion in ['inquilino', 'propietario']:
+                        has_active_relation = True
+                        break
+                if is_occupied_manual or has_active_relation:
+                    occupied_count += 1
+            
+            denominator = complejo.numero_total_unidades if complejo.numero_total_unidades > 0 else total_propiedades
+            porcentaje_ocupacion = int((occupied_count / denominator) * 100) if denominator > 0 else 0
+
+            # 4. Actividad Reciente (Reservas recientes en el complejo)
+            actividad_reciente = []
+            reservas_recientes = Reserva.objects.filter(
+                Q(complejo=complejo) | Q(amenidad__complejo=complejo)
+            ).order_by('-fecha_creacion')[:5]
+
+            for reserva in reservas_recientes:
+                actividad_reciente.append({
+                    'tipo': 'reserva',
+                    'descripcion': f'Nueva reserva: {reserva.amenidad.nombre} - {reserva.residente.persona.nombres}',
+                    'tiempo': reserva.fecha_creacion, # Assuming created_at exists, if not use an available date field
+                    'estado': reserva.estado
+                })
+            
+            # Also check for new contracts
+            nuevos_contratos = PropiedadPersona.objects.filter(
+                propiedad__complejo=complejo,
+                fecha_inicio__gte=timezone.now() - timedelta(days=30)
+            ).order_by('-fecha_inicio')[:5]
+
+            for contrato in nuevos_contratos:
+                actividad_reciente.append({
+                    'tipo': 'contrato',
+                    'descripcion': f'Nuevo contrato: {contrato.propiedad.numero_identificador} - {contrato.tipo_relacion}',
+                    'tiempo': contrato.fecha_inicio,
+                    'estado': contrato.estado
+                })
+            
+            # Sort combined activity
+            # Note: mixed types (datetime vs date) might cause sort issues if not handled carefully. 
+            # safe sort key:
+            def get_time(item):
+                t = item['tiempo']
+                # Convert date to datetime if needed
+                if not hasattr(t, 'hour'):
+                    return timezone.make_aware(timezone.datetime.combine(t, timezone.datetime.min.time()))
+                return t
+            
+            actividad_reciente.sort(key=get_time, reverse=True)
+            actividad_reciente = actividad_reciente[:10]
+
+            # 5. Operational Metrics - Option E (Only Daily Aggenda)
+            # Reservas confirmadas para HOY (Agenda del día)
+            reservas_hoy_count = Reserva.objects.filter(
+                Q(complejo=complejo) | Q(amenidad__complejo=complejo),
+                estado='confirmada',
+                fecha_inicio__date=timezone.now().date()
+            ).count()
+
+            context = {
+                'complejo': complejo,
+                'total_propiedades': total_propiedades,
+                'total_amenidades': total_amenidades,
+                'reservas_pendientes': reservas_pendientes,
+                'porcentaje_ocupacion': porcentaje_ocupacion,
+                'actividad_reciente': actividad_reciente,
+                'reservas_hoy_count': reservas_hoy_count,
+            }
+        else:
+             context = {
+                'error_mensaje': "No tienes un complejo asignado. Contacta al administrador."
+            }
+        
         return render(request, 'users/dashboard.html', context)
     
     elif request.user.rol == 'GUARDIA':

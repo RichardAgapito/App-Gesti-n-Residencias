@@ -154,17 +154,157 @@
     {% else %}
         {% include 'includes/admin_sidebar.html' %}
     {% endif %}
-    <div class="main-content">
-        <header>
-            <h1>Bienvenido, Gerente {{ request.user.persona.nombres|default:request.user.email }}</h1>
-            <form method="post" action="{% url 'logout' %}">
-                {% csrf_token %}
-                <button type="submit"><i class="fa-solid fa-right-from-bracket"></i> Cerrar Sesión</button>
-            </form>
+
+    <div class="lg:ml-64 flex flex-col h-full overflow-y-auto">
+        <!-- Header -->
+        <header class="px-8 pt-5 flex justify-between items-center">
+            <div>
+                <h1 class="text-4xl font-bold text-gray-900">Panel de Gerencia</h1>
+                <p class="text-lg text-gray-500 mt-1">Gestión del complejo <span class="text-blue-600 font-semibold">{{ complejo.nombre }}</span></p>
+            </div>
+            <div class="flex items-center gap-4 bg-[#EFF6FF] p-4 rounded-xl shadow-sm border border-blue-50">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold shadow-md">
+                        <i class="fa-solid fa-user-tie"></i>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-[16px] font-bold text-gray-900">Gerente</p>
+                        <p class="text-xs text-gray-500">{{request.user.email }}</p>
+                    </div>
+                </div>
+            </div>
         </header>
 
-        <h2>Complejo: {{ complejo.nombre }}</h2>
+        {% if error_mensaje %}
+            <div class="m-8 p-6 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-r shadow-sm">
+                <div class="flex items-center gap-3">
+                    <i class="fa-solid fa-circle-exclamation text-xl"></i>
+                    <p class="font-medium">{{ error_mensaje }}</p>
+                </div>
+            </div>
+        {% else %}
+        
+        <!-- Main Content -->
+        <main class="flex-1 p-8">
+            <!-- Stats Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <!-- Total Propiedades -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between group hover:shadow-md transition-shadow">
+                    <div>
+                        <p class="text-sm font-medium text-gray-500 mb-1 tracking-wider">Propiedades</p>
+                        <h3 class="text-4xl font-extrabold text-gray-900">{{ total_propiedades }}</h3>
+                    </div>
+                    <div class="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                        <i class="fa-solid fa-building text-2xl"></i>
+                    </div>
+                </div>
 
+                <!-- Ocupación -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between group hover:shadow-md transition-shadow">
+                    <div>
+                        <p class="text-sm font-medium text-gray-500 mb-1 tracking-wider">Ocupación</p>
+                        <h3 class="text-4xl font-extrabold text-gray-900">{{ porcentaje_ocupacion }}%</h3>
+                    </div>
+                    <div class="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white transition-colors">
+                        <i class="fa-solid fa-chart-pie text-2xl"></i>
+                    </div>
+                </div>
+
+                <!-- Reservas Pendientes -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between group hover:shadow-md transition-shadow">
+                    <div>
+                        <p class="text-sm font-medium text-gray-500 mb-1 tracking-wider">Pendientes</p>
+                        <h3 class="text-4xl font-extrabold text-gray-900">{{ reservas_pendientes }}</h3>
+                        <p class="text-xs text-gray-400 mt-1">Solicitudes de reserva</p>
+                    </div>
+                    <div class="w-14 h-14 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-600 group-hover:bg-amber-600 group-hover:text-white transition-colors relative">
+                        <i class="fa-solid fa-clock text-2xl"></i>
+                        {% if reservas_pendientes > 0 %}
+                            <span class="absolute top-0 right-0 -mt-1 -mr-1 w-4 h-4 bg-red-500 rounded-full border-2 border-white"></span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Amenidades -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between group hover:shadow-md transition-shadow">
+                    <div>
+                        <p class="text-sm font-medium text-gray-500 mb-1 tracking-wider">Amenidades</p>
+                        <h3 class="text-4xl font-extrabold text-gray-900">{{ total_amenidades }}</h3>
+                    </div>
+                    <div class="w-14 h-14 bg-purple-50 rounded-2xl flex items-center justify-center text-purple-600 group-hover:bg-purple-600 group-hover:text-white transition-colors">
+                        <i class="fa-solid fa-umbrella-beach text-2xl"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Actividad Reciente (2/3 width) -->
+                <div class="lg:col-span-2 bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-lg font-bold text-gray-900">Actividad Reciente</h3>
+                        <a href="{% url 'admin_reservas' %}" class="text-sm font-semibold text-blue-600 hover:text-blue-700 hover:underline">Ver Reservas</a>
+                    </div>
+                    
+                    <div class="space-y-6">
+                        {% for actividad in actividad_reciente %}
+                            <div class="flex items-start gap-4 pb-6 border-b border-gray-50 last:border-0 last:pb-0">
+                                <div class="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 
+                                    {% if actividad.tipo == 'reserva' %}bg-indigo-50 text-indigo-600
+                                    {% else %}bg-green-50 text-green-600{% endif %}">
+                                    {% if actividad.tipo == 'reserva' %}
+                                        <i class="fa-solid fa-calendar-check text-xl"></i>
+                                    {% else %}
+                                        <i class="fa-solid fa-file-contract text-xl"></i>
+                                    {% endif %}
+                                </div>
+                                <div class="flex-1">
+                                    <div class="flex justify-between items-start">
+                                        <p class="text-sm font-bold text-gray-900">{{ actividad.descripcion }}</p>
+                                        <span class="text-xs font-semibold px-2 py-1 rounded-md 
+                                            {% if actividad.estado == 'pendiente' %}bg-amber-100 text-amber-700
+                                            {% elif actividad.estado == 'confirmada' or actividad.estado == 'activo' %}bg-green-100 text-green-700
+                                            {% elif actividad.estado == 'cancelada' or actividad.estado == 'inactivo' %}bg-red-100 text-red-700
+                                            {% else %}bg-gray-100 text-gray-600{% endif %}">
+                                            {{ actividad.estado|title }}
+                                        </span>
+                                    </div>
+                                    <p class="text-xs text-gray-500 mt-1 flex items-center gap-1">
+                                        <i class="fa-regular fa-clock"></i> {{ actividad.tiempo|timesince }} atrás
+                                    </p>
+                                </div>
+                            </div>
+                        {% empty %}
+                            <div class="flex flex-col items-center justify-center py-12 text-center">
+                                <div class="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+                                    <i class="fa-solid fa-history text-gray-300 text-2xl"></i>
+                                </div>
+                                <p class="text-sm font-medium text-gray-500">No hay actividad reciente en el complejo.</p>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Panel Lateral / Accesos Rápidos (1/3 width) -->
+                <div class="space-y-6">
+                    <!-- Resumen Operativo -->
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                        <h3 class="text-lg font-bold text-gray-900 mb-4">Agenda del Día</h3>
+                        
+                        <!-- Agenda Reservas -->
+                         <div class="flex items-center gap-4 mb-2">
+                            <div class="w-12 h-12 bg-indigo-50 rounded-full flex items-center justify-center text-indigo-600">
+                                <i class="fa-solid fa-calendar-day text-xl"></i>
+                            </div>
+                            <div>
+                                <h4 class="text-2xl font-extrabold text-gray-900">{{ reservas_hoy_count }}</h4>
+                                <p class="text-sm text-gray-500 font-medium">Reservas Hoy</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+        {% endif %}
     </div>
 {% else %}
 <!-- (INICIO) NUEVA ESTRUCTURA PARA RESIDENTE -->
