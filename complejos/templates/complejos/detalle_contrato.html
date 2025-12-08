@@ -154,13 +154,8 @@
                         <div
                             class="bg-gradient-to-br from-green-50 to-white rounded-xl p-6 border border-green-100 shadow-sm grid grid-cols-1 md:grid-cols-2 gap-8">
 
-                            <!-- Tipo & Estado -->
+                            <!-- Status & Configuration -->
                             <div class="space-y-4">
-                                <div>
-                                    <p class="text-xs text-gray-500 uppercase font-semibold">Tipo de Operación</p>
-                                    <p class="text-lg font-bold text-gray-900">
-                                        {{ contrato_financiero.get_tipo_display }}</p>
-                                </div>
                                 <div>
                                     <p class="text-xs text-gray-500 uppercase font-semibold">Estado Financiero</p>
                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium mt-1
@@ -170,48 +165,86 @@
                                         {{ contrato_financiero.get_estado_display }}
                                     </span>
                                 </div>
-                            </div>
-
-                            <!-- Plan details -->
-                            <div class="space-y-4">
                                 <div>
-                                    <p class="text-xs text-gray-500 uppercase font-semibold">Plan de Pago / Cuotas</p>
-                                    <p class="text-lg font-medium text-gray-900">
-                                        {% if contrato_financiero.plan_pago %}
-                                        {{ contrato_financiero.plan_pago.nombre }}
+                                    <p class="text-xs text-gray-500 uppercase font-semibold">Configuración</p>
+                                    <p class="text-base font-medium text-gray-900">
+                                        {% if contrato_financiero.configuracion_personalizada %}
+                                        Personalizada
                                         {% else %}
-                                        <span class="text-gray-400 italic">No asignado</span>
+                                        Estándar del Complejo
                                         {% endif %}
                                     </p>
                                 </div>
+                                <div>
+                                    <p class="text-xs text-gray-500 uppercase font-semibold">Inicio Pago / Día de Corte
+                                    </p>
+                                    <p class="text-base font-medium text-gray-900">
+                                        {{ contrato_financiero.fecha_inicio_pago|date:"d/m/Y" }}
+                                        (Día {{ contrato_financiero.fecha_inicio_pago.day }})
+                                    </p>
+                                </div>
+                            </div>
 
-                                <div class="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <p class="text-xs text-gray-500 uppercase font-semibold">Día de Pago</p>
-                                        <p class="text-base font-medium text-gray-900">
-                                            Día {{ contrato_financiero.dia_vencimiento_mensual }}</p>
-                                    </div>
-                                    {% if contrato_financiero.tipo == 'FINANCIAMIENTO' %}
-                                    <div>
-                                        <p class="text-xs text-gray-500 uppercase font-semibold">Saldo Pendiente</p>
-                                        <p class="text-base font-bold text-green-700">
-                                            ${{ contrato_financiero.saldo_pendiente|default:"0.00" }}</p>
-                                    </div>
+                            <!-- Concepts List -->
+                            <div class="space-y-4">
+                                <div>
+                                    <p class="text-xs text-gray-500 uppercase font-semibold">Conceptos de Cobro Mensual
+                                    </p>
+                                    {% if contrato_financiero.conceptos.all %}
+                                    <ul class="mt-2 space-y-2">
+                                        {% for c in contrato_financiero.conceptos.all %}
+                                        <li
+                                            class="flex justify-between text-sm border-b border-gray-100 pb-1 last:border-0">
+                                            <span class="text-gray-700">{{ c.concepto.nombre }}
+                                            </span>
+                                            <span class="font-bold text-gray-900">${{ c.monto }}</span>
+                                        </li>
+                                        {% endfor %}
+                                    </ul>
+                                    {% else %}
+                                    <p class="text-sm text-gray-400 italic mt-1">Sin conceptos definidos explícitamente.
+                                    </p>
                                     {% endif %}
                                 </div>
                             </div>
 
-                            {% if contrato_financiero.tipo == 'FINANCIAMIENTO' %}
-                            <div class="col-span-1 md:col-span-2 mt-2 pt-4 border-t border-green-100">
-                                <div class="flex items-center justify-between text-sm">
-                                    <span class="text-gray-600">Progreso de Cuotas:</span>
-                                    <span class="font-bold text-gray-900">{{ contrato_financiero.cuotas_facturadas }} /
-                                        {{ contrato_financiero.numero_cuotas_totales|default:"?" }}</span>
-                                </div>
-                                <div class="w-full bg-green-200 rounded-full h-2.5 mt-2">
-                                    {% widthratio contrato_financiero.cuotas_facturadas
-                                    contrato_financiero.numero_cuotas_totales|default:1 100 as progress %}
-                                    <div class="bg-green-600 h-2.5 rounded-full" style="width: {{ progress }}%"></div>
+                            <!-- Purchase Info (Conditional) -->
+                            {% if contrato_financiero.tiene_informacion_compra %}
+                            <div class="col-span-1 md:col-span-2 mt-4 pt-4 border-t border-green-200">
+                                <h4 class="text-sm font-bold text-green-800 mb-3 uppercase tracking-wide">Información de
+                                    Compra/Venta</h4>
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                    {% if contrato_financiero.adelanto > 0 %}
+                                    <div>
+                                        <p class="text-xs text-gray-500 uppercase font-semibold">Adelanto Pagado</p>
+                                        <p class="text-lg font-bold text-gray-900">${{ contrato_financiero.adelanto }}
+                                        </p>
+                                    </div>
+                                    {% endif %}
+
+                                    {% if contrato_financiero.monto_pendiente > 0 %}
+                                    <div>
+                                        <p class="text-xs text-gray-500 uppercase font-semibold">Monto Pendiente</p>
+                                        <p class="text-lg font-bold text-green-700">
+                                            ${{ contrato_financiero.monto_pendiente }}</p>
+                                    </div>
+                                    {% endif %}
+
+                                    {% if contrato_financiero.numero_cuotas_totales > 0 %}
+                                    <div>
+                                        <p class="text-xs text-gray-500 uppercase font-semibold">Cuotas</p>
+                                        <div class="flex items-center justify-between text-sm mb-1">
+                                            <span class="text-gray-900 font-bold">
+                                                {{ contrato_financiero.cuotas_facturadas }} pagadas de
+                                                {{ contrato_financiero.numero_cuotas_totales }}</span>
+                                        </div>
+                                        <div class="w-full bg-green-200 rounded-full h-2.5">
+                                            <div class="bg-green-600 h-2.5 rounded-full"
+                                                style="width: {{ contrato_financiero.porcentaje_progreso_cuotas|stringformat:'f' }}%">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endif %}
                                 </div>
                             </div>
                             {% endif %}

@@ -50,10 +50,16 @@ class ConfiguracionFinancieraAdmin(admin.ModelAdmin):
 
 
 
+class ConceptoContratoInline(admin.TabularInline):
+    from .models import ConceptoContrato
+    model = ConceptoContrato
+    extra = 1
+
 @admin.register(ContratoFinanciero)
 class ContratoFinancieroAdmin(admin.ModelAdmin):
-    list_display = ('propiedad_persona', 'tipo', 'plan_pago', 'estado', 'cuotas_facturadas')
-    list_filter = ('tipo', 'estado')
+    inlines = (ConceptoContratoInline,)
+    list_display = ('propiedad_persona', 'adelanto', 'es_pago_contado', 'estado', 'cuotas_facturadas')
+    list_filter = ('estado', 'es_pago_contado')
     search_fields = ('propiedad_persona__persona__email', 'propiedad_persona__persona__nombres')
     
     def formfield_for_foreignkey(self, db_field, request, **kwargs):

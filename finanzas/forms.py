@@ -217,13 +217,12 @@ class CargoAdicionalForm(forms.ModelForm):
 class ConfiguracionFinancieraForm(forms.ModelForm):
     class Meta:
         model = ConfiguracionFinanciera
-        fields = ['dia_corte', 'dias_vencimiento', 'tasa_interes_mora_diaria', 'bloquear_servicios_con_deuda', 'plan_mantenimiento_default']
+        fields = ['dia_corte', 'dias_vencimiento', 'tasa_interes_mora_diaria', 'bloquear_servicios_con_deuda']
         widgets = {
             'dia_corte': forms.NumberInput(attrs={'class': 'form-control', 'min': 1, 'max': 28}),
             'dias_vencimiento': forms.NumberInput(attrs={'class': 'form-control'}),
             'tasa_interes_mora_diaria': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.001'}),
             'bloquear_servicios_con_deuda': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
-            'plan_mantenimiento_default': forms.Select(attrs={'class': 'form-control'}),
         }
         labels = {
             'dia_corte': 'Día del Mes de Corte',
@@ -234,5 +233,3 @@ class ConfiguracionFinancieraForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         complejo = kwargs.pop('complejo', None)
         super().__init__(*args, **kwargs)
-        if complejo:
-             self.fields['plan_mantenimiento_default'].queryset = PlanCuota.objects.filter(complejo=complejo, activo=True)

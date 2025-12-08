@@ -215,32 +215,77 @@ class ContratoFinanciero(models.Model):
     # Relación con el contrato legal existente
     propiedad_persona = models.OneToOneField(PropiedadPersona, on_delete=models.CASCADE, related_name='contrato_financiero')
     
-    tipo = models.CharField(max_length=20, choices=TIPO_CHOICES)
     estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='ACTIVO')
     
-    # Cuánto debe pagar (Definido por un Plan de Cuota)
-    plan_pago = models.ForeignKey('PlanCuota', on_delete=models.PROTECT, related_name='contratos_financieros', null=True, blank=True)
+    # Nuevo enfoque: Configuración personalizada
+    configuracion_personalizada = models.BooleanField(default=False, help_text="Si es True, usa los conceptos definidos en ConceptoContrato. Si es False, usa la configuración del complejo.")
     
+    # Overrides (Opcionales, anulan los del Complejo si configuracion_personalizada=True)
+    dia_corte = models.PositiveSmallIntegerField(null=True, blank=True, help_text="Día del mes que se genera el cobro (1-28). Si es null, usa el del Complejo.")
+    dias_vencimiento = models.PositiveSmallIntegerField(null=True, blank=True, help_text="Días para pagar después del corte. Si es null, usa el del Complejo.")
+    tasa_mora = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True, help_text="Porcentaje de mora diario/mensual. Si es null, usa el del Complejo.")
+    bloquear_servicios_con_deuda = models.BooleanField(default=False, help_text="Si se activa, el residente no podrá reservar amenidades si tiene deuda.")
+
     # Reglas de Tiempo
     fecha_inicio_pago = models.DateField(help_text="Fecha desde la cual se empieza a facturar")
-    dia_vencimiento_mensual = models.PositiveIntegerField(default=5, help_text="Día límite de pago para este concepto específico")
+    
+    # Finanzas
+    adelanto = models.DecimalField(max_digits=12, decimal_places=2, default=0.0, help_text="Monto pagado al inicio (Entrada/Pie)")
     
     # Campos exclusivos para COMPRA (Financiamiento)
+    es_pago_contado = models.BooleanField(default=False, help_text="Si es compra al contado (sin cuotas)")
     numero_cuotas_totales = models.PositiveIntegerField(null=True, blank=True, help_text="Solo para financiamiento: Total de cuotas pactadas (ej. 12, 24)")
     cuotas_facturadas = models.PositiveIntegerField(default=0, help_text="Contador de cuotas ya generadas")
-    saldo_pendiente = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True, help_text="Deuda total restante del inmueble")
+    monto_pendiente = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True, help_text="Deuda total restante del inmueble tras el adelanto")
 
     def __str__(self):
-        return f"{self.get_tipo_display()} - {self.propiedad_persona.persona.email}"
+        return f"Finanzas - {self.propiedad_persona.persona.email}"
 
     def es_vigente(self):
         """Helper para saber si debemos generarle factura este mes"""
         if self.estado != 'ACTIVO':
             return False
-        # Si es financiamiento y ya se cobraron todas las cuotas, no es vigente
-        if self.tipo == 'FINANCIAMIENTO' and self.numero_cuotas_totales and self.cuotas_facturadas >= self.numero_cuotas_totales:
-            return False
+        
+        # Si es compra al contado, normalmente no genera facturas mensuales recurrentes de 'cuota',
+        # salvo que tenga conceptos de mantenimiento asociados.
+        # Aquí asumimos que si es contado, el flujo de "cuotas" no aplica, pero el mantenimiento sí.
+        
+        # Si es financiamiento y ya se cobraron todas las cuotas...
+        if self.numero_cuotas_totales and self.cuotas_facturadas >= self.numero_cuotas_totales:
+            # OJO: Si tiene mantenimiento, sigue vigente.
+            # Esta lógica deberá refinarse para separar Cuota Propiedad vs Gastos Comunes.
+            # Por ahora lo dejamos genérico.
+            pass
+            
         return True
+
+    @property
+    def tiene_informacion_compra(self):
+        """Devuelve True si hay datos relevantes de compra/venta para mostrar."""
+        return (self.monto_pendiente and self.monto_pendiente > 0) or \
+               (self.adelanto and self.adelanto > 0) or \
+               (self.numero_cuotas_totales and self.numero_cuotas_totales > 0)
+
+    @property
+    def porcentaje_progreso_cuotas(self):
+        """Calcula el porcentaje de cuotas pagadas (0-100)."""
+        if not self.numero_cuotas_totales or self.numero_cuotas_totales == 0:
+            return 0
+        porcentaje = (self.cuotas_facturadas / self.numero_cuotas_totales) * 100
+        return min(porcentaje, 100) # Cap at 100 in case of overflow
+
+class ConceptoContrato(models.Model):
+    """
+    Conceptos de cobro específicos configurados para este contrato.
+    Reemplaza la rigidez de los 'Planes de Cuota'.
+    """
+    contrato = models.ForeignKey(ContratoFinanciero, on_delete=models.CASCADE, related_name='conceptos')
+    concepto = models.ForeignKey(ConceptoCobro, on_delete=models.PROTECT)
+    monto = models.DecimalField(max_digits=10, decimal_places=2)
+    orden = models.PositiveIntegerField(default=1)
+    
+    def __str__(self):
+        return f"{self.concepto.nombre} - ${self.monto}"
 
 class CargoAdicional(models.Model):
     """

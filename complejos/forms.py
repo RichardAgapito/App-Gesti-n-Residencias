@@ -246,56 +246,6 @@ class GlobalContratoForm(forms.ModelForm):
 
         return cleaned_data
 
-class EditarContratoForm(forms.ModelForm):
-    finanzas_plan = forms.ModelChoiceField(
-        queryset=PlanCuota.objects.filter(activo=True),
-        label="Plan de Pago / Cuota",
-        required=False,
-        help_text="Modificar el plan financiero asignado."
-    )
-
-    class Meta:
-        model = PropiedadPersona
-        fields = ['fecha_fin', 'estado']
-        widgets = {
-            'fecha_fin': forms.DateInput(attrs={'type': 'date'}),
-        }
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        
-        # Initialize financial plan if exists
-        if self.instance.pk:
-            try:
-                contrato_financiero = self.instance.contrato_financiero
-                self.fields['finanzas_plan'].initial = contrato_financiero.plan_pago
-            except Exception:
-                pass # No financial contract
-
-        for field_name, field in self.fields.items():
-            base_classes = "w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all text-sm"
-            
-            if isinstance(field.widget, forms.Select):
-                field.widget.attrs['class'] = f"{base_classes} appearance-none"
-            else:
-                field.widget.attrs['class'] = base_classes
-
-    def save(self, commit=True):
-        instance = super().save(commit=commit)
-        
-        # Save financial plan changes
-        finanzas_plan = self.cleaned_data.get('finanzas_plan')
-        if instance.pk:
-            try:
-                contrato_financiero = instance.contrato_financiero
-                if contrato_financiero:
-                    contrato_financiero.plan_pago = finanzas_plan
-                    contrato_financiero.save()
-            except Exception:
-                pass
-        
-        return instance
-
 class ReservaForm(forms.ModelForm):
     class Meta:
         model = Reserva
@@ -568,30 +518,42 @@ class ResidentePreAutorizacionForm(forms.ModelForm):
 
 class ContratoUnificadoForm(PropiedadPersonaForm):
     # Campos extra para la parte financiera
-    finanzas_tipo = forms.ChoiceField(
-        choices=ContratoFinanciero.TIPO_CHOICES, 
-        label="Tipo de Contrato Financiero",
-        required=True
-    )
-    finanzas_plan = forms.ModelChoiceField(
-        queryset=PlanCuota.objects.filter(activo=True),
-        label="Plan de Pago / Cuota",
-        required=False,
-        help_text="Seleccione qué plan define el monto a cobrar."
-    )
-    finanzas_dia_vencimiento = forms.IntegerField(
-        min_value=1, max_value=28, initial=5,
-        label="Día de Vencimiento Mensual"
-    )
     finanzas_cuotas = forms.IntegerField(
         min_value=1, required=False, 
-        label="Número de Cuotas (Solo para Compra)",
-        help_text="Ej: 12, 24, 36. Deje vacío para alquiler indefinido."
+        label="Número de Cuotas",
+        help_text="Solo si es financiamento a plazos. Deje vacío si es al contado o indefinido."
     )
-    finanzas_saldo = forms.DecimalField(
-        max_digits=12, decimal_places=2, required=False,
-        label="Saldo Pendiente (Solo para Compra)",
-        help_text="Monto total de la deuda a financiar."
+    finanzas_adelanto = forms.DecimalField(
+        max_digits=12, decimal_places=2, required=False, initial=0,
+        label="Pago Adelantado / Entrada",
+        help_text="Monto inicial pagado."
+    )
+    finanzas_es_contado = forms.BooleanField(
+        required=False,
+        label="¿Es pago al contado?",
+        help_text="Marque si el residente paga el total de la propiedad en un solo acto."
+    )
+    configuracion_personalizada = forms.BooleanField(
+        required=False, 
+        label="Configuración Financiera Personalizada",
+        help_text="Habilitar para agregar conceptos de cobro específicos (Alquiler, Mantenimiento, etc.) en el siguiente paso."
+    )
+
+    # Overrides Financial Fields
+    finanzas_dia_corte = forms.IntegerField(
+        min_value=1, max_value=28, required=False,
+        label="Día de Corte Mensual",
+        help_text="Override: Fija un día específico para generar la deuda."
+    )
+    finanzas_dias_vencimiento = forms.IntegerField(
+        min_value=0, required=False,
+        label="Días para Vencimiento",
+        help_text="Override: Días extra después del corte antes de mora."
+    )
+    finanzas_tasa_mora = forms.DecimalField(
+        min_value=0, max_digits=5, decimal_places=2, required=False,
+        label="Tasa de Mora (%)",
+        help_text="Override: Porcentaje de penalidad por atraso."
     )
 
     class Meta(PropiedadPersonaForm.Meta):
@@ -604,18 +566,133 @@ class ContratoUnificadoForm(PropiedadPersonaForm):
             propiedad_persona = super().save(commit=True)
 
             # 2. Guardar la parte de ContratoFinanciero (Financiera)
-            fin_tipo = self.cleaned_data.get('finanzas_tipo')
+            # Recuperar prop valor
+            prop_valor = propiedad_persona.propiedad.valor_estimado or 0
+            adelanto = self.cleaned_data.get('finanzas_adelanto') or 0
+            es_contado = self.cleaned_data.get('finanzas_es_contado')
             
+            # Si es contado, el adelanto es el valor total (automático)
+            if es_contado:
+                adelanto = prop_valor
+            
+            monto_pendiente = 0
+            if propiedad_persona.tipo_relacion == 'propietario' and not es_contado:
+               monto_pendiente = max(0, prop_valor - adelanto)
+
+            # Overrides
+            dia_corte = self.cleaned_data.get('finanzas_dia_corte')
+            dias_venc = self.cleaned_data.get('finanzas_dias_vencimiento')
+            tasa_mora = self.cleaned_data.get('finanzas_tasa_mora')
+
             # Crear contrato financiero vinculado
             ContratoFinanciero.objects.create(
                 propiedad_persona=propiedad_persona,
-                tipo=fin_tipo,
-                plan_pago=self.cleaned_data.get('finanzas_plan'),
                 fecha_inicio_pago=propiedad_persona.fecha_inicio,
-                dia_vencimiento_mensual=self.cleaned_data.get('finanzas_dia_vencimiento'),
+                
+                adelanto=adelanto,
+                es_pago_contado=es_contado,
                 numero_cuotas_totales=self.cleaned_data.get('finanzas_cuotas'),
-                saldo_pendiente=self.cleaned_data.get('finanzas_saldo'),
-                estado='ACTIVO'
+                monto_pendiente=monto_pendiente,
+                
+                configuracion_personalizada=self.cleaned_data.get('configuracion_personalizada'),
+                estado='ACTIVO',
+                
+                # Campos de override
+                dia_corte=dia_corte,
+                dias_vencimiento=dias_venc,
+                tasa_mora=tasa_mora
             )
             
             return propiedad_persona
+
+class EditarContratoForm(forms.ModelForm):
+    # Campos de configuración financiera personalizada
+    configuracion_personalizada = forms.BooleanField(
+        required=False, 
+        label="Configuración Personalizada",
+        help_text="Permite sobrescribir la configuración financiera global del complejo."
+    )
+    finanzas_dia_corte = forms.IntegerField(
+        min_value=1, max_value=28, required=False, 
+        label="Día de Corte",
+        help_text="Día del mes para el corte."
+    )
+    finanzas_dias_vencimiento = forms.IntegerField(
+        min_value=0, required=False, 
+        label="Días Vencimiento",
+        help_text="Días después del corte antes de morosidad."
+    )
+    finanzas_tasa_mora = forms.DecimalField(
+        max_digits=5, decimal_places=2, required=False, 
+        label="Tasa Mora Diaria (%)",
+        help_text="Porcentaje de interés por día de retraso."
+    )
+    finanzas_bloqueo = forms.BooleanField(
+        required=False,
+        label="Bloquear Servicios con Deuda",
+        help_text="Si se marcan, se bloquearán reservas si hay deuda."
+    )
+
+    class Meta:
+        model = PropiedadPersona
+        fields = ['fecha_fin', 'estado']
+        widgets = {
+            'fecha_fin': forms.DateInput(attrs={'type': 'date'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # Pre-fill financial config from ContratoFinanciero if exists
+        if self.instance.pk:
+            try:
+                cf = self.instance.contrato_financiero
+                if cf:
+                    self.fields['configuracion_personalizada'].initial = cf.configuracion_personalizada
+                    
+                    # Only pre-fill override values if they are set on the contract
+                    self.fields['finanzas_dia_corte'].initial = cf.dia_corte
+                    self.fields['finanzas_dias_vencimiento'].initial = cf.dias_vencimiento
+                    self.fields['finanzas_tasa_mora'].initial = cf.tasa_mora
+                    self.fields['finanzas_bloqueo'].initial = cf.bloquear_servicios_con_deuda
+            except Exception:
+                pass 
+
+        for field_name, field in self.fields.items():
+            base_classes = "w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all text-sm"
+            
+            if isinstance(field.widget, forms.Select):
+                field.widget.attrs['class'] = f"{base_classes} appearance-none"
+            elif isinstance(field.widget, forms.CheckboxInput):
+                field.widget.attrs['class'] = "w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+            else:
+                field.widget.attrs['class'] = base_classes
+
+    def save(self, commit=True):
+        instance = super().save(commit=commit)
+        
+        # Update ContratoFinanciero with overrides
+        if instance.pk:
+            try:
+                cf = instance.contrato_financiero
+                if cf:
+                    # Update config flag
+                    cf.configuracion_personalizada = self.cleaned_data.get('configuracion_personalizada')
+                    
+                    if cf.configuracion_personalizada:
+                        cf.dia_corte = self.cleaned_data.get('finanzas_dia_corte')
+                        cf.dias_vencimiento = self.cleaned_data.get('finanzas_dias_vencimiento')
+                        cf.tasa_mora = self.cleaned_data.get('finanzas_tasa_mora')
+                        cf.bloquear_servicios_con_deuda = self.cleaned_data.get('finanzas_bloqueo')
+                    else:
+                        # Clear overrides if unchecked creates cleaner data
+                        cf.dia_corte = None
+                        cf.dias_vencimiento = None
+                        cf.tasa_mora = None
+                        # Don't reset bloqueo as it might technically depend on global, but nullable allows fallback
+                        
+                    cf.save()
+            except Exception:
+                pass
+        
+        return instance
