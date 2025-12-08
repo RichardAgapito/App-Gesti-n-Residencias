@@ -13,6 +13,12 @@
             <span class="font-medium whitespace-nowrap">Dashboard</span>
         </a>
 
+        <a href="{% url 'detalle_complejo' request.user.complejo_asignado.id %}"
+           class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {% if 'complejo' in request.resolver_match.url_name %}bg-indigo-50 text-indigo-600{% else %}text-gray-700 hover:bg-gray-50{% endif %}">
+            <i class="fa-solid fa-building-user w-5 text-center"></i>
+            <span class="font-medium whitespace-nowrap">Mi Complejo</span>
+        </a>
+
         <!-- "Gestionar Complejos" removed for Manager -->
 
         <a href="{% url 'gestionar_amenidades' %}" 

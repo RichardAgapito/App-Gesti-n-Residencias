@@ -55,12 +55,14 @@
             </div>
             
             <div class="flex flex-wrap gap-3 ml-11 xl:ml-0">
+                {% if request.user.rol == 'ADMIN' %}
                 <a href="{% url 'editar_complejo' complejo.id %}?next={% url 'detalle_complejo' complejo.id %}" class="px-5 py-2.5 bg-white border border-gray-200 text-gray-700 font-medium rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm flex items-center gap-2">
                     <i class="fa-solid fa-pen text-gray-400"></i> Editar Complejo
                 </a>
                 <a href="{% url 'crear_propiedad' complejo.id %}" class="px-5 py-2.5 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 transition-all shadow-md shadow-blue-200 flex items-center gap-2">
                     <i class="fa-solid fa-plus"></i> Nueva Propiedad
                 </a>
+                {% endif %}
             </div>
         </div>
 

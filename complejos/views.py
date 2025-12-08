@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import user_passes_test, login_required
-from django.http import JsonResponse
+from django.http import JsonResponse, Http404
 from .models import Complejo, Propiedad, PropiedadPersona, Amenidad, Reserva
 from finanzas.models import Factura, ConfiguracionFinanciera
 from .forms import (
@@ -9,7 +9,7 @@ from .forms import (
     AdminReservaForm, BloquearHorarioForm, EditarContratoForm, ResidentePreAutorizacionForm,
     ContratoUnificadoForm
 )
-from users.views import es_admin
+from users.views import es_admin, es_admin_o_gerente
 from django.contrib.auth import get_user_model
 from users.models import CustomUser
 from django.db import models, transaction
@@ -192,9 +192,12 @@ def crear_complejo(request):
     return render(request, 'complejos/crear_complejo.html', {'form': form})
 
 
-@user_passes_test(es_admin, login_url='/')
+@user_passes_test(es_admin_o_gerente, login_url='/')
 def detalle_complejo(request, complejo_id):
     complejo = get_object_or_404(Complejo, id=complejo_id)
+    if request.user.rol == 'GERENTE':
+        if not request.user.complejo_asignado or complejo.id != request.user.complejo_asignado.id:
+            raise Http404
     
     propiedades_del_complejo = Propiedad.objects.filter(complejo=complejo)
 
@@ -307,10 +310,12 @@ def editar_complejo(request, complejo_id):
         form = ComplejoForm(instance=complejo)
     return render(request, 'complejos/editar_complejo.html', {'form': form, 'complejo': complejo})
 
-@user_passes_test(es_admin, login_url='/')
+@user_passes_test(es_admin_o_gerente, login_url='/')
 def detalle_propiedad(request, propiedad_id):
     propiedad = get_object_or_404(Propiedad, id=propiedad_id)
-    
+    if request.user.rol == 'GERENTE':
+        if not request.user.complejo_asignado or propiedad.complejo != request.user.complejo_asignado:
+            raise Http404
 
     contratos_activos = propiedad.personas_asociadas.filter(estado='activo').order_by('-fecha_inicio')
 
@@ -958,8 +963,12 @@ def seleccionar_propiedad_contrato(request, complejo_id):
     return render(request, 'complejos/seleccionar_propiedad_contrato.html', context)
 
 @login_required
+@user_passes_test(es_admin_o_gerente, login_url='/')
 def detalle_contrato(request, contrato_id):
     contrato = get_object_or_404(PropiedadPersona, id=contrato_id)
+    if request.user.rol == 'GERENTE':
+        if not request.user.complejo_asignado or contrato.propiedad.complejo != request.user.complejo_asignado:
+            raise Http404
     try:
         contrato_financiero = contrato.contrato_financiero
     except Exception:

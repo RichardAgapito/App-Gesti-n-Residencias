@@ -220,6 +220,7 @@
                     {% endif %}
 
                     <div class="mt-8 flex items-center justify-between pt-6 border-t border-gray-100">
+                        {% if request.user.rol == 'ADMIN' %}
                         <button type="button"
                             onclick="if(confirm('¿Estás seguro de que deseas eliminar este contrato permanentemente? Esta acción no se puede deshacer.')) { document.getElementById('delete-form').submit(); }"
                             class="px-6 py-2.5 text-red-600 font-medium hover:bg-red-50 rounded-xl transition-colors">
@@ -229,6 +230,7 @@
                             class="px-6 py-2.5 bg-blue-600 text-white font-semibold rounded-xl shadow-lg shadow-blue-200 hover:bg-blue-700 hover:shadow-blue-300 transition-all transform hover:-translate-y-0.5">
                             <i class="fa-solid fa-pen-to-square mr-2"></i>Editar Contrato
                         </a>
+                        {% endif %}
                     </div>
 
                     <form id="delete-form" action="{% url 'eliminar_contrato' contrato.id %}" method="POST"
