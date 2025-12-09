@@ -372,7 +372,13 @@ def editar_contrato(request, contrato_id):
     try:
         contrato_financiero = contrato.contrato_financiero
     except Exception:
-        contrato_financiero = None
+        # Auto-create for legacy contracts
+        from finanzas.models import ContratoFinanciero
+        contrato_financiero = ContratoFinanciero.objects.create(
+            propiedad_persona=contrato,
+            fecha_inicio_pago=contrato.fecha_inicio,
+            estado='ACTIVO'
+        )
 
     if request.method == 'POST':
         form = EditarContratoForm(request.POST, instance=contrato)
@@ -384,43 +390,66 @@ def editar_contrato(request, contrato_id):
                 # Refresh to get updated fields like configuracion_personalizada from form.save()
                 contrato_financiero.refresh_from_db()
                 
-                if contrato_financiero.configuracion_personalizada:
-                    conceptos_ids = request.POST.getlist('concepto_cobro_id')
-                    # Fallback for array notation if strictly used (JS usually sends name="foo" repeatedly)
-                    # The template input name is "concepto_cobro_id" (see line 281 in template snippet)
-                    if not conceptos_ids:
-                         conceptos_ids = request.POST.getlist('concepto_cobro_id[]')
-                         
-                    conceptos_montos = request.POST.getlist('concepto_monto')
-                    if not conceptos_montos:
-                        conceptos_montos = request.POST.getlist('concepto_monto[]')
-                    
-                    # Delete existing concepts
-                    from finanzas.models import ConceptoContrato, ConceptoCobro
-                    ConceptoContrato.objects.filter(contrato=contrato_financiero).delete()
-                    
-                    for index, cid in enumerate(conceptos_ids):
-                        try:
-                            monto = conceptos_montos[index]
-                            if cid and monto:
-                                obj_concepto = ConceptoCobro.objects.get(id=cid)
-                                ConceptoContrato.objects.create(
-                                    contrato=contrato_financiero,
-                                    concepto=obj_concepto,
-                                    monto=monto,
-                                    orden=index+1
-                                )
-                        except (IndexError, ConceptoCobro.DoesNotExist, ValueError):
-                            continue
+                # ALWAYS process concepts, regardless of "configuracion_personalizada"
+                # The boolean now only affects deadlines/interest, not the existence of the plan/concepts.
+                conceptos_ids = request.POST.getlist('concepto_cobro_id')
+                if not conceptos_ids:
+                        conceptos_ids = request.POST.getlist('concepto_cobro_id[]')
+                        
+                conceptos_montos = request.POST.getlist('concepto_monto')
+                if not conceptos_montos:
+                    conceptos_montos = request.POST.getlist('concepto_monto[]')
+                
+                # Ensure we have a personalized plan
+                from finanzas.models import PlanCuota, PlanConceptoCobro, ConceptoCobro
+                
+                plan_personalizado = contrato_financiero.plan
+                if not plan_personalizado:
+                    # Create a new private plan if none exists
+                    plan_personalizado = PlanCuota.objects.create(
+                        nombre=f"Plan Personalizado - {contrato.persona}",
+                        descripcion=f"Plan específico para contrato {contrato.id}",
+                        complejo=contrato.propiedad.complejo,
+                        activo=True
+                    )
+                    contrato_financiero.plan = plan_personalizado
+                    contrato_financiero.save()
+                
+                # Clear usage in this plan (rebuild)
+                PlanConceptoCobro.objects.filter(plan_cuota=plan_personalizado).delete()
+                
+                for index, cid in enumerate(conceptos_ids):
+                    try:
+                        monto = conceptos_montos[index]
+                        if cid and monto:
+                            obj_concepto = ConceptoCobro.objects.get(id=cid)
+                            PlanConceptoCobro.objects.create(
+                                plan_cuota=plan_personalizado,
+                                concepto_cobro=obj_concepto,
+                                monto=monto,
+                                orden=index+1
+                            )
+                    except (IndexError, ConceptoCobro.DoesNotExist, ValueError):
+                        continue
             
             return redirect('detalle_contrato', contrato_id=contrato.id)
     else:
         form = EditarContratoForm(instance=contrato)
     
     # Context data for concepts
-    from finanzas.models import ConceptoContrato, ConceptoCobro
-    conceptos_disponibles = ConceptoCobro.objects.filter(complejo=contrato.propiedad.complejo) if contrato_financiero else []
-    conceptos_existentes = ConceptoContrato.objects.filter(contrato=contrato_financiero).order_by('orden') if contrato_financiero else []
+    from finanzas.models import PlanCuota, PlanConceptoCobro, ConceptoCobro
+    conceptos_disponibles = ConceptoCobro.objects.filter(complejo=contrato.propiedad.complejo)
+    
+    conceptos_existentes = []
+    if contrato_financiero and contrato_financiero.plan:
+         # Serialize for JSON usage in template to avoid syntax errors
+         conceptos_qs = PlanConceptoCobro.objects.filter(plan_cuota=contrato_financiero.plan).order_by('orden')
+         for cc in conceptos_qs:
+             conceptos_existentes.append({
+                 'id': cc.concepto_cobro.id,
+                 'text': cc.concepto_cobro.nombre,
+                 'amount': float(cc.monto)
+             })
 
     context = {
         'form': form,
@@ -896,21 +925,31 @@ def crear_contrato_global(request):
             
             contrato_financiero = getattr(propiedad_persona, 'contrato_financiero', None)
             
-            if contrato_financiero and contrato_financiero.configuracion_personalizada:
+            if contrato_financiero:
+                # Process concepts unconditionally
                 conceptos_ids = request.POST.getlist('concepto_id[]')
                 conceptos_montos = request.POST.getlist('concepto_monto[]')
                 
-                # Limpiar conceptos previos si existieran (aunque es creación, asi que no debería haber)
-                from finanzas.models import ConceptoContrato, ConceptoCobro
+                from finanzas.models import PlanCuota, PlanConceptoCobro, ConceptoCobro
+                
+                # Create personalized plan
+                plan_personalizado = PlanCuota.objects.create(
+                    nombre=f"Plan Personalizado - {propiedad_persona.persona}",
+                    descripcion=f"Plan inicial para contrato {propiedad_persona.id}",
+                    complejo=propiedad_persona.propiedad.complejo,
+                    activo=True
+                )
+                contrato_financiero.plan = plan_personalizado
+                contrato_financiero.save()
                 
                 for index, cid in enumerate(conceptos_ids):
                     try:
                         monto = conceptos_montos[index]
                         if cid and monto:
                             obj_concepto = ConceptoCobro.objects.get(id=cid)
-                            ConceptoContrato.objects.create(
-                                contrato=contrato_financiero,
-                                concepto=obj_concepto,
+                            PlanConceptoCobro.objects.create(
+                                plan_cuota=plan_personalizado,
+                                concepto_cobro=obj_concepto,
                                 monto=monto,
                                 orden=index+1
                             )
@@ -1042,7 +1081,31 @@ def eliminar_contrato(request, contrato_id):
     
     if request.method == 'POST':
         try:
+            # Pre-check for exclusive PlanCuota cleanup
+            plan_to_delete = None
+            try:
+                if hasattr(contrato, 'contrato_financiero') and contrato.contrato_financiero.plan:
+                    plan = contrato.contrato_financiero.plan
+                    
+                    # 1. Check if it is a default plan for any config
+                    from finanzas.models import ConfiguracionFinanciera, ContratoFinanciero
+                    is_default = ConfiguracionFinanciera.objects.filter(plan_mantenimiento_default=plan).exists()
+                    
+                    # 2. Check if it is shared by other contracts (count > 1 means someone else uses it too)
+                    # Note: We include the current one in the count, so > 1 means "others exist"
+                    is_shared = ContratoFinanciero.objects.filter(plan=plan).count() > 1
+                    
+                    if not is_default and not is_shared:
+                        plan_to_delete = plan
+            except Exception:
+                pass # Fail silently on check, proceed with contract deletion
+
             contrato.delete()
+            
+            # If successful and we had an exclusive plan, delete it now
+            if plan_to_delete:
+                plan_to_delete.delete()
+
             messages.success(request, 'El contrato ha sido eliminado exitosamente.')
             return redirect('seleccionar_propiedad_contrato', complejo_id=complejo_id)
         except ProtectedError:

@@ -50,15 +50,11 @@ class ConfiguracionFinancieraAdmin(admin.ModelAdmin):
 
 
 
-class ConceptoContratoInline(admin.TabularInline):
-    from .models import ConceptoContrato
-    model = ConceptoContrato
-    extra = 1
+
 
 @admin.register(ContratoFinanciero)
 class ContratoFinancieroAdmin(admin.ModelAdmin):
-    inlines = (ConceptoContratoInline,)
-    list_display = ('propiedad_persona', 'adelanto', 'es_pago_contado', 'estado', 'cuotas_facturadas')
+    list_display = ('propiedad_persona', 'plan', 'adelanto', 'es_pago_contado', 'estado', 'cuotas_facturadas')
     list_filter = ('estado', 'es_pago_contado')
     search_fields = ('propiedad_persona__persona__email', 'propiedad_persona__persona__nombres')
     

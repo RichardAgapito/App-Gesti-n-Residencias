@@ -169,6 +169,8 @@ class ConfiguracionFinanciera(models.Model):
     Define las "Reglas de Juego" automáticas para cada complejo.
     Centraliza la configuración para no tener números mágicos en el código.
     """
+    nombre = models.CharField(max_length=100, default="Configuración Estándar", help_text="Nombre para identificar esta configuración")
+    es_personalizada = models.BooleanField(default=False, help_text="Si es True, es específica de un contrato y no se muestra en listas generales")
     complejo = models.ForeignKey(Complejo, on_delete=models.CASCADE, related_name='configuraciones_financieras')
     propiedad = models.OneToOneField(Propiedad, on_delete=models.CASCADE, null=True, blank=True, related_name='configuracion_financiera_especifica')
     
@@ -218,13 +220,13 @@ class ContratoFinanciero(models.Model):
     estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='ACTIVO')
     
     # Nuevo enfoque: Configuración personalizada
-    configuracion_personalizada = models.BooleanField(default=False, help_text="Si es True, usa los conceptos definidos en ConceptoContrato. Si es False, usa la configuración del complejo.")
+    configuracion_personalizada = models.BooleanField(default=False, help_text="Si es True, usa una configuración financiera específica (fechas, tasas). Si es False, usa la configuración del complejo.")
     
-    # Overrides (Opcionales, anulan los del Complejo si configuracion_personalizada=True)
-    dia_corte = models.PositiveSmallIntegerField(null=True, blank=True, help_text="Día del mes que se genera el cobro (1-28). Si es null, usa el del Complejo.")
-    dias_vencimiento = models.PositiveSmallIntegerField(null=True, blank=True, help_text="Días para pagar después del corte. Si es null, usa el del Complejo.")
-    tasa_mora = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True, help_text="Porcentaje de mora diario/mensual. Si es null, usa el del Complejo.")
-    bloquear_servicios_con_deuda = models.BooleanField(default=False, help_text="Si se activa, el residente no podrá reservar amenidades si tiene deuda.")
+    # PLAN PERSONALIZADO (Reemplaza a ConceptoContrato)
+    plan = models.ForeignKey('PlanCuota', on_delete=models.PROTECT, null=True, blank=True, help_text="Plan de cuotas (Conceptos de cobro) específico para este contrato")
+
+    # CONFIGURACIÓN FINANCIERA (Reemplaza los overrides directos)
+    configuracion = models.ForeignKey('ConfiguracionFinanciera', on_delete=models.PROTECT, null=True, blank=True, help_text="Configuración financiera específica (fechas, tasas). Si es null y configuracion_personalizada=False, usa la del complejo.")
 
     # Reglas de Tiempo
     fecha_inicio_pago = models.DateField(help_text="Fecha desde la cual se empieza a facturar")
@@ -267,25 +269,21 @@ class ContratoFinanciero(models.Model):
                (self.numero_cuotas_totales and self.numero_cuotas_totales > 0)
 
     @property
+    def configuracion_efectiva(self):
+        """
+        Devuelve la configuración financiera efectiva (personalizada o del complejo).
+        """
+        if self.configuracion_personalizada and self.configuracion:
+            return self.configuracion
+        return self.propiedad_persona.propiedad.complejo.configuraciones_financieras.first()
+
+    @property
     def porcentaje_progreso_cuotas(self):
         """Calcula el porcentaje de cuotas pagadas (0-100)."""
         if not self.numero_cuotas_totales or self.numero_cuotas_totales == 0:
             return 0
         porcentaje = (self.cuotas_facturadas / self.numero_cuotas_totales) * 100
         return min(porcentaje, 100) # Cap at 100 in case of overflow
-
-class ConceptoContrato(models.Model):
-    """
-    Conceptos de cobro específicos configurados para este contrato.
-    Reemplaza la rigidez de los 'Planes de Cuota'.
-    """
-    contrato = models.ForeignKey(ContratoFinanciero, on_delete=models.CASCADE, related_name='conceptos')
-    concepto = models.ForeignKey(ConceptoCobro, on_delete=models.PROTECT)
-    monto = models.DecimalField(max_digits=10, decimal_places=2)
-    orden = models.PositiveIntegerField(default=1)
-    
-    def __str__(self):
-        return f"{self.concepto.nombre} - ${self.monto}"
 
 class CargoAdicional(models.Model):
     """

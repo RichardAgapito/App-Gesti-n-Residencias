@@ -8,7 +8,7 @@ from visitas.models import PreAutorizacion
 from django.core.validators import RegexValidator
 
 
-from finanzas.models import PlanCuota, ContratoFinanciero
+from finanzas.models import PlanCuota, ContratoFinanciero, ConfiguracionFinanciera
 from django.db import transaction
 
 class UserChoiceField(forms.ModelChoiceField):
@@ -585,7 +585,7 @@ class ContratoUnificadoForm(PropiedadPersonaForm):
             tasa_mora = self.cleaned_data.get('finanzas_tasa_mora')
 
             # Crear contrato financiero vinculado
-            ContratoFinanciero.objects.create(
+            cf = ContratoFinanciero.objects.create(
                 propiedad_persona=propiedad_persona,
                 fecha_inicio_pago=propiedad_persona.fecha_inicio,
                 
@@ -597,11 +597,36 @@ class ContratoUnificadoForm(PropiedadPersonaForm):
                 configuracion_personalizada=self.cleaned_data.get('configuracion_personalizada'),
                 estado='ACTIVO',
                 
-                # Campos de override
-                dia_corte=dia_corte,
-                dias_vencimiento=dias_venc,
-                tasa_mora=tasa_mora
+                # Campos de override NO se pasan directamente al contrato ya
             )
+            
+            if self.cleaned_data.get('configuracion_personalizada'):
+                # Crear configuración financiera personalizada
+                # Crear configuración financiera personalizada (o usar existente)
+                config, created = ConfiguracionFinanciera.objects.get_or_create(
+                    propiedad=propiedad_persona.propiedad,
+                    defaults={
+                        'nombre': f"Configuración Personalizada - {propiedad_persona.persona}",
+                        'es_personalizada': True,
+                        'complejo': propiedad_persona.propiedad.complejo,
+                        'dia_corte': dia_corte or 1,
+                        'dias_vencimiento': dias_venc or 0,
+                        'tasa_interes_mora_diaria': tasa_mora or 0,
+                        'bloquear_servicios_con_deuda': False
+                    }
+                )
+                
+                if not created:
+                    # Update existing config with new values
+                    config.nombre = f"Configuración Personalizada - {propiedad_persona.persona}"
+                    config.es_personalizada = True
+                    config.complejo = propiedad_persona.propiedad.complejo # Ensure complex match
+                    if dia_corte: config.dia_corte = dia_corte
+                    if dias_venc: config.dias_vencimiento = dias_venc
+                    if tasa_mora: config.tasa_interes_mora_diaria = tasa_mora
+                    config.save()
+                cf.configuracion = config
+                cf.save()
             
             return propiedad_persona
 
@@ -647,14 +672,17 @@ class EditarContratoForm(forms.ModelForm):
         if self.instance.pk:
             try:
                 cf = self.instance.contrato_financiero
-                if cf:
-                    self.fields['configuracion_personalizada'].initial = cf.configuracion_personalizada
+                if cf and cf.configuracion_personalizada and cf.configuracion:
+                    conf = cf.configuracion
+                    self.fields['configuracion_personalizada'].initial = True
                     
-                    # Only pre-fill override values if they are set on the contract
-                    self.fields['finanzas_dia_corte'].initial = cf.dia_corte
-                    self.fields['finanzas_dias_vencimiento'].initial = cf.dias_vencimiento
-                    self.fields['finanzas_tasa_mora'].initial = cf.tasa_mora
-                    self.fields['finanzas_bloqueo'].initial = cf.bloquear_servicios_con_deuda
+                    # Only pre-fill override values if they are set on the contract config
+                    self.fields['finanzas_dia_corte'].initial = conf.dia_corte
+                    self.fields['finanzas_dias_vencimiento'].initial = conf.dias_vencimiento
+                    self.fields['finanzas_tasa_mora'].initial = conf.tasa_interes_mora_diaria
+                    self.fields['finanzas_bloqueo'].initial = conf.bloquear_servicios_con_deuda
+            except Exception:
+                pass
             except Exception:
                 pass 
 
@@ -673,26 +701,38 @@ class EditarContratoForm(forms.ModelForm):
         
         # Update ContratoFinanciero with overrides
         if instance.pk:
-            try:
-                cf = instance.contrato_financiero
-                if cf:
-                    # Update config flag
-                    cf.configuracion_personalizada = self.cleaned_data.get('configuracion_personalizada')
-                    
-                    if cf.configuracion_personalizada:
-                        cf.dia_corte = self.cleaned_data.get('finanzas_dia_corte')
-                        cf.dias_vencimiento = self.cleaned_data.get('finanzas_dias_vencimiento')
-                        cf.tasa_mora = self.cleaned_data.get('finanzas_tasa_mora')
-                        cf.bloquear_servicios_con_deuda = self.cleaned_data.get('finanzas_bloqueo')
-                    else:
-                        # Clear overrides if unchecked creates cleaner data
-                        cf.dia_corte = None
-                        cf.dias_vencimiento = None
-                        cf.tasa_mora = None
-                        # Don't reset bloqueo as it might technically depend on global, but nullable allows fallback
+            cf = getattr(instance, 'contrato_financiero', None)
+            if cf:
+                # Update config flag
+                cf.configuracion_personalizada = self.cleaned_data.get('configuracion_personalizada')
+                
+                if cf.configuracion_personalizada:
+                    # Ensure config object exists
+                    conf = cf.configuracion
+                    if not conf:
+                        # Check if one already exists for this property to avoid O2O conflict
+                        conf = ConfiguracionFinanciera.objects.filter(propiedad=instance.propiedad).first()
                         
-                    cf.save()
-            except Exception:
-                pass
+                        if not conf:
+                            conf = ConfiguracionFinanciera.objects.create(
+                                nombre=f"Configuración Personalizada - {instance.persona}",
+                                es_personalizada=True,
+                                complejo=instance.propiedad.complejo,
+                                propiedad=instance.propiedad
+                            )
+                        
+                        cf.configuracion = conf
+                    
+                    # Update values
+                    conf.dia_corte = self.cleaned_data.get('finanzas_dia_corte') or 1
+                    conf.dias_vencimiento = self.cleaned_data.get('finanzas_dias_vencimiento') or 0
+                    conf.tasa_interes_mora_diaria = self.cleaned_data.get('finanzas_tasa_mora') or 0
+                    conf.bloquear_servicios_con_deuda = self.cleaned_data.get('finanzas_bloqueo')
+                    conf.save()
+                else:
+                    # If customized is false, we keep the object but the contract flag ignores it.
+                    pass
+                    
+                cf.save()
         
         return instance

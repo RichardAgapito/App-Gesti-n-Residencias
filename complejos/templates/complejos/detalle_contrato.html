@@ -165,24 +165,7 @@
                                         {{ contrato_financiero.get_estado_display }}
                                     </span>
                                 </div>
-                                <div>
-                                    <p class="text-xs text-gray-500 uppercase font-semibold">Configuración</p>
-                                    <p class="text-base font-medium text-gray-900">
-                                        {% if contrato_financiero.configuracion_personalizada %}
-                                        Personalizada
-                                        {% else %}
-                                        Estándar del Complejo
-                                        {% endif %}
-                                    </p>
-                                </div>
-                                <div>
-                                    <p class="text-xs text-gray-500 uppercase font-semibold">Inicio Pago / Día de Corte
-                                    </p>
-                                    <p class="text-base font-medium text-gray-900">
-                                        {{ contrato_financiero.fecha_inicio_pago|date:"d/m/Y" }}
-                                        (Día {{ contrato_financiero.fecha_inicio_pago.day }})
-                                    </p>
-                                </div>
+
                             </div>
 
                             <!-- Concepts List -->
@@ -190,20 +173,26 @@
                                 <div>
                                     <p class="text-xs text-gray-500 uppercase font-semibold">Conceptos de Cobro Mensual
                                     </p>
-                                    {% if contrato_financiero.conceptos.all %}
+                                    {% if contrato_financiero.plan %}
+                                    <h5 class="text-xs font-bold text-gray-400 mb-1">
+                                        {{ contrato_financiero.plan.nombre}}</h5>
+                                    {% if contrato_financiero.plan.planconceptocobro_set.all %}
                                     <ul class="mt-2 space-y-2">
-                                        {% for c in contrato_financiero.conceptos.all %}
+                                        {% for c in contrato_financiero.plan.planconceptocobro_set.all %}
                                         <li
                                             class="flex justify-between text-sm border-b border-gray-100 pb-1 last:border-0">
-                                            <span class="text-gray-700">{{ c.concepto.nombre }}
+                                            <span class="text-gray-700">{{ c.concepto_cobro.nombre }}
                                             </span>
                                             <span class="font-bold text-gray-900">${{ c.monto }}</span>
                                         </li>
                                         {% endfor %}
                                     </ul>
                                     {% else %}
-                                    <p class="text-sm text-gray-400 italic mt-1">Sin conceptos definidos explícitamente.
+                                    <p class="text-sm text-gray-400 italic mt-1">El plan asignado no tiene conceptos.
                                     </p>
+                                    {% endif %}
+                                    {% else %}
+                                    <p class="text-sm text-gray-400 italic mt-1">Sin plan de cuotas asignado.</p>
                                     {% endif %}
                                 </div>
                             </div>
