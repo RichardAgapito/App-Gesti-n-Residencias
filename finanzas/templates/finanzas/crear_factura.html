@@ -2,56 +2,25 @@
 {% load static %}
 
 {% block extra_css %}
-    <link rel="stylesheet" href="{% static 'css/crear_complejo.css' %}">
-    <style>
-        .formset-container {
-            border: 1px solid #ccc;
-            padding: 15px;
-            margin-top: 20px;
-            margin-bottom: 20px;
-            border-radius: 5px;
-            background-color: #f9f9f9;
-        }
-        .formset-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-        .form-row-container {
-            display: flex;
-            gap: 1rem;
-            align-items: flex-end;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid #eee;
-            margin-bottom: 1rem;
-        }
-        .form-row-container .form-group {
-            flex: 1;
-            margin-bottom: 0;
-        }
-        .delete-btn {
-            height: fit-content;
-            margin-bottom: 0.5rem; /* Align with form-control padding */
-        }
-        .empty-form {
-            display: none;
-        }
-    </style>
+<link rel="stylesheet" href="{% static 'css/crear_complejo.css' %}">
 {% endblock %}
 
 {% block content %}
 <div class="form-container">
     <h2><i class="fa-solid fa-file-invoice-dollar"></i> Crear Factura Manual</h2>
-    
+
+    <div class="alert alert-info">
+        <i class="fa-solid fa-info-circle"></i>
+        La factura se generará automáticamente con los conceptos del contrato activo o el plan de mantenimiento.
+    </div>
+
     <form method="post">
         {% csrf_token %}
 
-        {% if form.non_field_errors or detalles.non_form_errors %}
-            <div class="alert alert-danger">
-                {{ form.non_field_errors }}
-                {{ detalles.non_form_errors }}
-            </div>
+        {% if form.non_field_errors %}
+        <div class="alert alert-danger">
+            {{ form.non_field_errors }}
+        </div>
         {% endif %}
 
         {# === MAIN FACTURA FORM === #}
@@ -63,63 +32,15 @@
             {{ form.fecha_vencimiento.label_tag }}
             {{ form.fecha_vencimiento }}
             {{ form.fecha_vencimiento.errors }}
-            
+
             {{ form.plan_cuota.label_tag }}
             {{ form.plan_cuota }}
             {{ form.plan_cuota.errors }}
-            
+
             {{ form.observaciones.label_tag }}
             {{ form.observaciones }}
             {{ form.observaciones.errors }}
         </div>
-
-        {# === DETALLES FORMSET === #}
-        <div class="formset-container">
-            <div class="formset-header">
-                <h3>Detalles de la Factura</h3>
-                <button type="button" id="add-form" class="btn btn-success">Añadir Concepto</button>
-            </div>
-            
-            {{ detalles.management_form }}
-            
-            <div id="formset-forms">
-                {% for formset_form in detalles.forms %}
-                    <div class="form-row-container">
-                        <div class="form-group">
-                            {{ formset_form.concepto_cobro.label_tag }}
-                            {{ formset_form.concepto_cobro }}
-                            {{ formset_form.concepto_cobro.errors }}
-                        </div>
-                        <div class="form-group">
-                            {{ formset_form.monto.label_tag }}
-                            {{ formset_form.monto }}
-                            {{ formset_form.monto.errors }}
-                        </div>
-                        {% if formset_form.instance.pk and detalles.can_delete %}
-                            <div class="form-group">
-                                {{ formset_form.DELETE.label_tag }}
-                                {{ formset_form.DELETE }}
-                            </div>
-                        {% endif %}
-                    </div>
-                {% endfor %}
-            </div>
-        </div>
-
-        {# This is the template for new forms #}
-        <template id="empty-form-template">
-            <div class="form-row-container">
-                <div class="form-group">
-                    {{ detalles.empty_form.concepto_cobro.label_tag }}
-                    {{ detalles.empty_form.concepto_cobro }}
-                </div>
-                <div class="form-group">
-                    {{ detalles.empty_form.monto.label_tag }}
-                    {{ detalles.empty_form.monto }}
-                </div>
-                <button type="button" class="btn btn-danger delete-btn">Eliminar</button>
-            </div>
-        </template>
 
         <button type="submit" class="btn-submit">Guardar Factura</button>
         <a href="{% url 'lista_facturas' %}" class="back-link">Cancelar y Volver</a>
@@ -127,39 +48,29 @@
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const addButton = document.getElementById('add-form');
-    const formsetContainer = document.getElementById('formset-forms');
-    const emptyFormTemplate = document.getElementById('empty-form-template').innerHTML;
-    const totalFormsInput = document.querySelector('input[name="detalles-TOTAL_FORMS"]');
-    
-    addButton.addEventListener('click', function() {
-        const formNum = parseInt(totalFormsInput.value);
-        const newFormHtml = emptyFormTemplate.replace(/__prefix__/g, formNum);
-        
-        const newFormElement = document.createElement('div');
-        newFormElement.innerHTML = newFormHtml;
-        formsetContainer.appendChild(newFormElement.firstChild);
-        
-        totalFormsInput.value = formNum + 1;
-    });
+    document.addEventListener('DOMContentLoaded', function () {
+        const propiedadSelect = document.getElementById('id_propiedad');
+        const planCuotaSelect = document.getElementById('id_plan_cuota');
 
-    formsetContainer.addEventListener('click', function(e) {
-        if (e.target && e.target.classList.contains('delete-btn')) {
-            const row = e.target.closest('.form-row-container');
-            // Find the DELETE checkbox if it exists (for existing forms)
-            const deleteCheckbox = row.querySelector('input[type="checkbox"][name$="-DELETE"]');
-            if (deleteCheckbox) {
-                deleteCheckbox.checked = true;
-                row.style.display = 'none'; // Hide the form
-            } else {
-                // This is a new form that hasn't been saved, so just remove it
-                row.remove();
-                // Decrement total forms count as we are removing a new form
-                totalFormsInput.value = parseInt(totalFormsInput.value) - 1;
-            }
+        // AJAX: Load plan info when "Propiedad" changes to auto-select it
+        if (propiedadSelect) {
+            propiedadSelect.addEventListener('change', function () {
+                const propiedadId = this.value;
+                if (!propiedadId) return;
+
+                fetch(`{% url 'get_conceptos_contrato' %}?propiedad_id=${propiedadId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        // Update Plan Cuota Select
+                        if (planCuotaSelect && data.plan_id) {
+                            planCuotaSelect.value = data.plan_id;
+                        } else if (planCuotaSelect) {
+                            planCuotaSelect.value = '';
+                        }
+                    })
+                    .catch(error => console.error('Error fetching plan:', error));
+            });
         }
     });
-});
 </script>
 {% endblock %}

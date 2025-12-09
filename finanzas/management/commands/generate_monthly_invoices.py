@@ -78,8 +78,8 @@ class Command(BaseCommand):
                         
                         factura = Factura.objects.create(
                             propiedad=propiedad,
-                            # El plan cuota cabecera será el de mantenimiento base (informativo)
-                            plan_cuota=config_actual.plan_mantenimiento_default, 
+                            # El plan cuota cabecera será None inicialmente, se asigna si hay contrato
+                            plan_cuota=None, 
                             fecha_emision=today,
                             fecha_vencimiento=fecha_vencimiento,
                             estado='PENDIENTE',
@@ -88,62 +88,71 @@ class Command(BaseCommand):
                         
                         total_acumulado = 0
 
-                        # --- PASO B: Agregar Conceptos de Mantenimiento (Gasto Común) ---
-                        if config_actual.plan_mantenimiento_default:
-                            conceptos_base = PlanConceptoCobro.objects.filter(
-                                plan_cuota=config_actual.plan_mantenimiento_default,
-                                # No filtar por activo=True aqui plan_cuota.planconceptocobro_set.all() ?
-                                # Asumiendo que el PlanConceptoCobro no tiene campo activo, pero el PlanCuota si.
+                        # --- PASO B: (ELIMINADO) No hay cobro de Mantenimiento por defecto ---
+                        # Solo se cobra si hay Contrato Financiero o Cargos Adicionales.
+
+
+                        # --- PASO 1: Determinar Plan de Cuota a Facturar ---
+                        # Estrategia: "Exclusive OR"
+                        # 1. Por defecto, usamos el plan del de la configuración (Global)
+                        plan_a_usar = config_actual.plan_mantenimiento_default
+                        contrato_fin = None
+
+                        # 2. Buscamos si tiene Contrato Financiero ACTIVO
+                        contrato_candidate = ContratoFinanciero.objects.filter(
+                            propiedad_persona=contrato_residencial,
+                            estado='ACTIVO'
+                        ).first()
+
+                        if contrato_candidate and contrato_candidate.es_vigente():
+                            contrato_fin = contrato_candidate
+                            # Si el contrato tiene un plan específico, ESTE anula al default
+                            if contrato_fin.plan:
+                                plan_a_usar = contrato_fin.plan
+
+                        # --- PASO 2: Generar Detalles de la Factura (El Cobro) ---
+                        if plan_a_usar:
+                            # Asignamos el plan a la cabecera
+                            factura.plan_cuota = plan_a_usar
+                            factura.save(update_fields=['plan_cuota'])
+
+                            # Generamos los items del plan elegido
+                            conceptos_del_plan = PlanConceptoCobro.objects.filter(
+                                plan_cuota=plan_a_usar
                             ).select_related('concepto_cobro')
 
-                            for item in conceptos_base:
+                            for item in conceptos_del_plan:
                                 DetalleFactura.objects.create(
                                     factura=factura,
                                     concepto_cobro=item.concepto_cobro,
                                     monto=item.monto
                                 )
                                 total_acumulado += item.monto
-
-                        # --- PASO C: Buscar Contratos Financieros (Alquiler / Compra) ---
-                        contrato_fin = ContratoFinanciero.objects.filter(
-                            propiedad_persona=contrato_residencial,
-                            estado='ACTIVO'
-                        ).first()
-
-                        if contrato_fin and contrato_fin.es_vigente():
-                            # Usar los conceptos del plan de pago del contrato
-                            if contrato_fin.plan_pago:
-                                conceptos_contrato = PlanConceptoCobro.objects.filter(
-                                    plan_cuota=contrato_fin.plan_pago
-                                ).select_related('concepto_cobro')
-                                
-                                for item in conceptos_contrato:
-                                    DetalleFactura.objects.create(
-                                        factura=factura,
-                                        concepto_cobro=item.concepto_cobro,
-                                        monto=item.monto
-                                    )
-                                    total_acumulado += item.monto
-                                
-                                # Actualizar estados del contrato
-                                if contrato_fin.tipo == 'FINANCIAMIENTO':
-                                    contrato_fin.cuotas_facturadas += 1
-                                    
-                                    # Reducir saldo si aplica
-                                    if contrato_fin.saldo_pendiente and total_acumulado > 0:
-                                        # Nota: Aquí estamos asumiendo que TODO el monto va al capital, 
-                                        # lo cual podría no ser cierto si hay intereses. 
-                                        # Simplificación: reducir saldo por el monto total del plan contrato.
-                                        monto_contrato_total = sum(c.monto for c in conceptos_contrato)
-                                        contrato_fin.saldo_pendiente -= monto_contrato_total
-
-                                    if contrato_fin.numero_cuotas_totales and contrato_fin.cuotas_facturadas >= contrato_fin.numero_cuotas_totales:
-                                        contrato_fin.estado = 'FINALIZADO'
-                                        self.stdout.write(self.style.SUCCESS(f"    -> Fin contrato compra para {propiedad}"))
-                                    
-                                    contrato_fin.save()
                         
-                        # --- PASO D: Agregar Cargos Adicionales Pendientes (Multas / Extras) ---
+                        # --- PASO 3: Procesar Lógica del Contrato (Saldos / Cuotas) ---
+                        if contrato_fin:
+                             # Solo si el plan facturado FUE el del contrato, actualizamos contadores
+                             # O si es financiamiento, etc.
+                             # Asumiremos que si hay contrato, actualizamos sus métricas independientemente
+                             # de si el plan vino del contrato o del default (aunque usualmente irán de la mano).
+                             
+                             if contrato_fin.tipo == 'FINANCIAMIENTO':
+                                contrato_fin.cuotas_facturadas += 1
+                                
+                                # Reducir saldo
+                                if contrato_fin.monto_pendiente and total_acumulado > 0:
+                                    # Nota: Aquí reducimos por el total facturado.
+                                    # Si el plan era el default, técnicamente también reduce deuda?
+                                    # Discutible, pero por ahora mantendremos la lógica simple: Todo pago cuenta.
+                                    contrato_fin.monto_pendiente -= total_acumulado
+
+                                if contrato_fin.numero_cuotas_totales and contrato_fin.cuotas_facturadas >= contrato_fin.numero_cuotas_totales:
+                                    contrato_fin.estado = 'FINALIZADO'
+                                    self.stdout.write(self.style.SUCCESS(f"    -> Fin contrato compra para {propiedad}"))
+                                
+                                contrato_fin.save()
+                        
+                        # --- PASO 4: Agregar Cargos Adicionales Pendientes ---
                         cargos_pendientes = CargoAdicional.objects.filter(
                             propiedad=propiedad,
                             procesado=False

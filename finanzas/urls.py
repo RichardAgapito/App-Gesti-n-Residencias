@@ -23,7 +23,8 @@ from .views import (
     ListaCargosAdicionalesView,
     CrearCargoAdicionalView,
     ConfiguracionFinancieraUpdateView,
-    SeleccionarComplejoFinanzasView # Added
+    SeleccionarComplejoFinanzasView, # Added
+    get_conceptos_contrato # Added
 )
 
 urlpatterns = [
@@ -61,5 +62,6 @@ urlpatterns = [
     path('facturas/generar-automatico/', GenerateInvoicesView.as_view(), name='generar_facturas_automatico'),
     
     # NUEVA RUTA:
-    path('facturas/actualizar-estados/', UpdateFinancialStatusView.as_view(), name='actualizar_estados_financieros')
+    path('facturas/actualizar-estados/', UpdateFinancialStatusView.as_view(), name='actualizar_estados_financieros'),
+    path('ajax/get-conceptos-contrato/', get_conceptos_contrato, name='get_conceptos_contrato'), # Helper para crear factura
 ]
