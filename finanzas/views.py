@@ -352,7 +352,7 @@ class FacturaCreateView(LoginRequiredMixin, GerenteRequiredMixin, CreateView):
                 except ContratoFinanciero.DoesNotExist:
                     pass
 
-            # C. Fallback to Complex Default if no specific plan found
+            # C. Fallback to Complex Default ONLY if no specific plan found
             if not plan_efectivo:
                 config = ConfiguracionFinanciera.objects.filter(complejo=propiedad.complejo).first()
                 if config:
@@ -745,8 +745,10 @@ def get_conceptos_contrato(request):
         plan = None
         if contrato_financiero.plan:
             plan = contrato_financiero.plan
-        else:
-            # Buscar configuración del complejo
+        # else:
+            # No fallback to default configuration logic
+        # REVERTED ABOVE: We DO recognize default if no specific plan.
+        if not plan: # Only if no personalized plan
             config = ConfiguracionFinanciera.objects.filter(complejo=contrato.propiedad.complejo).first()
             if config:
                 plan = config.plan_mantenimiento_default

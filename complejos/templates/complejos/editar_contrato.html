@@ -277,9 +277,9 @@
     const existingConcepts = [
         {% for cc in conceptos_existentes %}
     {
-        id: "{{ cc.concepto.id }}",
-            text: "{{ cc.concepto.nombre }}",
-                amount: "{{ cc.monto|stringformat:'f' }}", 
+        id: "{{ cc.id }}",
+            text: "{{ cc.text }}",
+                amount: "{{ cc.amount|stringformat:'f' }}", 
         },
     {% endfor %}
     ];
@@ -301,7 +301,7 @@
             </td>
             <td class="px-6 py-3 text-center">
                 <button type="button" onclick="this.closest('tr').remove()" 
-                    class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100">
+                    class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all">
                     <i class="fa-solid fa-trash-can"></i>
                 </button>
             </td>

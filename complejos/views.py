@@ -403,25 +403,37 @@ def editar_contrato(request, contrato_id):
                 # Ensure we have a personalized plan
                 from finanzas.models import PlanCuota, PlanConceptoCobro, ConceptoCobro
                 
-                plan_personalizado = contrato_financiero.plan
-                if not plan_personalizado:
-                    # Create a new private plan if none exists
-                    plan_personalizado = PlanCuota.objects.create(
-                        nombre=f"Plan Personalizado - {contrato.persona}",
-                        descripcion=f"Plan específico para contrato {contrato.id}",
-                        complejo=contrato.propiedad.complejo,
-                        activo=True
-                    )
-                    contrato_financiero.plan = plan_personalizado
-                    contrato_financiero.save()
+                # Logic update: Only create/maintain personalized plan if there are concepts.
+                # If no concepts are provided, we should switch to Default Plan (plan=None).
                 
-                # Clear usage in this plan (rebuild)
-                PlanConceptoCobro.objects.filter(plan_cuota=plan_personalizado).delete()
-                
+                # Filter out empty entries
+                valid_concepts = []
                 for index, cid in enumerate(conceptos_ids):
-                    try:
-                        monto = conceptos_montos[index]
-                        if cid and monto:
+                     try:
+                         monto = conceptos_montos[index]
+                         if cid and monto:
+                             valid_concepts.append((cid, monto))
+                     except IndexError:
+                         continue
+                
+                if valid_concepts:
+                    # We have custom concepts, so we need a personalized plan
+                    plan_personalizado = contrato_financiero.plan
+                    if not plan_personalizado:
+                        plan_personalizado = PlanCuota.objects.create(
+                            nombre=f"Plan Personalizado - {contrato.persona}",
+                            descripcion=f"Plan específico para contrato {contrato.id}",
+                            complejo=contrato.propiedad.complejo,
+                            activo=True
+                        )
+                        contrato_financiero.plan = plan_personalizado
+                        contrato_financiero.save()
+                    
+                    # Clear usage in this plan (rebuild)
+                    PlanConceptoCobro.objects.filter(plan_cuota=plan_personalizado).delete()
+                    
+                    for index, (cid, monto) in enumerate(valid_concepts):
+                        try:
                             obj_concepto = ConceptoCobro.objects.get(id=cid)
                             PlanConceptoCobro.objects.create(
                                 plan_cuota=plan_personalizado,
@@ -429,8 +441,24 @@ def editar_contrato(request, contrato_id):
                                 monto=monto,
                                 orden=index+1
                             )
-                    except (IndexError, ConceptoCobro.DoesNotExist, ValueError):
-                        continue
+                        except (ConceptoCobro.DoesNotExist, ValueError):
+                            continue
+                else:
+                    # No concepts provided -> Use Default Plan.
+                    # If there was a plan assigned, unassign it.
+                    if contrato_financiero.plan:
+                        old_plan = contrato_financiero.plan
+                        contrato_financiero.plan = None
+                        contrato_financiero.save()
+                        
+                        # Cleanup: If the old plan was created for this person (heuristic check), delete it?
+                        # Using our safe logic: if it is orphaned and not default config.
+                        from finanzas.models import ContratoFinanciero
+                        is_used_by_others = ContratoFinanciero.objects.filter(plan=old_plan).exists() # self is already unassigned
+                        is_default_config = ConfiguracionFinanciera.objects.filter(plan_mantenimiento_default=old_plan).exists()
+                        
+                        if not is_used_by_others and not is_default_config:
+                            old_plan.delete()
             
             return redirect('detalle_contrato', contrato_id=contrato.id)
     else:
@@ -932,20 +960,31 @@ def crear_contrato_global(request):
                 
                 from finanzas.models import PlanCuota, PlanConceptoCobro, ConceptoCobro
                 
-                # Create personalized plan
-                plan_personalizado = PlanCuota.objects.create(
-                    nombre=f"Plan Personalizado - {propiedad_persona.persona}",
-                    descripcion=f"Plan inicial para contrato {propiedad_persona.id}",
-                    complejo=propiedad_persona.propiedad.complejo,
-                    activo=True
-                )
-                contrato_financiero.plan = plan_personalizado
-                contrato_financiero.save()
+                # Logic update: Only create Plan if concepts exist
                 
+                # Filter valid concepts
+                valid_concepts = []
                 for index, cid in enumerate(conceptos_ids):
-                    try:
-                        monto = conceptos_montos[index]
-                        if cid and monto:
+                     try:
+                         monto = conceptos_montos[index]
+                         if cid and monto:
+                             valid_concepts.append((cid, monto))
+                     except IndexError:
+                         continue
+                
+                if valid_concepts:
+                    # Create personalized plan ONLY if we have concepts
+                    plan_personalizado = PlanCuota.objects.create(
+                        nombre=f"Plan Personalizado - {propiedad_persona.persona}",
+                        descripcion=f"Plan inicial para contrato {propiedad_persona.id}",
+                        complejo=propiedad_persona.propiedad.complejo,
+                        activo=True
+                    )
+                    contrato_financiero.plan = plan_personalizado
+                    contrato_financiero.save()
+                    
+                    for index, (cid, monto) in enumerate(valid_concepts):
+                        try:
                             obj_concepto = ConceptoCobro.objects.get(id=cid)
                             PlanConceptoCobro.objects.create(
                                 plan_cuota=plan_personalizado,
@@ -953,8 +992,12 @@ def crear_contrato_global(request):
                                 monto=monto,
                                 orden=index+1
                             )
-                    except (IndexError, ConceptoCobro.DoesNotExist, ValueError):
-                        continue
+                        except (ConceptoCobro.DoesNotExist, ValueError):
+                            continue
+                else:
+                    # Ensure plan is None (Default)
+                    contrato_financiero.plan = None
+                    contrato_financiero.save()
 
             # Handle second person manually
             persona2 = form.cleaned_data.get('persona2')
@@ -983,13 +1026,37 @@ def crear_contrato_global(request):
             initial_data['propiedad'] = propiedad_preseleccionada.id
         form = ContratoUnificadoForm(propiedad=propiedad_preseleccionada, initial=initial_data)
     
-    from finanzas.models import ConceptoCobro
+    from finanzas.models import ConceptoCobro, ConfiguracionFinanciera
     conceptos_disponibles = ConceptoCobro.objects.filter(complejo=propiedad_preseleccionada.complejo) if propiedad_preseleccionada else ConceptoCobro.objects.none()
     
+    # Datos para Vista Previa (Default Plan & Config)
+    conceptos_default_preview = []
+    config_default_preview = {}
+    
+    if propiedad_preseleccionada:
+        config_obj = ConfiguracionFinanciera.objects.filter(complejo=propiedad_preseleccionada.complejo, propiedad__isnull=True).first()
+        if config_obj:
+            # Config
+            config_default_preview = {
+                'dia_corte': config_obj.dia_corte,
+                'dias_vencimiento': config_obj.dias_vencimiento,
+                'tasa_mora': float(config_obj.tasa_interes_mora_diaria),
+                'nombre': config_obj.nombre
+            }
+            # Plan Default
+            if config_obj.plan_mantenimiento_default:
+                for pcc in config_obj.plan_mantenimiento_default.planconceptocobro_set.all():
+                    conceptos_default_preview.append({
+                        'nombre': pcc.concepto_cobro.nombre,
+                        'monto': float(pcc.monto)
+                    })
+
     context = {
         'form': form,
         'propiedad_preseleccionada': propiedad_preseleccionada,
         'conceptos_disponibles': conceptos_disponibles,
+        'conceptos_default_preview': conceptos_default_preview,
+        'config_default_preview': config_default_preview,
     }
     return render(request, 'complejos/crear_contrato_global.html', context)
 
@@ -1067,9 +1134,41 @@ def detalle_contrato(request, contrato_id):
     except Exception:
         contrato_financiero = None
 
+    # Lógica de Plan Efectivo (Personalizado vs Default)
+    plan_efectivo = None
+    es_plan_default = False
+
+    if contrato_financiero:
+        if contrato_financiero.plan:
+            plan_efectivo = contrato_financiero.plan
+        else:
+            # Si no tiene plan personalizado, buscamos el default del complejo
+            config = ConfiguracionFinanciera.objects.filter(complejo=contrato.propiedad.complejo).first()
+            if config:
+                plan_efectivo = config.plan_mantenimiento_default
+                es_plan_default = True
+
+    # Lógica de Configuración Financiera Efectiva (Personalizada vs Default)
+    config_efectiva = None
+    es_config_default = False
+
+    if contrato_financiero:
+        if contrato_financiero.configuracion_personalizada and contrato_financiero.configuracion:
+             config_efectiva = contrato_financiero.configuracion
+        else:
+             # Buscar configuración global del complejo
+             config_global = ConfiguracionFinanciera.objects.filter(complejo=contrato.propiedad.complejo, propiedad__isnull=True).first()
+             if config_global:
+                 config_efectiva = config_global
+                 es_config_default = True
+
     context = {
         'contrato': contrato,
         'contrato_financiero': contrato_financiero,
+        'plan_efectivo': plan_efectivo,
+        'es_plan_default': es_plan_default,
+        'config_efectiva': config_efectiva,
+        'es_config_default': es_config_default,
     }
     return render(request, 'complejos/detalle_contrato.html', context)
 

@@ -189,7 +189,7 @@ class ConfiguracionFinanciera(models.Model):
         null=True, 
         blank=True, 
         related_name='config_mantenimiento',
-        help_text="Plan de cuotas (Gasto Común) que se aplica a TODOS los residentes activos"
+        help_text="Plan de cuotas (Gasto Común) que se aplica si el residente no tiene plan personalizado"
     )
 
     def __str__(self):
@@ -214,9 +214,11 @@ class ContratoFinanciero(models.Model):
         ('CANCELADO', 'Cancelado'),
     ]
 
+
     # Relación con el contrato legal existente
     propiedad_persona = models.OneToOneField(PropiedadPersona, on_delete=models.CASCADE, related_name='contrato_financiero')
     
+    tipo = models.CharField(max_length=20, choices=TIPO_CHOICES, default='ALQUILER')
     estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='ACTIVO')
     
     # Nuevo enfoque: Configuración personalizada
@@ -284,6 +286,26 @@ class ContratoFinanciero(models.Model):
             return 0
         porcentaje = (self.cuotas_facturadas / self.numero_cuotas_totales) * 100
         return min(porcentaje, 100) # Cap at 100 in case of overflow
+
+    def delete(self, *args, **kwargs):
+        # Capturamos el plan antes de borrar el contrato
+        plan_to_check = self.plan
+        super().delete(*args, **kwargs)
+        
+        # Lógica de "Borrado Inteligente":
+        # Si el plan era exclusivo de este contrato (no usado por nadie más)
+        # Y NO es el plan default del complejo, entonces lo borramos también.
+        if plan_to_check:
+             # Verificar si el plan quedó huérfano (nadie más lo usa)
+             is_used_by_others = ContratoFinanciero.objects.filter(plan=plan_to_check).exists()
+             
+             # Verificar si es un plan maestro de configuración default
+             # (Usamos el related_name 'config_mantenimiento')
+             is_default_config = ConfiguracionFinanciera.objects.filter(plan_mantenimiento_default=plan_to_check).exists()
+             
+             if not is_used_by_others and not is_default_config:
+                 print(f"Borrado Inteligente: Eliminando plan huérfano '{plan_to_check.nombre}' tras borrar contrato.")
+                 plan_to_check.delete()
 
 class CargoAdicional(models.Model):
     """

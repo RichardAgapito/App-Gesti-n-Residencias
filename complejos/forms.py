@@ -551,9 +551,10 @@ class ContratoUnificadoForm(PropiedadPersonaForm):
         help_text="Override: Días extra después del corte antes de mora."
     )
     finanzas_tasa_mora = forms.DecimalField(
-        min_value=0, max_digits=5, decimal_places=2, required=False,
+        min_value=0, max_digits=5, decimal_places=3, required=False,
         label="Tasa de Mora (%)",
-        help_text="Override: Porcentaje de penalidad por atraso."
+        help_text="Override: Porcentaje de penalidad por atraso.",
+        widget=forms.NumberInput(attrs={'step': '0.001'})
     )
 
     class Meta(PropiedadPersonaForm.Meta):
@@ -648,9 +649,10 @@ class EditarContratoForm(forms.ModelForm):
         help_text="Días después del corte antes de morosidad."
     )
     finanzas_tasa_mora = forms.DecimalField(
-        max_digits=5, decimal_places=2, required=False, 
+        max_digits=5, decimal_places=3, required=False, 
         label="Tasa Mora Diaria (%)",
-        help_text="Porcentaje de interés por día de retraso."
+        help_text="Porcentaje de interés por día de retraso.",
+        widget=forms.NumberInput(attrs={'step': '0.001'})
     )
     finanzas_bloqueo = forms.BooleanField(
         required=False,
