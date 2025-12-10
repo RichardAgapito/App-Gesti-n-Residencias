@@ -6,10 +6,25 @@
 
 {% block extra_css %}
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3b82f6',
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
 {% endblock %}
 
 {% block content %}
-<div class="min-h-screen bg-gray-50 flex font-sans">
+<div class="h-screen bg-gray-50 flex font-sans overflow-hidden">
     
     {% if request.user.rol == 'GERENTE' %}
         {% include 'includes/manager_sidebar.html' %}
@@ -17,130 +32,167 @@
         {% include 'includes/admin_sidebar.html' %}
     {% endif %}
 
-    <main class="flex-1 lg:ml-64 p-8">
-        <!-- Header -->
-        <div class="mb-6 flex items-center justify-between">
-            <div>
-                <h1 class="text-3xl font-bold text-gray-900"><i class="fa-solid fa-file-invoice text-blue-600"></i> Gestión de Facturas</h1>
-                <p class="text-gray-600 mt-1">Administra las facturas del sistema</p>
-            </div>
-            {% if request.user.rol == 'GERENTE' %}
-                <div class="flex gap-2">
-                    <a href="{% url 'crear_factura' %}" class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                        <i class="fa-solid fa-plus"></i> Crear Nueva Factura
-                    </a>
-                    <div class="flex gap-2">
+    <div class="flex-1 lg:ml-64 flex flex-col h-full overflow-y-auto">
+        <main class="flex-1 p-8">
+            <div class="max-w-7xl mx-auto">
+                <!-- Header -->
+                <div class="mb-8 flex flex-col xl:flex-row xl:items-center xl:justify-between gap-6">
+                    <div class="flex items-center gap-4">
+                        <a href="{% url 'dashboard' %}" 
+                           class="w-10 h-10 rounded-xl bg-white border border-gray-200 flex items-center justify-center text-gray-500 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 transition-all shadow-sm group">
+                            <i class="fa-solid fa-arrow-left text-lg transform group-hover:-translate-x-1 transition-transform"></i>
+                        </a>
+                        <div>
+                            <h1 class="text-3xl font-bold text-gray-900">Gestión de Facturas</h1>
+                            <p class="text-gray-500 mt-1">Control de emisiones y estados de cuenta</p>
+                        </div>
+                    </div>
+
+                    {% if request.user.rol == 'GERENTE' %}
+                    <div class="flex flex-wrap items-center gap-3">
                         <form action="{% url 'generar_facturas_automatico' %}" method="post">
                             {% csrf_token %}
-                            <button type="submit" class="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors" title="Crea facturas del mes actual">
-                                <i class="fa-solid fa-robot"></i> Generar Facturas
+                            <button type="submit" class="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors shadow-md shadow-green-200 text-sm">
+                                <i class="fa-solid fa-robot"></i> Generar Mes
                             </button>
                         </form>
 
                         <form action="{% url 'actualizar_estados_financieros' %}" method="post">
                             {% csrf_token %}
-                            <button type="submit" class="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors" title="Calcula moras y vence facturas antiguas">
-                                <i class="fa-solid fa-clock-rotate-left"></i> Actualizar Estados
+                            <button type="submit" class="inline-flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 transition-colors shadow-md shadow-orange-200 text-sm">
+                                <i class="fa-solid fa-rotate"></i> Recalcular Estados
                             </button>
                         </form>
-                    </div>
-                </div>
-            {% endif %}
-        </div>
-
-        <!-- Filter Form -->
-        <div class="mb-6 p-4 bg-white rounded-lg shadow-sm border border-gray-100">
-            <form method="get" action="{% url 'lista_facturas' %}">
-                <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                    
-                    {% if request.user.rol == 'ADMIN' %}
-                    <div>
-                        <label for="complejo" class="block text-sm font-medium text-gray-700">Complejo</label>
-                        <select name="complejo" id="complejo" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
-                            <option value="">Todos</option>
-                            {% for c in complejos %}
-                                <option value="{{ c.id }}" {% if c.id|stringformat:"s" == selected_complejo %}selected{% endif %}>{{ c.nombre }}</option>
-                            {% endfor %}
-                        </select>
+                        
+                        <a href="{% url 'crear_factura' %}" class="inline-flex items-center gap-2 px-5 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors shadow-md shadow-blue-200 text-sm">
+                            <i class="fa-solid fa-plus"></i> Nueva Factura
+                        </a>
                     </div>
                     {% endif %}
+                </div>
 
-                    <div>
-                        <label for="estado" class="block text-sm font-medium text-gray-700">Estado</label>
-                        <select name="estado" id="estado" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
-                            <option value="">Todos</option>
-                            {% for val, name in estados %}
-                                <option value="{{ val }}" {% if val == selected_estado %}selected{% endif %}>{{ name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
+                <!-- Filter Bar -->
+                <div class="mb-6 bg-white p-1 rounded-xl shadow-sm border border-gray-200">
+                    <form method="get" action="{% url 'lista_facturas' %}" class="flex flex-col md:flex-row gap-2">
+                        
+                        {% if request.user.rol == 'ADMIN' %}
+                        <div class="flex-1">
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                                    <i class="fa-solid fa-building"></i>
+                                </div>
+                                <select name="complejo" class="block w-full pl-10 pr-10 py-2.5 text-sm bg-gray-50 border-transparent focus:bg-white focus:border-blue-500 focus:ring-0 rounded-lg transition-colors">
+                                    <option value="">Todos los Complejos</option>
+                                    {% for c in complejos %}
+                                        <option value="{{ c.id }}" {% if c.id|stringformat:"s" == selected_complejo %}selected{% endif %}>{{ c.nombre }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        {% endif %}
 
-                    <div class="flex items-end">
-                        <button type="submit" class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                            <i class="fa-solid fa-filter"></i> Filtrar
+                        <div class="flex-1">
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                                    <i class="fa-solid fa-filter"></i>
+                                </div>
+                                <select name="estado" class="block w-full pl-10 pr-10 py-2.5 text-sm bg-gray-50 border-transparent focus:bg-white focus:border-blue-500 focus:ring-0 rounded-lg transition-colors">
+                                    <option value="">Todos los Estados</option>
+                                    {% for val, name in estados %}
+                                        <option value="{{ val }}" {% if val == selected_estado %}selected{% endif %}>{{ name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="px-6 py-2.5 bg-gray-900 text-white font-medium rounded-lg hover:bg-gray-800 transition-colors text-sm">
+                            Filtrar
                         </button>
-                    </div>
+                    </form>
                 </div>
-            </form>
-        </div>
 
-        <!-- Content Container -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-            {% if facturas %}
-                <div class="overflow-x-auto">
-                    <table class="w-full table-auto">
-                        <thead class="bg-gray-50 border-b border-gray-200">
-                            <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nº Factura</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Propiedad</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Plan de Cuota</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha Emisión</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha Vencimiento</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Monto Total</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
-                            {% for factura in facturas %}
-                                <tr class="hover:bg-gray-50">
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ factura.numero_factura }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ factura.propiedad }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ factura.plan_cuota|default:"N/A" }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ factura.fecha_emision }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ factura.fecha_vencimiento }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">${{ factura.total_calculado|floatformat:2 }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm">
-                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
-                                            {% if factura.estado == 'PAGADA' %}bg-green-100 text-green-800
-                                            {% elif factura.estado == 'PENDIENTE' %}bg-yellow-100 text-yellow-800
-                                            {% elif factura.estado == 'VENCIDA' %}bg-red-100 text-red-800
-                                            {% else %}bg-gray-100 text-gray-800{% endif %}">
-                                            {{ factura.get_estado_display }}
-                                        </span>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm">
-                                        <div class="flex gap-1">
-                                            <a href="{% url 'detalle_factura' factura.id %}" class="px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700">
-                                                <i class="fa-solid fa-eye"></i>
-                                            </a>
-                                        </div>
-                                    </td>                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                <!-- Content Table -->
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+                    {% if facturas %}
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-gray-50/50 border-b border-gray-100">
+                                        <th class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Factura</th>
+                                        <th class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Propiedad</th>
+                                        <th class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Concepto Base</th>
+                                        <th class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Fechas</th>
+                                        <th class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Estado</th>
+                                        <th class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">Total</th>
+                                        <th class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-center"></th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100">
+                                    {% for factura in facturas %}
+                                        <tr class="hover:bg-blue-50/40 transition-colors group">
+                                            <td class="px-6 py-4">
+                                                <div class="font-medium text-gray-900">#{{ factura.numero_factura }}</div>
+                                            </td>
+                                            <td class="px-6 py-4">
+                                                <div class="flex items-center gap-2">
+                                                    <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-xs font-bold">
+                                                        <i class="fa-regular fa-building"></i>
+                                                    </div>
+                                                    <span class="text-sm text-gray-700 font-medium">{{ factura.propiedad }}</span>
+                                                </div>
+                                            </td>
+                                            <td class="px-6 py-4 text-sm text-gray-500">
+                                                {{ factura.plan_cuota|default:"-" }}
+                                            </td>
+                                            <td class="px-6 py-4">
+                                                <div class="flex flex-col text-xs">
+                                                    <span class="text-gray-900 font-medium">Emisión: {{ factura.fecha_emision|date:"d M" }}</span>
+                                                    <span class="text-gray-400">Vence: {{ factura.fecha_vencimiento|date:"d M" }}</span>
+                                                </div>
+                                            </td>
+                                            <td class="px-6 py-4">
+                                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border
+                                                    {% if factura.estado == 'PAGADA' %} bg-green-50 text-green-700 border-green-100 ring-1 ring-green-600/10
+                                                    {% elif factura.estado == 'PENDIENTE' %} bg-yellow-50 text-yellow-700 border-yellow-100 ring-1 ring-yellow-600/10
+                                                    {% elif factura.estado == 'VENCIDA' %} bg-red-50 text-red-700 border-red-100 ring-1 ring-red-600/10
+                                                    {% else %} bg-gray-50 text-gray-600 border-gray-200 {% endif %}">
+                                                    <span class="w-1.5 h-1.5 rounded-full 
+                                                        {% if factura.estado == 'PAGADA' %} bg-green-600
+                                                        {% elif factura.estado == 'PENDIENTE' %} bg-yellow-600
+                                                        {% elif factura.estado == 'VENCIDA' %} bg-red-600
+                                                        {% else %} bg-gray-500 {% endif %}"></span>
+                                                    {{ factura.get_estado_display }}
+                                                </span>
+                                            </td>
+                                            <td class="px-6 py-4 text-right">
+                                                <span class="text-sm font-bold text-gray-900 group-hover:text-blue-700 transition-colors">
+                                                    ${{ factura.total_calculado|floatformat:2 }}
+                                                </span>
+                                            </td>
+                                            <td class="px-6 py-4 text-center">
+                                                <a href="{% url 'detalle_factura' factura.id %}" 
+                                                   class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-white border border-gray-200 text-gray-400 hover:text-blue-600 hover:border-blue-200 hover:shadow-sm transition-all"
+                                                   title="Ver Detalle">
+                                                    <i class="fa-regular fa-eye text-sm"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="flex flex-col items-center justify-center py-20 text-center">
+                            <div class="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+                                <i class="fa-regular fa-file-lines text-2xl text-gray-400"></i>
+                            </div>
+                            <h3 class="text-lg font-medium text-gray-900">No hay facturas</h3>
+                            <p class="text-gray-500 mt-1">No se encontraron registros con los filtros actuales.</p>
+                        </div>
+                    {% endif %}
                 </div>
-            {% else %}
-                <p class="text-center text-gray-500 py-8">No se encontraron facturas.</p>
-            {% endif %}
-        </div>
-
-        <!-- Back Link -->
-        <div class="mt-6">
-            <a href="{% url 'dashboard' %}" class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700">
-                <i class="fa-solid fa-arrow-left"></i> Volver al Dashboard
-            </a>
-        </div>
-    </main>
+            </div>
+        </main>
+    </div>
 </div>
 {% endblock %}

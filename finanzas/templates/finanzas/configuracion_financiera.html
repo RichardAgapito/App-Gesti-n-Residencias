@@ -1,235 +1,240 @@
 {% extends 'base.html' %}
 {% load static %}
 
+{% block bootstrap_css %}{% endblock %}
+{% block global_styles %}{% endblock %}
+
 {% block title %}Configuración Financiera{% endblock %}
 
 {% block extra_css %}
-<!-- Tailwind CSS CDN -->
-<script src="https://cdn.tailwindcss.com"></script>
-<script>
-    tailwind.config = {
-        theme: {
-            extend: {
-                colors: {
-                    primary: '#3b82f6',
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3b82f6',
+                    }
                 }
             }
         }
-    }
-</script>
+    </script>
+    <style>
+        /* Harmonized Input Styles */
+        input[type="text"],
+        input[type="number"],
+        select {
+            width: 100%;
+            padding-left: 2.5rem;
+            padding-right: 1rem;
+            padding-top: 0.6rem;
+            padding-bottom: 0.6rem;
+            border-radius: 0.75rem;
+            border: 1px solid #e5e7eb;
+            background-color: #f9fafb;
+            font-size: 0.875rem;
+        }
+    
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            background-color: #ffffff;
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+        }
+    
+        input[type="checkbox"] {
+            width: 1rem;
+            height: 1rem;
+            color: #3b82f6;
+            border-radius: 0.25rem;
+        }
+    </style>
 {% endblock %}
 
 {% block content %}
-<div class="min-h-screen bg-gray-50 flex font-sans">
-
+<div class="h-screen bg-gray-50 font-sans overflow-hidden">
+    
     <!-- Sidebar -->
-    {% include 'includes/admin_sidebar.html' %}
+    {% if request.user.rol == 'GERENTE' %}
+        {% include 'includes/manager_sidebar.html' %}
+    {% else %}
+        {% include 'includes/admin_sidebar.html' %}
+    {% endif %}
 
     <!-- Main Content -->
-    <main class="flex-1 lg:ml-64 p-8 h-screen overflow-y-auto">
-        <div class="max-w-7xl mx-auto">
+    <div class="lg:ml-64 flex flex-col h-full overflow-y-auto">
+        <main class="flex-1 p-8">
+            <div class="max-w-7xl mx-auto">
+                <!-- Header -->
+                <div class="mb-8 border-b border-gray-200 pb-6 flex items-center justify-between">
+                    <div class="flex items-center gap-4">
+                        <a href="{% url 'seleccionar_complejo_finanzas' %}" 
+                           class="w-10 h-10 rounded-xl bg-white border border-gray-200 flex items-center justify-center text-gray-500 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 transition-all shadow-sm group">
+                            <i class="fa-solid fa-arrow-left text-lg transform group-hover:-translate-x-1 transition-transform"></i>
+                        </a>
+                        <div>
+                            <h1 class="text-3xl font-bold text-gray-900">Configuración Financiera</h1>
+                            <p class="text-gray-500 mt-1">
+                                {% if form.instance.complejo %}
+                                Gestionando:
+                                <span class="font-semibold text-blue-600">{{ form.instance.complejo.nombre }}</span>
+                                {% else %}
+                                Ajustes Globales del Sistema
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <!-- Status Badge -->
+                    <div class="hidden md:block">
+                        <span class="inline-flex items-center px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-sm font-medium border border-blue-100">
+                            <i class="fa-solid fa-gear mr-2"></i> Configuración Activa
+                        </span>
+                    </div>
+                </div>
 
-            <!-- Header -->
-            <div class="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                <div>
-                    <h1 class="text-3xl font-bold text-gray-900">Configuración Financiera</h1>
-                    <p class="text-gray-500 mt-1">
-                        {% if form.instance.complejo %}
-                        Gestionando:
-                        <span class="font-semibold text-blue-600">{{ form.instance.complejo.nombre}}</span>
-                        {% else %}
-                        Ajustes Globales del Sistema
-                        {% endif %}
-                    </p>
-                </div>
-                <!-- Optional: Status or Info Badge -->
-                <div class="hidden md:block">
-                    <span
-                        class="inline-flex items-center px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-sm font-medium border border-blue-100">
-                        <i class="fa-solid fa-gear mr-2"></i> Configuración Activa
-                    </span>
-                </div>
+                <form method="post" class="space-y-8">
+                    {% csrf_token %}
+
+                    {% if form.non_field_errors %}
+                    <div class="bg-red-50 text-red-700 p-4 rounded-xl border border-red-200 flex items-start gap-3">
+                        <i class="fa-solid fa-circle-exclamation mt-1"></i>
+                        <div class="font-medium">{{ form.non_field_errors }}</div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Grid Layout for Settings -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+
+                        <!-- COLUMN 1: FACTURACIÓN -->
+                        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+                            <div class="h-1 bg-blue-500"></div>
+                            <div class="p-6">
+                                <h3 class="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
+                                    <div class="p-2 bg-blue-50 rounded-lg text-blue-600">
+                                        <i class="fa-solid fa-calendar-check"></i>
+                                    </div>
+                                    Facturación
+                                </h3>
+
+                                <div class="space-y-6">
+                                    <div class="form-group">
+                                        <label class="block text-sm font-bold text-gray-700 mb-2">Día de Corte Mensual</label>
+                                        <div class="relative">
+                                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                                                <i class="fa-solid fa-calendar-day"></i>
+                                            </div>
+                                            {{ form.dia_corte }}
+                                        </div>
+                                        {{ form.dia_corte.errors }}
+                                        <p class="text-xs text-gray-400 mt-2">Se generan las facturas automáticas.</p>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label class="block text-sm font-bold text-gray-700 mb-2">Días de Gracia</label>
+                                        <div class="relative">
+                                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                                                <i class="fa-solid fa-hourglass-half"></i>
+                                            </div>
+                                            {{ form.dias_vencimiento }}
+                                        </div>
+                                        {{ form.dias_vencimiento.errors }}
+                                        <p class="text-xs text-gray-400 mt-2">Días permitidos antes de aplicar mora.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- COLUMN 2: MOROSIDAD -->
+                        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+                            <div class="h-1 bg-red-500"></div>
+                            <div class="p-6">
+                                <h3 class="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
+                                    <div class="p-2 bg-red-50 rounded-lg text-red-600">
+                                        <i class="fa-solid fa-triangle-exclamation"></i>
+                                    </div>
+                                    Morosidad
+                                </h3>
+
+                                <div class="space-y-6">
+                                    <div class="form-group">
+                                        <label class="block text-sm font-bold text-gray-700 mb-2">Tasa de Interés Diaria</label>
+                                        <div class="relative">
+                                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                                                <i class="fa-solid fa-percent"></i>
+                                            </div>
+                                            {{ form.tasa_interes_mora_diaria }}
+                                        </div>
+                                        {{ form.tasa_interes_mora_diaria.errors }}
+                                        <p class="text-xs text-gray-400 mt-2">0.033% diario ≈ 1% mensual.</p>
+                                    </div>
+
+                                    <div class="pt-4 border-t border-gray-50">
+                                        <div class="flex items-start gap-3">
+                                            <div class="flex items-center h-5">
+                                                {{ form.bloquear_servicios_con_deuda }}
+                                            </div>
+                                            <div class="ml-1">
+                                                <label for="{{ form.bloquear_servicios_con_deuda.id_for_label }}" class="font-bold text-gray-700 cursor-pointer text-sm">
+                                                    Restringir Amenidades
+                                                </label>
+                                                <p class="text-xs text-gray-400 mt-1">Bloquear reservas a morosos.</p>
+                                            </div>
+                                        </div>
+                                        {{ form.bloquear_servicios_con_deuda.errors }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- COLUMN 3: PLAN DE CUOTAS (Full Width) -->
+                        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden lg:col-span-2">
+                            <div class="h-1 bg-green-500"></div>
+                            <div class="p-6">
+                                <h3 class="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
+                                    <div class="p-2 bg-green-50 rounded-lg text-green-600">
+                                        <i class="fa-solid fa-table-list"></i>
+                                    </div>
+                                    Plan de Cuotas Predeterminado
+                                </h3>
+
+                                <div class="form-group max-w-xl">
+                                    <label class="block text-sm font-bold text-gray-700 mb-2">Seleccionar Plan Base</label>
+                                    <div class="relative">
+                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                                            <i class="fa-solid fa-file-contract"></i>
+                                        </div>
+                                        {{ form.plan_mantenimiento_default }}
+                                    </div>
+                                    {{ form.plan_mantenimiento_default.errors }}
+                                    <p class="text-xs text-gray-400 mt-2">
+                                        <i class="fa-solid fa-circle-info text-blue-400"></i>
+                                        Este plan se asignará automáticamente como "Gastos Comunes" a las propiedades que no tengan un contrato financiero personalizado.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Action Bar -->
+                    <div class="flex items-center justify-end gap-4 pt-6 border-t border-gray-100">
+                        <button type="button" onclick="window.history.back()"
+                            class="px-6 py-2.5 text-gray-700 font-medium hover:bg-gray-100 rounded-xl transition-colors">
+                            Cancelar
+                        </button>
+                        <button type="submit"
+                            class="px-8 py-2.5 bg-blue-600 text-white font-semibold rounded-xl shadow-lg shadow-blue-200 hover:bg-blue-700 hover:shadow-blue-300 transition-all transform hover:-translate-y-0.5">
+                            <i class="fa-solid fa-save mr-2"></i>Guardar Cambios
+                        </button>
+                    </div>
+
+                </form>
             </div>
-
-            <form method="post" class="space-y-8">
-                {% csrf_token %}
-
-                {% if form.non_field_errors %}
-                <div class="bg-red-50 text-red-700 p-4 rounded-xl border border-red-200 flex items-start gap-3">
-                    <i class="fa-solid fa-circle-exclamation mt-1"></i>
-                    <div class="font-medium">{{ form.non_field_errors }}</div>
-                </div>
-                {% endif %}
-
-                <!-- Grid Layout for Settings -->
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-
-                    <!-- COLUMN 1: FACTURACIÓN -->
-                    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-                        <div class="h-1 bg-blue-500"></div>
-                        <div class="p-6">
-                            <h3 class="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
-                                <div class="p-2 bg-blue-50 rounded-lg text-blue-600">
-                                    <i class="fa-solid fa-calendar-check"></i>
-                                </div>
-                                Facturación
-                            </h3>
-
-                            <div class="space-y-6">
-                                <div class="form-group">
-                                    <label class="block text-sm font-bold text-gray-700 mb-2">Día de Corte
-                                        Mensual</label>
-                                    <div class="relative">
-                                        <div
-                                            class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                                            <i class="fa-solid fa-calendar-day"></i>
-                                        </div>
-                                        {{ form.dia_corte }}
-                                    </div>
-                                    {{ form.dia_corte.errors }}
-                                    <p class="text-xs text-gray-400 mt-2">Se generan las facturas automáticas.</p>
-                                </div>
-
-                                <div class="form-group">
-                                    <label class="block text-sm font-bold text-gray-700 mb-2">Días de Gracia</label>
-                                    <div class="relative">
-                                        <div
-                                            class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                                            <i class="fa-solid fa-hourglass-half"></i>
-                                        </div>
-                                        {{ form.dias_vencimiento }}
-                                    </div>
-                                    {{ form.dias_vencimiento.errors }}
-                                    <p class="text-xs text-gray-400 mt-2">Días permitidos antes de aplicar mora.</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- COLUMN 2: MOROSIDAD -->
-                    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-                        <div class="h-1 bg-red-500"></div>
-                        <div class="p-6">
-                            <h3 class="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
-                                <div class="p-2 bg-red-50 rounded-lg text-red-600">
-                                    <i class="fa-solid fa-triangle-exclamation"></i>
-                                </div>
-                                Morosidad
-                            </h3>
-
-                            <div class="space-y-6">
-                                <div class="form-group">
-                                    <label class="block text-sm font-bold text-gray-700 mb-2">Tasa de Interés
-                                        Diaria</label>
-                                    <div class="relative">
-                                        <div
-                                            class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                                            <i class="fa-solid fa-percent"></i>
-                                        </div>
-                                        {{ form.tasa_interes_mora_diaria }}
-                                    </div>
-                                    {{ form.tasa_interes_mora_diaria.errors }}
-                                    <p class="text-xs text-gray-400 mt-2">0.033% diario ≈ 1% mensual.</p>
-                                </div>
-
-                                <div class="pt-4 border-t border-gray-50">
-                                    <div class="flex items-start gap-3">
-                                        <div class="flex items-center h-5">
-                                            {{ form.bloquear_servicios_con_deuda }}
-                                        </div>
-                                        <div class="ml-1">
-                                            <label for="{{ form.bloquear_servicios_con_deuda.id_for_label }}"
-                                                class="font-bold text-gray-700 cursor-pointer text-sm">
-                                                Restringir Amenidades
-                                            </label>
-                                            <p class="text-xs text-gray-400 mt-1">Bloquear reservas a morosos.</p>
-                                        </div>
-                                    </div>
-                                    {{ form.bloquear_servicios_con_deuda.errors }}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- COLUMN 3: PLAN DE CUOTAS (Full Width) -->
-                    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden lg:col-span-2">
-                        <div class="h-1 bg-green-500"></div>
-                        <div class="p-6">
-                            <h3 class="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
-                                <div class="p-2 bg-green-50 rounded-lg text-green-600">
-                                    <i class="fa-solid fa-table-list"></i>
-                                </div>
-                                Plan de Cuotas Predeterminado
-                            </h3>
-
-                            <div class="form-group max-w-xl">
-                                <label class="block text-sm font-bold text-gray-700 mb-2">Seleccionar Plan Base</label>
-                                <div class="relative">
-                                    <div
-                                        class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                                        <i class="fa-solid fa-file-contract"></i>
-                                    </div>
-                                    {{ form.plan_mantenimiento_default }}
-                                </div>
-                                {{ form.plan_mantenimiento_default.errors }}
-                                <p class="text-xs text-gray-400 mt-2">
-                                    <i class="fa-solid fa-circle-info text-blue-400"></i>
-                                    Este plan se asignará automáticamente como "Gastos Comunes" a las propiedades que no
-                                    tengan un contrato financiero personalizado.
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-
-                </div>
-
-                <!-- Action Bar -->
-                <div class="flex items-center justify-end gap-4 pt-6 border-t border-gray-100">
-                    <button type="button" onclick="window.history.back()"
-                        class="px-6 py-2.5 text-gray-700 font-medium hover:bg-gray-100 rounded-xl transition-colors">
-                        Cancelar
-                    </button>
-                    <button type="submit"
-                        class="px-8 py-2.5 bg-blue-600 text-white font-semibold rounded-xl shadow-lg shadow-blue-200 hover:bg-blue-700 hover:shadow-blue-300 transition-all transform hover:-translate-y-0.5">
-                        <i class="fa-solid fa-save mr-2"></i>Guardar Cambios
-                    </button>
-                </div>
-
-            </form>
-        </div>
-    </main>
+        </main>
+    </div>
 </div>
-
-<style>
-    /* Harmonized Input Styles */
-    input[type="text"],
-    input[type="number"],
-    select {
-        width: 100%;
-        padding-left: 2.5rem;
-        padding-right: 1rem;
-        padding-top: 0.6rem;
-        padding-bottom: 0.6rem;
-        border-radius: 0.75rem;
-        border: 1px solid #e5e7eb;
-        background-color: #f9fafb;
-        font-size: 0.875rem;
-    }
-
-    input[type="text"]:focus,
-    input[type="number"]:focus,
-    select:focus {
-        outline: none;
-        border-color: #3b82f6;
-        background-color: #ffffff;
-        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
-    }
-
-    input[type="checkbox"] {
-        width: 1rem;
-        height: 1rem;
-        color: #3b82f6;
-        border-radius: 0.25rem;
-    }
-</style>
 {% endblock %}
