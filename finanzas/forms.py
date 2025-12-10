@@ -219,9 +219,9 @@ class ConfiguracionFinancieraForm(forms.ModelForm):
         model = ConfiguracionFinanciera
         fields = ['dia_corte', 'dias_vencimiento', 'tasa_interes_mora_diaria', 'bloquear_servicios_con_deuda', 'plan_mantenimiento_default']
         widgets = {
-            'dia_corte': forms.NumberInput(attrs={'class': 'form-control', 'min': 1, 'max': 28}),
-            'dias_vencimiento': forms.NumberInput(attrs={'class': 'form-control'}),
-            'tasa_interes_mora_diaria': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.001'}),
+            'dia_corte': forms.NumberInput(attrs={'class': 'form-control', 'min': 1, 'max': 28, 'placeholder': 'Ej: 5'}),
+            'dias_vencimiento': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 10'}),
+            'tasa_interes_mora_diaria': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.001', 'placeholder': 'Ej: 0.033'}),
             'bloquear_servicios_con_deuda': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'plan_mantenimiento_default': forms.Select(attrs={'class': 'form-control select2'}),
         }
@@ -240,3 +240,10 @@ class ConfiguracionFinancieraForm(forms.ModelForm):
              self.fields['plan_mantenimiento_default'].queryset = PlanCuota.objects.filter(complejo=complejo, activo=True)
         else:
              self.fields['plan_mantenimiento_default'].queryset = PlanCuota.objects.none()
+
+        # Force clear initial values only if it's a NEW instance (unsaved)
+        # This ensures placeholders appear for new configs, but existing data remains editable.
+        if not self.instance.pk:
+            self.initial['dia_corte'] = None
+            self.initial['dias_vencimiento'] = None
+            self.initial['tasa_interes_mora_diaria'] = None

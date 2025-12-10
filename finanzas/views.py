@@ -666,11 +666,11 @@ class ConfiguracionFinancieraUpdateView(LoginRequiredMixin, GerenteRequiredMixin
              # Should be caught by dispatch/redirect, but if here:
              raise Http404("No tienes un complejo asignado.")
         
-        config, created = ConfiguracionFinanciera.objects.get_or_create(
-            complejo=complejo,
-            propiedad=None # Configuración global
-        )
-        return config
+        try:
+            return ConfiguracionFinanciera.objects.get(complejo=complejo, propiedad=None)
+        except ConfiguracionFinanciera.DoesNotExist:
+            # Return a new, unsaved instance preventing premature DB creation
+            return ConfiguracionFinanciera(complejo=complejo)
 
     def dispatch(self, request, *args, **kwargs):
         user = self.request.user
