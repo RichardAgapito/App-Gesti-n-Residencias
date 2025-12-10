@@ -585,11 +585,26 @@ class ContratoUnificadoForm(PropiedadPersonaForm):
             dias_venc = self.cleaned_data.get('finanzas_dias_vencimiento')
             tasa_mora = self.cleaned_data.get('finanzas_tasa_mora')
 
+            # Lógica de Tipo de Contrato y Cuota
+            tipo_contrato = 'ALQUILER'
+            monto_cuota = 0
+            
+            if propiedad_persona.tipo_relacion in ['propietario', 'co-propietario']:
+                tipo_contrato = 'FINANCIAMIENTO'
+                
+                # Calcular cuota si hay deuda y número de cuotas
+                cuotas = self.cleaned_data.get('finanzas_cuotas')
+                if monto_pendiente > 0 and cuotas and cuotas > 0:
+                    monto_cuota = monto_pendiente / cuotas
+
             # Crear contrato financiero vinculado
             cf = ContratoFinanciero.objects.create(
                 propiedad_persona=propiedad_persona,
                 fecha_inicio_pago=propiedad_persona.fecha_inicio,
                 
+                tipo=tipo_contrato, # [FIXIED]
+                monto_cuota=monto_cuota, # [FIXED]
+
                 adelanto=adelanto,
                 es_pago_contado=es_contado,
                 numero_cuotas_totales=self.cleaned_data.get('finanzas_cuotas'),

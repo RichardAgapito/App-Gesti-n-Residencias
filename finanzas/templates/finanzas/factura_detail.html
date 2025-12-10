@@ -2,125 +2,475 @@
 {% load static %}
 
 {% block extra_css %}
-    <link rel="stylesheet" href="{% static 'css/complejos.css' %}"> {# Reusing existing CSS for now #}
-    <style>
-        .invoice-box {
-            max-width: 800px;
-            margin: auto;
-            padding: 30px;
-            border: 1px solid #eee;
-            box-shadow: 0 0 10px rgba(0, 0, 0, .15);
-            font-size: 16px;
-            line-height: 24px;
-            font-family: 'Helvetica Neue', 'Helvetica', Helvetica, Arial, sans-serif;
-            color: #555;
+<!-- No external invoice CSS, using embedded styles per request -->
+<style>
+    /* VARIABLES */
+    :root {
+        --ticket-bg: #fff;
+        --ticket-shadow: rgba(0, 0, 0, 0.15);
+        --text-primary: #1f2937;
+        --text-secondary: #6b7280;
+        --accent-color: #3b82f6;
+        /* Blue 500 */
+        --border-color: #e5e7eb;
+        --font-family: 'Courier New', Courier, monospace;
+        /* Classic receipt feel */
+        --font-family-body: system-ui, -apple-system, sans-serif;
+    }
+
+    body {
+        background-color: #f3f4f6;
+        /* Gray 100 */
+    }
+
+    /* BACK BUTTON */
+    .back-btn {
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        background: white;
+        color: var(--text-secondary);
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        box-shadow: 0 2px 10px var(--ticket-shadow);
+        transition: transform 0.2s, color 0.2s;
+        z-index: 100;
+        border: 1px solid var(--border-color);
+    }
+
+    .back-btn:hover {
+        transform: translateX(-3px);
+        color: var(--accent-color);
+    }
+
+    /* TICKET CONTAINER */
+    .ticket-wrapper {
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 40px 20px;
+    }
+
+    .ticket {
+        width: 100%;
+        max-width: 420px;
+        /* Standard thermal receipt width approx */
+        background: var(--ticket-bg);
+        box-shadow: 0 10px 25px -5px var(--ticket-shadow), 0 8px 10px -6px var(--ticket-shadow);
+        position: relative;
+        padding: 0;
+        margin: 0 auto;
+        font-family: var(--font-family-body);
+        color: var(--text-primary);
+        /* Jagged Edge Effect (Top) */
+        background-image: linear-gradient(135deg, white 50%, transparent 50%), linear-gradient(225deg, white 50%, transparent 50%);
+        background-position: top center;
+        background-size: 20px 20px;
+        background-repeat: repeat-x;
+        margin-top: 10px;
+        /* Space for jagged part */
+    }
+
+    /* Simulate jagged bottom - simpler visual trick */
+    .ticket::after {
+        content: "";
+        position: absolute;
+        bottom: -10px;
+        left: 0;
+        width: 100%;
+        height: 10px;
+        background: linear-gradient(45deg, transparent 33.333%, white 33.333%, white 66.667%, transparent 66.667%),
+            linear-gradient(-45deg, transparent 33.333%, white 33.333%, white 66.667%, transparent 66.667%);
+        background-size: 20px 20px;
+        background-position: 0 0;
+    }
+
+    /* HEADER */
+    .ticket-header {
+        text-align: center;
+        padding: 30px 20px 20px 20px;
+        border-bottom: 2px dashed var(--border-color);
+    }
+
+    .brand-logo {
+        width: 60px;
+        height: 60px;
+        background-color: var(--text-primary);
+        color: white;
+        border-radius: 50%;
+        margin: 0 auto 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+    }
+
+    .brand-name {
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-size: 1.1rem;
+        margin-bottom: 5px;
+    }
+
+    .ticket-meta {
+        font-family: var(--font-family);
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        margin-bottom: 5px;
+    }
+
+    /* SECTIONS */
+    .section {
+        padding: 20px;
+        border-bottom: 1px dashed var(--border-color);
+    }
+
+    .section-title {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        font-weight: 700;
+        color: var(--text-secondary);
+        margin-bottom: 10px;
+        letter-spacing: 0.5px;
+    }
+
+    /* DATA GRID */
+    .data-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 8px;
+        font-size: 0.9rem;
+    }
+
+    .data-label {
+        color: var(--text-secondary);
+    }
+
+    .data-value {
+        font-weight: 600;
+        text-align: right;
+    }
+
+    /* TABLE */
+    .items-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+        font-family: var(--font-family);
+        /* Monospace for items */
+    }
+
+    .items-table th {
+        text-align: left;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        color: var(--text-secondary);
+        padding-bottom: 8px;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .items-table td {
+        padding: 8px 0;
+        font-size: 0.85rem;
+        vertical-align: top;
+    }
+
+    .items-table .col-price {
+        text-align: right;
+    }
+
+    .item-desc {
+        display: block;
+        font-size: 0.7rem;
+        color: var(--text-secondary);
+    }
+
+    /* SUMMARY */
+    .summary-section {
+        padding: 20px;
+        background-color: #fafafa;
+    }
+
+    .total-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+
+    .total-label {
+        font-size: 1.1rem;
+        font-weight: 800;
+    }
+
+    .total-value {
+        font-size: 1.5rem;
+        font-weight: 900;
+        color: var(--text-primary);
+    }
+
+    .status-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 999px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .status-pagada {
+        background: #d1fae5;
+        color: #059669;
+    }
+
+    .status-pendiente {
+        background: #fef3c7;
+        color: #d97706;
+    }
+
+    .status-vencida {
+        background: #fee2e2;
+        color: #dc2626;
+    }
+
+    /* FOOTER */
+    .ticket-footer {
+        text-align: center;
+        padding: 20px;
+        font-family: var(--font-family);
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        background-image: repeating-linear-gradient(45deg,
+                transparent,
+                transparent 10px,
+                rgba(0, 0, 0, 0.03) 10px,
+                rgba(0, 0, 0, 0.03) 20px);
+    }
+
+    .barcode {
+        font-family: 'Libre Barcode 128', sans-serif;
+        /* Fallback if not loaded */
+        font-size: 2rem;
+        margin-top: 10px;
+        letter-spacing: 2px;
+        overflow: hidden;
+        white-space: nowrap;
+    }
+
+    /* ACTIONS */
+    .actions {
+        margin-top: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .btn {
+        display: block;
+        width: 100%;
+        padding: 12px;
+        text-align: center;
+        border-radius: 8px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-size: 0.85rem;
+        text-decoration: none;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-primary {
+        background-color: var(--text-primary);
+        color: white;
+        border: none;
+    }
+
+    .btn-primary:hover {
+        background-color: black;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    .btn-secondary {
+        background-color: transparent;
+        color: var(--text-secondary);
+        border: 1px solid var(--border-color);
+    }
+
+    .btn-secondary:hover {
+        border-color: var(--text-primary);
+        color: var(--text-primary);
+    }
+
+    /* PRINT */
+    @media print {
+
+        .back-btn,
+        .actions,
+        .base-nav,
+        .base-footer {
+            display: none !important;
         }
-        .invoice-box table {
-            width: 100%;
-            line-height: inherit;
-            text-align: left;
+
+        body {
+            background: white;
         }
-        .invoice-box table td {
-            padding: 5px;
-            vertical-align: top;
+
+        .ticket-wrapper {
+            padding: 0;
+            display: block;
         }
-        .invoice-box table tr.top table td {
-            padding-bottom: 20px;
+
+        .ticket {
+            box-shadow: none;
+            max-width: 100%;
+            margin: 0;
+            border: 1px solid #ddd;
+            /* simple border for print */
         }
-        .invoice-box table tr.top table td.title {
-            font-size: 45px;
-            line-height: 45px;
-            color: #333;
+
+        .ticket::after {
+            display: none;
+            /* remove visual trick for print */
         }
-        .invoice-box table tr.information table td {
-            padding-bottom: 40px;
-        }
-        .invoice-box table tr.heading td {
-            background: #eee;
-            border-bottom: 1px solid #ddd;
-            font-weight: bold;
-        }
-        .invoice-box table tr.details td {
-            padding-bottom: 20px;
-        }
-        .invoice-box table tr.item td{
-            border-bottom: 1px solid #eee;
-        }
-        .invoice-box table tr.item.last td {
-            border-bottom: none;
-        }
-        .invoice-box table tr.total td:nth-child(2) {
-            border-top: 2px solid #eee;
-            font-weight: bold;
-        }
-        .text-right {
-            text-align: right;
-        }
-    </style>
+    }
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Barcode+128&display=swap" rel="stylesheet">
 {% endblock %}
 
 {% block content %}
-<div class="complejos-container">
-    <div class="invoice-box">
-        <table>
-            <tr class="top">
-                <td colspan="2">
-                    <table>
-                        <tr>
-                            <td class="title">
-                                FACTURA
-                            </td>
-                            <td class="text-right">
-                                Nº Factura: {{ factura.numero_factura }}<br>
-                                Fecha Emisión: {{ factura.fecha_emision }}<br>
-                                Fecha Vencimiento: {{ factura.fecha_vencimiento }}
-                            </td>
-                        </tr>
-                    </table>
-                </td>
-            </tr>
-            
-            <tr class="information">
-                <td colspan="2">
-                    <table>
-                        <tr>
-                            <td>
-                                <strong>Propiedad:</strong><br>
-                                {{ factura.propiedad.numero_identificador }}<br>
-                                {{ factura.propiedad.complejo.nombre }}
-                            </td>
-                            <td class="text-right">
-                                <strong>Residente:</strong><br>
-                                {{ factura.propiedad.personas_asociadas.first.persona.persona.nombres }} {{ factura.propiedad.personas_asociadas.first.persona.persona.apellidos }}<br>
-                                {{ factura.propiedad.personas_asociadas.first.persona.email }}
-                            </td>
-                        </tr>
-                    </table>
-                </td>
-            </tr>
-            
-            <tr class="heading">
-                <td>Descripción</td>
-                <td class="text-right">Monto</td>
-            </tr>
-            
-            {% for detalle in factura.detalles.all %}
-            <tr class="item">
-                <td>{{ detalle.descripcion }}</td>
-                <td class="text-right">${{ detalle.monto }}</td>
-            </tr>
-            {% endfor %}
-            
-            <tr class="total">
-                <td></td>
-                <td class="text-right">
-                   <strong>Total: ${{ factura.monto_total }}</strong>
-                </td>
-            </tr>
-        </table>
-        <hr>
-        <p><strong>Observaciones:</strong> {{ factura.observaciones|default:"Sin observaciones." }}</p>
+<a href="{% url 'lista_facturas' %}" class="back-btn" title="Volver a la lista">
+    <i class="fa-solid fa-arrow-left"></i>
+</a>
+
+<div class="ticket-wrapper">
+    <div class="ticket">
+
+        <!-- Header -->
+        <header class="ticket-header">
+            <div class="brand-logo">
+                <i class="fa-solid fa-city"></i>
+            </div>
+            <div class="brand-name">{{ factura.propiedad.complejo.nombre }}</div>
+            <div class="ticket-meta">{{ factura.propiedad.complejo.calle }}</div>
+            <div class="ticket-meta">{{ factura.propiedad.complejo.ciudad }}</div>
+            <div class="ticket-meta" style="margin-top: 10px;">
+                FACTURA #{{ factura.numero_factura|slice:"-6:" }}
+            </div>
+            <div style="margin-top: 10px;">
+                {% if factura.estado == 'PAGADA' %}
+                <span class="status-badge status-pagada">PAGADA</span>
+                {% elif factura.estado == 'VENCIDA' %}
+                <span class="status-badge status-vencida">VENCIDA</span>
+                {% else %}
+                <span class="status-badge status-pendiente">PENDIENTE DE PAGO</span>
+                {% endif %}
+            </div>
+        </header>
+
+        <!-- Resident Info -->
+        <section class="section">
+            <div class="section-title">Datos del Residente</div>
+            {% with residente=factura.propiedad.personas_asociadas.first %}
+            <div class="data-row">
+                <span class="data-label">Nombre</span>
+                <span class="data-value">{{ residente.persona }}</span>
+            </div>
+            <div class="data-row">
+                <span class="data-label">Unidad / Apto</span>
+                <span class="data-value">{{ factura.propiedad.numero_identificador }}</span>
+            </div>
+            <div class="data-row">
+                <span class="data-label">Relación</span>
+                <span class="data-value">{{ residente.get_tipo_relacion_display }}</span>
+            </div>
+            {% endwith %}
+        </section>
+
+        <!-- Dates -->
+        <section class="section">
+            <div class="data-row">
+                <span class="data-label">Fecha Emisión</span>
+                <span class="data-value">{{ factura.fecha_emision|date:"d/m/Y" }}</span>
+            </div>
+            <div class="data-row">
+                <span class="data-label">Vencimiento</span>
+                <span class="data-value">{{ factura.fecha_vencimiento|date:"d/m/Y" }}</span>
+            </div>
+        </section>
+
+        <!-- Items -->
+        <section class="section">
+            <div class="section-title">Detalle de Cargos</div>
+            <table class="items-table">
+                <thead>
+                    <tr>
+                        <th style="width: 70%">Concepto</th>
+                        <th class="col-price">Monto</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for detalle in factura.detalles.all %}
+                    <tr>
+                        <td>
+                            {{ detalle.concepto_cobro.nombre }}
+                            {% if detalle.descripcion %}
+                            <span class="item-desc">{{ detalle.descripcion }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="col-price">${{ detalle.monto }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="2" style="text-align: center; color: #999;">Sin ítems registrados</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Financial Summary -->
+        <div class="summary-section">
+            <div class="total-row">
+                <span class="total-label">TOTAL</span>
+                <span class="total-value">${{ factura.total_calculado }}</span>
+            </div>
+
+            {% if factura.monto_pagado_total > 0 %}
+            <div class="data-row" style="margin-top: 10px;">
+                <span class="data-label">Monto Abonado</span>
+                <span class="data-value" style="color: #059669;">- ${{ factura.monto_pagado_total }}</span>
+            </div>
+            <div class="data-row" style="border-top: 1px solid #ddd; padding-top: 10px; margin-top: 5px;">
+                <span class="data-label" style="font-weight: bold; color: var(--text-primary);">Saldo Pendiente</span>
+                <span class="data-value" style="color: var(--accent-color);">${{ factura.saldo_pendiente }}</span>
+            </div>
+            {% endif %}
+
+            <!-- Actions (No Print) -->
+            <div class="actions">
+                <button onclick="window.print()" class="btn btn-secondary">
+                    <i class="fa-solid fa-print"></i> Imprimir Recibo
+                </button>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="ticket-footer">
+            <p>Gracias por su puntualidad.</p>
+            <p>Este documento es un comprobante válido de sistema.</p>
+            <div class="barcode">|| ||| || ||| || ||| ||</div>
+            <p style="margin-top: 5px; font-size: 0.6rem;">{{ factura.numero_factura }}</p>
+        </footer>
+
     </div>
-    <a href="{% url 'lista_facturas' %}" class="back-link" style="display: block; text-align: center; margin-top: 20px;">← Volver a la Lista de Facturas</a>
 </div>
 {% endblock %}

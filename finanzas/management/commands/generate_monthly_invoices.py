@@ -114,7 +114,12 @@ class Command(BaseCommand):
                         if plan_a_usar:
                             # Asignamos el plan a la cabecera
                             factura.plan_cuota = plan_a_usar
-                            factura.save(update_fields=['plan_cuota'])
+                            
+                            # Si identificamos un contrato financiero, lo vinculamos
+                            if contrato_fin:
+                                factura.contrato = contrato_fin
+                                
+                            factura.save(update_fields=['plan_cuota', 'contrato'])
 
                             # Generamos los items del plan elegido
                             conceptos_del_plan = PlanConceptoCobro.objects.filter(
@@ -131,26 +136,52 @@ class Command(BaseCommand):
                         
                         # --- PASO 3: Procesar Lógica del Contrato (Saldos / Cuotas) ---
                         if contrato_fin:
-                             # Solo si el plan facturado FUE el del contrato, actualizamos contadores
-                             # O si es financiamiento, etc.
-                             # Asumiremos que si hay contrato, actualizamos sus métricas independientemente
-                             # de si el plan vino del contrato o del default (aunque usualmente irán de la mano).
-                             
-                             if contrato_fin.tipo == 'FINANCIAMIENTO':
-                                contrato_fin.cuotas_facturadas += 1
-                                
-                                # Reducir saldo
-                                if contrato_fin.monto_pendiente and total_acumulado > 0:
-                                    # Nota: Aquí reducimos por el total facturado.
-                                    # Si el plan era el default, técnicamente también reduce deuda?
-                                    # Discutible, pero por ahora mantendremos la lógica simple: Todo pago cuenta.
-                                    contrato_fin.monto_pendiente -= total_acumulado
+                            # Vincular contrato a la factura si no se hizo antes
+                            if not factura.contrato:
+                                factura.contrato = contrato_fin
+                                factura.save(update_fields=['contrato'])
 
-                                if contrato_fin.numero_cuotas_totales and contrato_fin.cuotas_facturadas >= contrato_fin.numero_cuotas_totales:
-                                    contrato_fin.estado = 'FINALIZADO'
-                                    self.stdout.write(self.style.SUCCESS(f"    -> Fin contrato compra para {propiedad}"))
-                                
-                                contrato_fin.save()
+                            if contrato_fin.tipo == 'FINANCIAMIENTO':
+                                # --- NUEVA LÓGICA DE FINANCIAMIENTO ---
+                                # Si tiene cuota definida, la agregamos como Item a la factura
+                                if contrato_fin.monto_cuota and contrato_fin.monto_cuota > 0:
+                                    
+                                    # Verificar si todavía faltan cuotas por facturar
+                                    # Usamos cuotas_facturadas como límite
+                                    if not contrato_fin.numero_cuotas_totales or contrato_fin.cuotas_facturadas < contrato_fin.numero_cuotas_totales:
+                                        
+                                        # Buscar o crear Concepto de Cobro para la cuota
+                                        # Idealmente esto debería estar parametrizado, pero para evitar fallos creamos uno genérico
+                                        from finanzas.models import ConceptoCobro
+                                        concepto_cuota, _ = ConceptoCobro.objects.get_or_create(
+                                            nombre="Cuota Financiamiento",
+                                            defaults={'descripcion': "Cuota mensual de financiamiento de propiedad"}
+                                        )
+
+                                        # Crear Detalle
+                                        DetalleFactura.objects.create(
+                                            factura=factura,
+                                            concepto_cobro=concepto_cuota,
+                                            monto=contrato_fin.monto_cuota,
+                                            descripcion=f"Cuota {contrato_fin.cuotas_facturadas + 1} de {contrato_fin.numero_cuotas_totales or '?'}"
+                                        )
+                                        total_acumulado += contrato_fin.monto_cuota
+                                        
+                                        # Actualizar contadores del contrato
+                                        contrato_fin.cuotas_facturadas += 1
+                                        
+                                        # Reducir saldo (Solo por el monto de la cuota, NO por el total de la factura)
+                                        if contrato_fin.monto_pendiente:
+                                            contrato_fin.monto_pendiente = max(0, contrato_fin.monto_pendiente - contrato_fin.monto_cuota)
+
+                                        # Verificar finalización
+                                        if contrato_fin.numero_cuotas_totales and contrato_fin.cuotas_facturadas >= contrato_fin.numero_cuotas_totales:
+                                            contrato_fin.estado = 'FINALIZADO'
+                                            self.stdout.write(self.style.SUCCESS(f"    -> Fin contrato compra para {propiedad}"))
+                                        
+                                        contrato_fin.save()
+                                else:
+                                    self.stdout.write(self.style.WARNING(f"    -> Contrato Financiamiento para {propiedad} no tiene monto_cuota definido."))
                         
                         # --- PASO 4: Agregar Cargos Adicionales Pendientes ---
                         cargos_pendientes = CargoAdicional.objects.filter(

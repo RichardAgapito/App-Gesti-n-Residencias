@@ -67,6 +67,16 @@ class Factura(models.Model):
     fecha_vencimiento = models.DateField()
     estado = models.CharField(max_length=15, choices=Estado.choices, default=Estado.PENDIENTE)
     observaciones = models.TextField(blank=True, null=True)
+    
+    # Vinculación con Contrato Financiero (Nuevo)
+    contrato = models.ForeignKey(
+        'ContratoFinanciero', 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        related_name='facturas',
+        help_text="Contrato financiero que generó esta factura (si aplica)"
+    )
 
     @property
     def total_calculado(self):
@@ -79,6 +89,10 @@ class Factura(models.Model):
     @property
     def esta_pagada(self):
         return self.monto_pagado_total >= self.total_calculado
+
+    @property
+    def saldo_pendiente(self):
+        return max(self.total_calculado - self.monto_pagado_total, 0)
     
     def _update_factura_estado(self):
         # Evitar modificar estados terminales
@@ -122,6 +136,7 @@ class DetalleFactura(models.Model):
     factura = models.ForeignKey(Factura, on_delete=models.CASCADE, related_name='detalles')
     concepto_cobro = models.ForeignKey(ConceptoCobro, on_delete=models.PROTECT)
     monto = models.DecimalField(max_digits=10, decimal_places=2)
+    descripcion = models.CharField(max_length=255, blank=True, null=True, help_text="Descripción opcional del detalle (ej. Cuota 1/12)")
 
     def __str__(self):
         return f"{self.concepto_cobro.nombre} - {self.monto}"
@@ -238,6 +253,7 @@ class ContratoFinanciero(models.Model):
     
     # Campos exclusivos para COMPRA (Financiamiento)
     es_pago_contado = models.BooleanField(default=False, help_text="Si es compra al contado (sin cuotas)")
+    monto_cuota = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, help_text="Monto fijo de la cuota mensual para financiamiento")
     numero_cuotas_totales = models.PositiveIntegerField(null=True, blank=True, help_text="Solo para financiamiento: Total de cuotas pactadas (ej. 12, 24)")
     cuotas_facturadas = models.PositiveIntegerField(default=0, help_text="Contador de cuotas ya generadas")
     monto_pendiente = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True, help_text="Deuda total restante del inmueble tras el adelanto")
@@ -280,12 +296,20 @@ class ContratoFinanciero(models.Model):
         return self.propiedad_persona.propiedad.complejo.configuraciones_financieras.first()
 
     @property
+    def cuotas_pagadas(self):
+        """
+        Calcula cuántas cuotas se han pagado realmente basándose en facturas pagadas
+        asociadas a este contrato.
+        """
+        return self.facturas.filter(estado='PAGADA').count()
+
+    @property
     def porcentaje_progreso_cuotas(self):
-        """Calcula el porcentaje de cuotas pagadas (0-100)."""
+        """Calcula el porcentaje de cuotas pagadas (0-100) basado en pagos reales."""
         if not self.numero_cuotas_totales or self.numero_cuotas_totales == 0:
             return 0
-        porcentaje = (self.cuotas_facturadas / self.numero_cuotas_totales) * 100
-        return min(porcentaje, 100) # Cap at 100 in case of overflow
+        porcentaje = (self.cuotas_pagadas / self.numero_cuotas_totales) * 100
+        return min(porcentaje, 100) # Cap at 100
 
     def delete(self, *args, **kwargs):
         # Capturamos el plan antes de borrar el contrato
