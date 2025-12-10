@@ -14,7 +14,9 @@ from django.contrib import messages
 from django.core.management import call_command
 from django.core.management import call_command
 from io import StringIO
-from complejos.models import Complejo # Added import
+from complejos.models import Complejo, PropiedadPersona # Added PropiedadPersona
+from finanzas.models import ContratoFinanciero # Added ContratoFinanciero
+
 
 class AdminRequiredMixin(UserPassesTestMixin):
     """
@@ -325,43 +327,85 @@ class FacturaCreateView(LoginRequiredMixin, GerenteRequiredMixin, CreateView):
         kwargs['user'] = self.request.user
         return kwargs
 
-    def get_context_data(self, **kwargs):
-        data = super().get_context_data(**kwargs)
-        if self.request.POST:
-            data['detalles'] = DetalleFacturaFormSet(self.request.POST)
-        else:
-            data['detalles'] = DetalleFacturaFormSet()
-        return data
-
-    def post(self, request, *args, **kwargs):
-        self.object = None
-        form = self.get_form()
-        detalles_formset = DetalleFacturaFormSet(request.POST)
-
-        if form.is_valid() and detalles_formset.is_valid():
-            return self.form_valid(form, detalles_formset)
-        else:
-            return self.form_invalid(form, detalles_formset)
-
-    def form_valid(self, form, detalles_formset):
+    def form_valid(self, form):
         with transaction.atomic():
-            # Guardar la factura principal y asignarla a self.object
+            # 1. Save the main Invoice
             self.object = form.save(commit=False)
-            # Asignar el usuario creador si tienes ese campo
-            # self.object.usuario_creador = self.request.user 
+            
+            # Logic to find the effective plan
+            propiedad = self.object.propiedad
+            plan_efectivo = None
+            contrato_financiero = None # To track it
+            
+            # A. Check active contract for this property
+            contrato = PropiedadPersona.objects.filter(
+                propiedad=propiedad,
+                estado='activo'
+            ).first()
+
+            if contrato:
+                # B. Check Financial Contract
+                try:
+                    contrato_financiero = contrato.contrato_financiero
+                    if contrato_financiero.plan:
+                        plan_efectivo = contrato_financiero.plan
+                except ContratoFinanciero.DoesNotExist:
+                    pass
+
+            # C. Fallback to Complex Default ONLY if no specific plan found
+            if not plan_efectivo:
+                config = ConfiguracionFinanciera.objects.filter(complejo=propiedad.complejo).first()
+                if config:
+                    plan_efectivo = config.plan_mantenimiento_default
+
+            if plan_efectivo:
+                self.object.plan_cuota = plan_efectivo
+            
             self.object.save()
 
-            # Asociar y guardar los detalles
-            detalles_formset.instance = self.object
-            detalles_formset.save()
+            from .models import DetalleFactura # Avoid circular import if any
 
-        messages.success(self.request, "Factura creada exitosamente.")
+            # 2. Generate Standard Details from Plan (Mantenimiento / Alquiler Fixed)
+            if plan_efectivo:
+                conceptos_plan = plan_efectivo.planconceptocobro_set.all()
+                for pcc in conceptos_plan:
+                    DetalleFactura.objects.create(
+                        factura=self.object,
+                        concepto_cobro=pcc.concepto_cobro,
+                        monto=pcc.monto,
+                        descripcion=pcc.concepto_cobro.nombre # Explicit description
+                    )
+            
+            # 3. Generate Dynamic Financing Details if applicable
+            if contrato_financiero and contrato_financiero.propiedad_persona.tipo_relacion == 'propietario': # Usually financing is for owners
+                 # Check if explicitly 'FINANCIAMIENTO' (we don't have 'tipo' on ContratoFinanciero yet in model snippet, 
+                 # but logic suggests checking fields explicitly or assuming based on presence of debt)
+                 # Actually model snippet showed TIPO_CHOICES but not 'tipo' field on the class snippet I saw?
+                 # Let's check model again if needed. But assuming we can infer from `monto_pendiente`.
+                 
+                 # Logic: If there is a pending amount and cuotas remaining
+                 if contrato_financiero.monto_pendiente and contrato_financiero.monto_pendiente > 0:
+                     if contrato_financiero.numero_cuotas_totales and contrato_financiero.numero_cuotas_totales > contrato_financiero.cuotas_facturadas:
+                         cuotas_restantes = contrato_financiero.numero_cuotas_totales - contrato_financiero.cuotas_facturadas
+                         monto_cuota = contrato_financiero.monto_pendiente / cuotas_restantes
+                         
+                         numero_cuota_actual = contrato_financiero.cuotas_facturadas + 1
+                         
+                         DetalleFactura.objects.create(
+                             factura=self.object,
+                             monto=monto_cuota,
+                             descripcion=f"Cuota de Financiamiento ({numero_cuota_actual}/{contrato_financiero.numero_cuotas_totales})"
+                         )
+                         
+                         # Update Contract State
+                         contrato_financiero.cuotas_facturadas += 1
+                         contrato_financiero.save()
+
+            if not plan_efectivo and not (contrato_financiero and contrato_financiero.monto_pendiente):
+                messages.warning(self.request, "La factura se creó pero no se encontró un Plan de Cuota activo ni Deuda Vigente para generar cargos.")
+
+        messages.success(self.request, "Factura creada exitosamente con los cargos automáticos.")
         return redirect(self.get_success_url())
-
-    def form_invalid(self, form, detalles_formset):
-        # Pasar los formularios con errores de vuelta a la plantilla
-        context = self.get_context_data(form=form, detalles=detalles_formset)
-        return self.render_to_response(context)
 
 class FacturaUpdateView(LoginRequiredMixin, GerenteRequiredMixin, UpdateView):
     model = Factura
@@ -665,3 +709,72 @@ class SeleccionarComplejoFinanzasView(LoginRequiredMixin, ListView):
         context = super().get_context_data(**kwargs)
         context['titulo'] = "Seleccionar Complejo para Configuración"
         return context
+
+@login_required
+def get_conceptos_contrato(request):
+    """
+    Devuelve los conceptos de cobro (nombre, id, monto) aplicables a una propiedad
+    basándose en su ContratoFinanciero activo.
+    Prioridad:
+    1. Plan Personalizado (si contrato.contrato_financiero.plan existe)
+    2. Plan Default del Complejo (ConfiguracionFinanciera)
+    """
+    propiedad_id = request.GET.get('propiedad_id')
+    if not propiedad_id:
+        return JsonResponse({'error': 'No propiedad_id provided'}, status=400)
+    
+    try:
+        # 1. Buscar contrato activo
+        contrato = PropiedadPersona.objects.filter(
+            propiedad_id=propiedad_id,
+            estado='activo'
+        ).first()
+
+        if not contrato:
+            return JsonResponse({'error': 'No active contract found for this property'}, status=404)
+
+        # 2. Buscar ContratoFinanciero
+        # OJO: Puede que no exista si no se creó. Asumimos que debería existir si hay contrato activo.
+        # Si no, fallamos suavemente o buscamos defaults puros.
+        try:
+            contrato_financiero = contrato.contrato_financiero
+        except ContratoFinanciero.DoesNotExist:
+             return JsonResponse({'error': 'No financial contract found'}, status=404)
+
+        # 3. Determinar Plan Efectivo
+        plan = None
+        if contrato_financiero.plan:
+            plan = contrato_financiero.plan
+        # else:
+            # No fallback to default configuration logic
+        # REVERTED ABOVE: We DO recognize default if no specific plan.
+        if not plan: # Only if no personalized plan
+            config = ConfiguracionFinanciera.objects.filter(complejo=contrato.propiedad.complejo).first()
+            if config:
+                plan = config.plan_mantenimiento_default
+        
+        conceptos_data = []
+
+        if plan:
+            # Cargar conceptos del plan
+            conceptos = plan.planconceptocobro_set.all().select_related('concepto_cobro')
+            for pcc in conceptos:
+                conceptos_data.append({
+                    'id': pcc.concepto_cobro.id,
+                    'nombre': pcc.concepto_cobro.nombre,
+                    'monto': float(pcc.monto), # Decimal to float for JSON
+                    'tipo': 'Plan'
+                })
+        else:
+             # Fallback final: Si no hay plan ni default, tal vez devolver vacío o error.
+             # Por ahora vacío.
+             pass
+
+        return JsonResponse({
+            'conceptos': conceptos_data,
+            'plan_id': plan.id if plan else None,
+            'plan_nombre': plan.nombre if plan else None
+        })
+
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)

@@ -370,6 +370,14 @@
                                     <ul id="preview-concepts-list" class="list-none pl-4 text-gray-600 italic">
                                         <li>(Según configuración estándar del complejo)</li>
                                     </ul>
+                                    <li class="mt-2 text-gray-800"><strong>Configuración Financiera:</strong></li>
+                                    <ul class="list-none pl-4 text-xs text-gray-600">
+                                        <li>• Día de Corte: <span id="preview-dia-corte">1</span></li>
+                                        <li>• Vencimiento: <span id="preview-dias-venc">10</span> días</li>
+                                        <li>• Tasa Mora: <span id="preview-tasa-mora">0.05</span>%</li>
+                                        <li id="preview-config-source" class="list-none pl-4 text-gray-600 italic">
+                                            (Configuración Estándar)</li>
+                                    </ul>
                                 </ul>
                             </div>
 
@@ -410,6 +418,20 @@
 </div>
 
 <script>
+    // Inject Default Data from Django
+    const DEFAULT_CONCEPTS = [
+        {% for c in conceptos_default_preview %}
+    { text: "{{ c.nombre }}", amount: "{{ c.monto|stringformat:'f' }}" },
+    {% endfor %}
+    ];
+
+    const DEFAULT_CONFIG = {
+        dia_corte: "{{ config_default_preview.dia_corte|default:'1' }}",
+        dias_vencimiento: "{{ config_default_preview.dias_vencimiento|default:'0' }}",
+        tasa_mora: "{{ config_default_preview.tasa_mora|stringformat:'f' }}",
+        nombre: "{{ config_default_preview.nombre|default:'Estándar' }}"
+    };
+
     document.addEventListener('DOMContentLoaded', function () {
         // --- WIZARD LOGIC ---
         let currentStep = 1;
@@ -648,20 +670,49 @@
             const listContainer = document.getElementById('preview-concepts-list');
             listContainer.innerHTML = '';
 
-            // ALWAYS SHOW CONCEPTS (Check removed)
             const rows = tableBody.querySelectorAll('tr');
             if (rows.length === 0) {
-                listContainer.innerHTML = '<li>(Sin conceptos adicionales configurados)</li>';
+                // If no custom rows, show Default Plan Concepts
+                if (DEFAULT_CONCEPTS.length > 0) {
+                    DEFAULT_CONCEPTS.forEach(c => {
+                        const li = document.createElement('li');
+                        li.innerHTML = `<strong>${c.text}</strong>: $${parseFloat(c.amount).toFixed(2)}`;
+                        listContainer.appendChild(li);
+                    });
+                    const liNote = document.createElement('li');
+                    liNote.className = "text-[10px] text-gray-400 mt-1";
+                    liNote.innerText = "(Plan Estándar del Complejo)";
+                    listContainer.appendChild(liNote);
+                } else {
+                    listContainer.innerHTML = '<li>(Sin conceptos asignados)</li>';
+                }
             } else {
                 rows.forEach(row => {
                     const sel = row.querySelector('select option:checked');
                     const amt = row.querySelector('input[type="number"]').value;
                     if (sel && sel.value) {
                         const li = document.createElement('li');
-                        li.innerHTML = `<strong>${sel.text.split('(')[0]}</strong>: $${amt}`;
+                        li.innerHTML = `<strong>${sel.text.split('(')[0]}</strong>: $${parseFloat(amt).toFixed(2)}`;
                         listContainer.appendChild(li);
                     }
                 });
+            }
+
+            // Financial Configuration Preview
+            const useCustomConfig = document.querySelector('[name="configuracion_personalizada"]').checked;
+
+            if (useCustomConfig) {
+                document.getElementById('preview-dia-corte').innerText = document.querySelector('[name="finanzas_dia_corte"]').value || '--';
+                document.getElementById('preview-dias-venc').innerText = document.querySelector('[name="finanzas_dias_vencimiento"]').value || '0';
+                document.getElementById('preview-tasa-mora').innerText = document.querySelector('[name="finanzas_tasa_mora"]').value || '0';
+                document.getElementById('preview-config-source').innerText = "(PERSONALIZADA)";
+                document.getElementById('preview-config-source').classList.add('text-blue-600');
+            } else {
+                document.getElementById('preview-dia-corte').innerText = DEFAULT_CONFIG.dia_corte;
+                document.getElementById('preview-dias-venc').innerText = DEFAULT_CONFIG.dias_vencimiento;
+                document.getElementById('preview-tasa-mora').innerText = DEFAULT_CONFIG.tasa_mora;
+                document.getElementById('preview-config-source').innerText = "(" + DEFAULT_CONFIG.nombre + ")";
+                document.getElementById('preview-config-source').classList.remove('text-blue-600');
             }
         }
 

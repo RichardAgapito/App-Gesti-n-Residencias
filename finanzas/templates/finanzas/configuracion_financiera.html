@@ -151,6 +151,36 @@
                         </div>
                     </div>
 
+                    <!-- COLUMN 3: PLAN DE CUOTAS (Full Width) -->
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden lg:col-span-2">
+                        <div class="h-1 bg-green-500"></div>
+                        <div class="p-6">
+                            <h3 class="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
+                                <div class="p-2 bg-green-50 rounded-lg text-green-600">
+                                    <i class="fa-solid fa-table-list"></i>
+                                </div>
+                                Plan de Cuotas Predeterminado
+                            </h3>
+
+                            <div class="form-group max-w-xl">
+                                <label class="block text-sm font-bold text-gray-700 mb-2">Seleccionar Plan Base</label>
+                                <div class="relative">
+                                    <div
+                                        class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                                        <i class="fa-solid fa-file-contract"></i>
+                                    </div>
+                                    {{ form.plan_mantenimiento_default }}
+                                </div>
+                                {{ form.plan_mantenimiento_default.errors }}
+                                <p class="text-xs text-gray-400 mt-2">
+                                    <i class="fa-solid fa-circle-info text-blue-400"></i>
+                                    Este plan se asignará automáticamente como "Gastos Comunes" a las propiedades que no
+                                    tengan un contrato financiero personalizado.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
 
                 <!-- Action Bar -->

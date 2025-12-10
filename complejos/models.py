@@ -104,6 +104,19 @@ class PropiedadPersona(models.Model):
         return f'{self.propiedad} - {self.persona} ({self.tipo_relacion})'
 
     def save(self, *args, **kwargs):
+        # Auto-asignar es_principal si es el primero
+        if self.estado == 'activo' and not self.es_principal:
+            # Verificar si ya existe un principal activo para esta propiedad
+            # Excluimos self.pk por si es una actualización del mismo objeto
+            existe_principal = PropiedadPersona.objects.filter(
+                propiedad=self.propiedad,
+                es_principal=True,
+                estado='activo'
+            ).exclude(pk=self.pk).exists()
+            
+            if not existe_principal:
+                self.es_principal = True
+
         super().save(*args, **kwargs)
         propiedad = self.propiedad
         if propiedad.personas_asociadas.filter(tipo_relacion__in=['inquilino', 'propietario'], estado='activo').exists():

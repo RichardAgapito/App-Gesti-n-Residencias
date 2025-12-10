@@ -165,23 +165,53 @@
                                         {{ contrato_financiero.get_estado_display }}
                                     </span>
                                 </div>
+
+                            </div>
+
+                            <!-- Effective Configuration -->
+                            <div class="space-y-4">
                                 <div>
-                                    <p class="text-xs text-gray-500 uppercase font-semibold">Configuración</p>
-                                    <p class="text-base font-medium text-gray-900">
-                                        {% if contrato_financiero.configuracion_personalizada %}
-                                        Personalizada
+                                    <p class="text-xs text-gray-500 uppercase font-semibold">Configuración Financiera
+                                    </p>
+
+                                    {% if config_efectiva %}
+                                    <div class="flex items-center justify-between mb-2">
+                                        <h5 class="text-xs font-bold text-gray-400">
+                                            {{ config_efectiva.nombre|default:"Configuración Efectiva" }}
+                                        </h5>
+                                        {% if es_config_default %}
+                                        <span
+                                            class="px-2 py-0.5 rounded text-[10px] font-semibold bg-gray-100 text-gray-600 border border-gray-200">
+                                            Global (Default)
+                                        </span>
                                         {% else %}
-                                        Estándar del Complejo
+                                        <span
+                                            class="px-2 py-0.5 rounded text-[10px] font-semibold bg-indigo-50 text-indigo-600 border border-indigo-100">
+                                            Personalizada
+                                        </span>
                                         {% endif %}
+                                    </div>
+                                    <dl class="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                                        <div>
+                                            <dt class="text-gray-500 text-xs">Día de Corte</dt>
+                                            <dd class="font-medium text-gray-900">{{ config_efectiva.dia_corte }} de
+                                                cada mes</dd>
+                                        </div>
+                                        <div>
+                                            <dt class="text-gray-500 text-xs">Vencimiento</dt>
+                                            <dd class="font-medium text-gray-900">{{ config_efectiva.dias_vencimiento }}
+                                                días post-corte</dd>
+                                        </div>
+                                        <div>
+                                            <dt class="text-gray-500 text-xs">Interés Mora</dt>
+                                            <dd class="font-medium text-gray-900">
+                                                {{ config_efectiva.tasa_interes_mora_diaria }}% diario</dd>
+                                        </div>
+                                    </dl>
+                                    {% else %}
+                                    <p class="text-sm text-gray-400 italic mt-1">No se encontró configuración activa.
                                     </p>
-                                </div>
-                                <div>
-                                    <p class="text-xs text-gray-500 uppercase font-semibold">Inicio Pago / Día de Corte
-                                    </p>
-                                    <p class="text-base font-medium text-gray-900">
-                                        {{ contrato_financiero.fecha_inicio_pago|date:"d/m/Y" }}
-                                        (Día {{ contrato_financiero.fecha_inicio_pago.day }})
-                                    </p>
+                                    {% endif %}
                                 </div>
                             </div>
 
@@ -190,20 +220,41 @@
                                 <div>
                                     <p class="text-xs text-gray-500 uppercase font-semibold">Conceptos de Cobro Mensual
                                     </p>
-                                    {% if contrato_financiero.conceptos.all %}
+                                    {% if plan_efectivo %}
+                                    <div class="flex items-center justify-between mb-2">
+                                        <h5 class="text-xs font-bold text-gray-400">
+                                            {{ plan_efectivo.nombre }}
+                                        </h5>
+                                        {% if es_plan_default %}
+                                        <span
+                                            class="px-2 py-0.5 rounded text-[10px] font-semibold bg-gray-100 text-gray-600 border border-gray-200">
+                                            Plan Default
+                                        </span>
+                                        {% else %}
+                                        <span
+                                            class="px-2 py-0.5 rounded text-[10px] font-semibold bg-blue-50 text-blue-600 border border-blue-100">
+                                            Personalizado
+                                        </span>
+                                        {% endif %}
+                                    </div>
+
+                                    {% if plan_efectivo.planconceptocobro_set.all %}
                                     <ul class="mt-2 space-y-2">
-                                        {% for c in contrato_financiero.conceptos.all %}
+                                        {% for c in plan_efectivo.planconceptocobro_set.all %}
                                         <li
                                             class="flex justify-between text-sm border-b border-gray-100 pb-1 last:border-0">
-                                            <span class="text-gray-700">{{ c.concepto.nombre }}
+                                            <span class="text-gray-700">{{ c.concepto_cobro.nombre }}
                                             </span>
                                             <span class="font-bold text-gray-900">${{ c.monto }}</span>
                                         </li>
                                         {% endfor %}
                                     </ul>
                                     {% else %}
-                                    <p class="text-sm text-gray-400 italic mt-1">Sin conceptos definidos explícitamente.
+                                    <p class="text-sm text-gray-400 italic mt-1">El plan asignado no tiene conceptos.
                                     </p>
+                                    {% endif %}
+                                    {% else %}
+                                    <p class="text-sm text-gray-400 italic mt-1">Sin plan de cuotas asignado.</p>
                                     {% endif %}
                                 </div>
                             </div>

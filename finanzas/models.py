@@ -67,6 +67,16 @@ class Factura(models.Model):
     fecha_vencimiento = models.DateField()
     estado = models.CharField(max_length=15, choices=Estado.choices, default=Estado.PENDIENTE)
     observaciones = models.TextField(blank=True, null=True)
+    
+    # Vinculación con Contrato Financiero (Nuevo)
+    contrato = models.ForeignKey(
+        'ContratoFinanciero', 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        related_name='facturas',
+        help_text="Contrato financiero que generó esta factura (si aplica)"
+    )
 
     @property
     def total_calculado(self):
@@ -79,6 +89,10 @@ class Factura(models.Model):
     @property
     def esta_pagada(self):
         return self.monto_pagado_total >= self.total_calculado
+
+    @property
+    def saldo_pendiente(self):
+        return max(self.total_calculado - self.monto_pagado_total, 0)
     
     def _update_factura_estado(self):
         # Evitar modificar estados terminales
@@ -122,6 +136,7 @@ class DetalleFactura(models.Model):
     factura = models.ForeignKey(Factura, on_delete=models.CASCADE, related_name='detalles')
     concepto_cobro = models.ForeignKey(ConceptoCobro, on_delete=models.PROTECT)
     monto = models.DecimalField(max_digits=10, decimal_places=2)
+    descripcion = models.CharField(max_length=255, blank=True, null=True, help_text="Descripción opcional del detalle (ej. Cuota 1/12)")
 
     def __str__(self):
         return f"{self.concepto_cobro.nombre} - {self.monto}"
@@ -169,6 +184,8 @@ class ConfiguracionFinanciera(models.Model):
     Define las "Reglas de Juego" automáticas para cada complejo.
     Centraliza la configuración para no tener números mágicos en el código.
     """
+    nombre = models.CharField(max_length=100, default="Configuración Estándar", help_text="Nombre para identificar esta configuración")
+    es_personalizada = models.BooleanField(default=False, help_text="Si es True, es específica de un contrato y no se muestra en listas generales")
     complejo = models.ForeignKey(Complejo, on_delete=models.CASCADE, related_name='configuraciones_financieras')
     propiedad = models.OneToOneField(Propiedad, on_delete=models.CASCADE, null=True, blank=True, related_name='configuracion_financiera_especifica')
     
@@ -187,7 +204,7 @@ class ConfiguracionFinanciera(models.Model):
         null=True, 
         blank=True, 
         related_name='config_mantenimiento',
-        help_text="Plan de cuotas (Gasto Común) que se aplica a TODOS los residentes activos"
+        help_text="Plan de cuotas (Gasto Común) que se aplica si el residente no tiene plan personalizado"
     )
 
     def __str__(self):
@@ -212,19 +229,21 @@ class ContratoFinanciero(models.Model):
         ('CANCELADO', 'Cancelado'),
     ]
 
+
     # Relación con el contrato legal existente
     propiedad_persona = models.OneToOneField(PropiedadPersona, on_delete=models.CASCADE, related_name='contrato_financiero')
     
+    tipo = models.CharField(max_length=20, choices=TIPO_CHOICES, default='ALQUILER')
     estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='ACTIVO')
     
     # Nuevo enfoque: Configuración personalizada
-    configuracion_personalizada = models.BooleanField(default=False, help_text="Si es True, usa los conceptos definidos en ConceptoContrato. Si es False, usa la configuración del complejo.")
+    configuracion_personalizada = models.BooleanField(default=False, help_text="Si es True, usa una configuración financiera específica (fechas, tasas). Si es False, usa la configuración del complejo.")
     
-    # Overrides (Opcionales, anulan los del Complejo si configuracion_personalizada=True)
-    dia_corte = models.PositiveSmallIntegerField(null=True, blank=True, help_text="Día del mes que se genera el cobro (1-28). Si es null, usa el del Complejo.")
-    dias_vencimiento = models.PositiveSmallIntegerField(null=True, blank=True, help_text="Días para pagar después del corte. Si es null, usa el del Complejo.")
-    tasa_mora = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True, help_text="Porcentaje de mora diario/mensual. Si es null, usa el del Complejo.")
-    bloquear_servicios_con_deuda = models.BooleanField(default=False, help_text="Si se activa, el residente no podrá reservar amenidades si tiene deuda.")
+    # PLAN PERSONALIZADO (Reemplaza a ConceptoContrato)
+    plan = models.ForeignKey('PlanCuota', on_delete=models.PROTECT, null=True, blank=True, help_text="Plan de cuotas (Conceptos de cobro) específico para este contrato")
+
+    # CONFIGURACIÓN FINANCIERA (Reemplaza los overrides directos)
+    configuracion = models.ForeignKey('ConfiguracionFinanciera', on_delete=models.PROTECT, null=True, blank=True, help_text="Configuración financiera específica (fechas, tasas). Si es null y configuracion_personalizada=False, usa la del complejo.")
 
     # Reglas de Tiempo
     fecha_inicio_pago = models.DateField(help_text="Fecha desde la cual se empieza a facturar")
@@ -234,6 +253,7 @@ class ContratoFinanciero(models.Model):
     
     # Campos exclusivos para COMPRA (Financiamiento)
     es_pago_contado = models.BooleanField(default=False, help_text="Si es compra al contado (sin cuotas)")
+    monto_cuota = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, help_text="Monto fijo de la cuota mensual para financiamiento")
     numero_cuotas_totales = models.PositiveIntegerField(null=True, blank=True, help_text="Solo para financiamiento: Total de cuotas pactadas (ej. 12, 24)")
     cuotas_facturadas = models.PositiveIntegerField(default=0, help_text="Contador de cuotas ya generadas")
     monto_pendiente = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True, help_text="Deuda total restante del inmueble tras el adelanto")
@@ -267,25 +287,49 @@ class ContratoFinanciero(models.Model):
                (self.numero_cuotas_totales and self.numero_cuotas_totales > 0)
 
     @property
+    def configuracion_efectiva(self):
+        """
+        Devuelve la configuración financiera efectiva (personalizada o del complejo).
+        """
+        if self.configuracion_personalizada and self.configuracion:
+            return self.configuracion
+        return self.propiedad_persona.propiedad.complejo.configuraciones_financieras.first()
+
+    @property
+    def cuotas_pagadas(self):
+        """
+        Calcula cuántas cuotas se han pagado realmente basándose en facturas pagadas
+        asociadas a este contrato.
+        """
+        return self.facturas.filter(estado='PAGADA').count()
+
+    @property
     def porcentaje_progreso_cuotas(self):
-        """Calcula el porcentaje de cuotas pagadas (0-100)."""
+        """Calcula el porcentaje de cuotas pagadas (0-100) basado en pagos reales."""
         if not self.numero_cuotas_totales or self.numero_cuotas_totales == 0:
             return 0
-        porcentaje = (self.cuotas_facturadas / self.numero_cuotas_totales) * 100
-        return min(porcentaje, 100) # Cap at 100 in case of overflow
+        porcentaje = (self.cuotas_pagadas / self.numero_cuotas_totales) * 100
+        return min(porcentaje, 100) # Cap at 100
 
-class ConceptoContrato(models.Model):
-    """
-    Conceptos de cobro específicos configurados para este contrato.
-    Reemplaza la rigidez de los 'Planes de Cuota'.
-    """
-    contrato = models.ForeignKey(ContratoFinanciero, on_delete=models.CASCADE, related_name='conceptos')
-    concepto = models.ForeignKey(ConceptoCobro, on_delete=models.PROTECT)
-    monto = models.DecimalField(max_digits=10, decimal_places=2)
-    orden = models.PositiveIntegerField(default=1)
-    
-    def __str__(self):
-        return f"{self.concepto.nombre} - ${self.monto}"
+    def delete(self, *args, **kwargs):
+        # Capturamos el plan antes de borrar el contrato
+        plan_to_check = self.plan
+        super().delete(*args, **kwargs)
+        
+        # Lógica de "Borrado Inteligente":
+        # Si el plan era exclusivo de este contrato (no usado por nadie más)
+        # Y NO es el plan default del complejo, entonces lo borramos también.
+        if plan_to_check:
+             # Verificar si el plan quedó huérfano (nadie más lo usa)
+             is_used_by_others = ContratoFinanciero.objects.filter(plan=plan_to_check).exists()
+             
+             # Verificar si es un plan maestro de configuración default
+             # (Usamos el related_name 'config_mantenimiento')
+             is_default_config = ConfiguracionFinanciera.objects.filter(plan_mantenimiento_default=plan_to_check).exists()
+             
+             if not is_used_by_others and not is_default_config:
+                 print(f"Borrado Inteligente: Eliminando plan huérfano '{plan_to_check.nombre}' tras borrar contrato.")
+                 plan_to_check.delete()
 
 class CargoAdicional(models.Model):
     """
