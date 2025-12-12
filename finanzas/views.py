@@ -1,11 +1,11 @@
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, View, TemplateView, DetailView
-from .models import PlanCuota, ConceptoCobro, MetodoPago, Factura, Recaudo, CargoAdicional, ConfiguracionFinanciera
+from .models import PlanCuota, ConceptoCobro, MetodoPago, Factura, Recaudo, ConfiguracionFinanciera
 from .forms import (
     PlanCuotaForm, ConceptoCobroForm, MetodoPagoForm, FacturaForm, 
     DetalleFacturaFormSet, RecaudoForm, PlanConceptoCobroFormSet,
-    CargoAdicionalForm, ConfiguracionFinancieraForm
+    ConfiguracionFinancieraForm
 )
 from django.db import transaction, models
 from django.shortcuts import get_object_or_404, redirect, reverse
@@ -327,85 +327,88 @@ class FacturaCreateView(LoginRequiredMixin, GerenteRequiredMixin, CreateView):
         kwargs['user'] = self.request.user
         return kwargs
 
-    def form_valid(self, form):
+    def get_context_data(self, **kwargs):
+        data = super().get_context_data(**kwargs)
+        if self.request.POST:
+            data['detalles'] = DetalleFacturaFormSet(self.request.POST, form_kwargs={'complejo': self.request.user.complejo_asignado})
+        else:
+            data['detalles'] = DetalleFacturaFormSet(form_kwargs={'complejo': self.request.user.complejo_asignado})
+        return data
+
+    def post(self, request, *args, **kwargs):
+        self.object = None
+        form = self.get_form()
+        detalles = DetalleFacturaFormSet(request.POST, form_kwargs={'complejo': self.request.user.complejo_asignado})
+        
+        if form.is_valid() and detalles.is_valid():
+            return self.form_valid(form, detalles)
+        else:
+            return self.form_invalid(form, detalles)
+
+    def form_valid(self, form, detalles):
         with transaction.atomic():
             # 1. Save the main Invoice
-            self.object = form.save(commit=False)
+            self.object = form.save()
             
-            # Logic to find the effective plan
-            propiedad = self.object.propiedad
-            plan_efectivo = None
-            contrato_financiero = None # To track it
-            
-            # A. Check active contract for this property
-            contrato = PropiedadPersona.objects.filter(
-                propiedad=propiedad,
-                estado='activo'
-            ).first()
+            # 2. Save Manual Details
+            detalles.instance = self.object
+            detalles.save()
 
-            if contrato:
-                # B. Check Financial Contract
-                try:
-                    contrato_financiero = contrato.contrato_financiero
-                    if contrato_financiero.plan:
-                        plan_efectivo = contrato_financiero.plan
-                except ContratoFinanciero.DoesNotExist:
-                    pass
-
-            # C. Fallback to Complex Default ONLY if no specific plan found
-            if not plan_efectivo:
-                config = ConfiguracionFinanciera.objects.filter(complejo=propiedad.complejo).first()
-                if config:
-                    plan_efectivo = config.plan_mantenimiento_default
-
-            if plan_efectivo:
-                self.object.plan_cuota = plan_efectivo
-            
-            self.object.save()
-
-            from .models import DetalleFactura # Avoid circular import if any
-
-            # 2. Generate Standard Details from Plan (Mantenimiento / Alquiler Fixed)
-            if plan_efectivo:
+            # 3. Automatic Generation Logic (ONLY if Plan is selected)
+            # We respect the user's choice: If plan_cuota is None, we treat this as a purely manual invoice.
+            if self.object.plan_cuota:
+                plan_efectivo = self.object.plan_cuota
+                
+                # A. Generate Standard Details from Plan
+                from .models import DetalleFactura # Avoid circular import if any
                 conceptos_plan = plan_efectivo.planconceptocobro_set.all()
                 for pcc in conceptos_plan:
                     DetalleFactura.objects.create(
                         factura=self.object,
                         concepto_cobro=pcc.concepto_cobro,
                         monto=pcc.monto,
-                        descripcion=pcc.concepto_cobro.nombre # Explicit description
+                        descripcion=pcc.concepto_cobro.nombre
                     )
+
+                # B. Generate Financing Details (Mortgage) if applicable
+                # We need to find the Financial Contract associated with this property
+                contrato = PropiedadPersona.objects.filter(
+                    propiedad=self.object.propiedad,
+                    estado='activo'
+                ).first()
+
+                if contrato:
+                    try:
+                        contrato_financiero = contrato.contrato_financiero
+                        # Logic: If there is a pending amount and cuotas remaining
+                        if contrato_financiero.monto_pendiente and contrato_financiero.monto_pendiente > 0:
+                            if contrato_financiero.numero_cuotas_totales and contrato_financiero.numero_cuotas_totales > contrato_financiero.cuotas_facturadas:
+                                cuotas_restantes = contrato_financiero.numero_cuotas_totales - contrato_financiero.cuotas_facturadas
+                                monto_cuota = contrato_financiero.monto_pendiente / cuotas_restantes
+                                
+                                numero_cuota_actual = contrato_financiero.cuotas_facturadas + 1
+                                
+                                DetalleFactura.objects.create(
+                                    factura=self.object,
+                                    monto=monto_cuota,
+                                    descripcion=f"Cuota de Financiamiento ({numero_cuota_actual}/{contrato_financiero.numero_cuotas_totales})"
+                                )
+                                
+                                # Update Contract State
+                                contrato_financiero.cuotas_facturadas += 1
+                                contrato_financiero.save()
+                    except ContratoFinanciero.DoesNotExist:
+                        pass
             
-            # 3. Generate Dynamic Financing Details if applicable
-            if contrato_financiero and contrato_financiero.propiedad_persona.tipo_relacion == 'propietario': # Usually financing is for owners
-                 # Check if explicitly 'FINANCIAMIENTO' (we don't have 'tipo' on ContratoFinanciero yet in model snippet, 
-                 # but logic suggests checking fields explicitly or assuming based on presence of debt)
-                 # Actually model snippet showed TIPO_CHOICES but not 'tipo' field on the class snippet I saw?
-                 # Let's check model again if needed. But assuming we can infer from `monto_pendiente`.
-                 
-                 # Logic: If there is a pending amount and cuotas remaining
-                 if contrato_financiero.monto_pendiente and contrato_financiero.monto_pendiente > 0:
-                     if contrato_financiero.numero_cuotas_totales and contrato_financiero.numero_cuotas_totales > contrato_financiero.cuotas_facturadas:
-                         cuotas_restantes = contrato_financiero.numero_cuotas_totales - contrato_financiero.cuotas_facturadas
-                         monto_cuota = contrato_financiero.monto_pendiente / cuotas_restantes
-                         
-                         numero_cuota_actual = contrato_financiero.cuotas_facturadas + 1
-                         
-                         DetalleFactura.objects.create(
-                             factura=self.object,
-                             monto=monto_cuota,
-                             descripcion=f"Cuota de Financiamiento ({numero_cuota_actual}/{contrato_financiero.numero_cuotas_totales})"
-                         )
-                         
-                         # Update Contract State
-                         contrato_financiero.cuotas_facturadas += 1
-                         contrato_financiero.save()
+            if not self.object.plan_cuota and not detalles.has_changed() and not detalles.initial_form_count() > 0:
+                 # Logic check: If no plan and no details were added manually
+                 messages.warning(self.request, "Se creó una factura sin conceptos (ni automáticos ni manuales).")
 
-            if not plan_efectivo and not (contrato_financiero and contrato_financiero.monto_pendiente):
-                messages.warning(self.request, "La factura se creó pero no se encontró un Plan de Cuota activo ni Deuda Vigente para generar cargos.")
-
-        messages.success(self.request, "Factura creada exitosamente con los cargos automáticos.")
+        messages.success(self.request, "Factura creada exitosamente.")
         return redirect(self.get_success_url())
+
+    def form_invalid(self, form, detalles):
+        return self.render_to_response(self.get_context_data(form=form, detalles=detalles))
 
 class FacturaUpdateView(LoginRequiredMixin, GerenteRequiredMixin, UpdateView):
     model = Factura
@@ -612,32 +615,7 @@ class UpdateFinancialStatusView(LoginRequiredMixin, View):
         # Redirigimos a la misma lista de facturas para ver los cambios (ej. estados VENCIDA)
         return redirect(reverse('lista_facturas'))
 
-class ListaCargosAdicionalesView(LoginRequiredMixin, GerenteRequiredMixin, ListView):
-    model = CargoAdicional
-    template_name = 'finanzas/lista_cargos.html'
-    context_object_name = 'cargos'
 
-    def get_queryset(self):
-        user = self.request.user
-        if user.rol == 'GERENTE' and user.complejo_asignado:
-            return CargoAdicional.objects.filter(propiedad__complejo=user.complejo_asignado).order_by('-fecha_registro')
-        return CargoAdicional.objects.none()
-
-class CrearCargoAdicionalView(LoginRequiredMixin, GerenteRequiredMixin, CreateView):
-    model = CargoAdicional
-    form_class = CargoAdicionalForm
-    template_name = 'finanzas/crear_cargo.html'
-    success_url = reverse_lazy('lista_cargos')
-
-    def get_form_kwargs(self):
-        kwargs = super().get_form_kwargs()
-        kwargs['user'] = self.request.user
-        return kwargs
-    
-    
-    def form_valid(self, form):
-        messages.success(self.request, "Cargo adicional registrado correctamente. Se incluirá en la próxima facturación.")
-        return super().form_valid(form)
 
 class ConfiguracionFinancieraUpdateView(LoginRequiredMixin, GerenteRequiredMixin, UpdateView):
     model = ConfiguracionFinanciera

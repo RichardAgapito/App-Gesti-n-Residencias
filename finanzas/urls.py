@@ -20,8 +20,6 @@ from .views import (
     ReciboPagoView, # Added
     get_conceptos_plan,
     UpdateFinancialStatusView, # Added
-    ListaCargosAdicionalesView,
-    CrearCargoAdicionalView,
     ConfiguracionFinancieraUpdateView,
     SeleccionarComplejoFinanzasView, # Added
     get_conceptos_contrato # Added
@@ -51,8 +49,6 @@ urlpatterns = [
     path('facturas/generar-automatico/', GenerateInvoicesView.as_view(), name='generar_facturas_automatico'), # Added
     path('recibo/<int:pk>/', ReciboPagoView.as_view(), name='ver_recibo'), # Added
     path('ajax/get-conceptos-plan/', get_conceptos_plan, name='get_conceptos_plan'), # Added
-    path('cargos/', ListaCargosAdicionalesView.as_view(), name='lista_cargos'),
-    path('cargos/crear/', CrearCargoAdicionalView.as_view(), name='crear_cargo'),
     path('configuracion/', ConfiguracionFinancieraUpdateView.as_view(), name='configuracion_financiera'),
     path('configuracion/seleccionar/', SeleccionarComplejoFinanzasView.as_view(), name='seleccionar_complejo_finanzas'),
 

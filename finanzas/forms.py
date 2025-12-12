@@ -2,7 +2,7 @@ from django import forms
 from django.forms import inlineformset_factory
 from django.core.exceptions import ValidationError # Added
 from django.utils import timezone # Added
-from .models import PlanCuota, Factura, DetalleFactura, ConceptoCobro, MetodoPago, Recaudo, PlanConceptoCobro, CargoAdicional, ConfiguracionFinanciera
+from .models import PlanCuota, Factura, DetalleFactura, ConceptoCobro, MetodoPago, Recaudo, PlanConceptoCobro, ConfiguracionFinanciera
 from complejos.models import Complejo, Propiedad # Import Complejo and Propiedad
 
 class PlanCuotaForm(forms.ModelForm):
@@ -130,12 +130,23 @@ class FacturaForm(forms.ModelForm):
 class DetalleFacturaForm(forms.ModelForm):
     class Meta:
         model = DetalleFactura
-        fields = ['concepto_cobro', 'monto']
+        fields = ['concepto_cobro', 'monto', 'descripcion']
         widgets = {
             'concepto_cobro': forms.Select(attrs={'class': 'form-control'}),
             'monto': forms.NumberInput(attrs={'class': 'form-control'}),
             'descripcion': forms.TextInput(attrs={'class': 'form-control'}),
         }
+
+    def __init__(self, *args, **kwargs):
+        complejo = kwargs.pop('complejo', None)
+        super().__init__(*args, **kwargs)
+        if complejo:
+            self.fields['concepto_cobro'].queryset = ConceptoCobro.objects.filter(complejo=complejo)
+        else:
+            # If no complex provided (e.g. Admin view without specific filter, or early init), 
+            # ideally show all or nothing. For Admin show all.
+            # But wait, if I don't pass anything, it defaults to all.
+            pass
 
 DetalleFacturaFormSet = inlineformset_factory(
     Factura,
@@ -190,29 +201,7 @@ class RecaudoForm(forms.ModelForm):
 
         return cleaned_data
 
-class CargoAdicionalForm(forms.ModelForm):
-    class Meta:
-        model = CargoAdicional
-        fields = ['propiedad', 'concepto', 'monto', 'observaciones']
-        widgets = {
-            'propiedad': forms.Select(attrs={'class': 'form-control'}),
-            'concepto': forms.Select(attrs={'class': 'form-control'}),
-            'monto': forms.NumberInput(attrs={'class': 'form-control'}),
-            'observaciones': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
-        }
 
-    def __init__(self, *args, **kwargs):
-        user = kwargs.pop('user', None)
-        super().__init__(*args, **kwargs)
-        
-        if user and user.rol == 'GERENTE':
-            # Filtrar propiedades y conceptos del complejo del gerente
-            if user.complejo_asignado:
-                self.fields['propiedad'].queryset = Propiedad.objects.filter(complejo=user.complejo_asignado)
-                self.fields['concepto'].queryset = ConceptoCobro.objects.filter(complejo=user.complejo_asignado)
-            else:
-                self.fields['propiedad'].queryset = Propiedad.objects.none()
-                self.fields['concepto'].queryset = ConceptoCobro.objects.none()
 
 class ConfiguracionFinancieraForm(forms.ModelForm):
     class Meta:

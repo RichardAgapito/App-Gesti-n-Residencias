@@ -331,20 +331,3 @@ class ContratoFinanciero(models.Model):
                  print(f"Borrado Inteligente: Eliminando plan huérfano '{plan_to_check.nombre}' tras borrar contrato.")
                  plan_to_check.delete()
 
-class CargoAdicional(models.Model):
-    """
-    Cargos extra puntuales (Multas, Reservas manuales, Servicios extra)
-    que se agregan a la próxima factura.
-    """
-    propiedad = models.ForeignKey(Propiedad, on_delete=models.CASCADE, related_name='cargos_adicionales')
-    concepto = models.ForeignKey(ConceptoCobro, on_delete=models.PROTECT)
-    monto = models.DecimalField(max_digits=10, decimal_places=2)
-    
-    fecha_registro = models.DateTimeField(auto_now_add=True)
-    observaciones = models.TextField(blank=True, null=True)
-    
-    procesado = models.BooleanField(default=False, help_text="True si ya fue incluido en una factura")
-    factura_asociada = models.ForeignKey(Factura, on_delete=models.SET_NULL, null=True, blank=True, related_name='cargos_origen')
-
-    def __str__(self):
-        return f"Cargo: {self.concepto.nombre} - {self.propiedad} (${self.monto})"
