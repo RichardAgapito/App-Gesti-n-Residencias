@@ -1,7 +1,7 @@
 from django.contrib import admin
 from .models import (
     PlanCuota, ConceptoCobro, Factura, DetalleFactura, MetodoPago, Recaudo, 
-    PlanConceptoCobro, ConfiguracionFinanciera, ContratoFinanciero, PropiedadPersona, CargoAdicional
+    PlanConceptoCobro, ConfiguracionFinanciera, ContratoFinanciero, PropiedadPersona
 )
 
 class PlanConceptoCobroInline(admin.TabularInline):
@@ -64,8 +64,3 @@ class ContratoFinancieroAdmin(admin.ModelAdmin):
             kwargs["queryset"] = PropiedadPersona.objects.filter(es_principal=True, estado='activo')
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
-@admin.register(CargoAdicional)
-class CargoAdicionalAdmin(admin.ModelAdmin):
-    list_display = ('concepto', 'propiedad', 'monto', 'fecha_registro', 'procesado')
-    list_filter = ('procesado', 'fecha_registro', 'concepto')
-    search_fields = ('propiedad__numero_identificador', 'observaciones')

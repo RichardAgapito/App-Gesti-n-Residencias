@@ -5,31 +5,33 @@
 {% block global_styles %}{% endblock %}
 
 {% block extra_css %}
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#3b82f6',
-                    }
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+    tailwind.config = {
+        theme: {
+            extend: {
+                colors: {
+                    primary: '#3b82f6',
                 }
             }
         }
-    </script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Inter', sans-serif; }
-    </style>
+    }
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+    body {
+        font-family: 'Inter', sans-serif;
+    }
+</style>
 {% endblock %}
 
 {% block content %}
 <div class="h-screen bg-gray-50 flex font-sans overflow-hidden">
-    
+
     {% if request.user.rol == 'GERENTE' %}
-        {% include 'includes/manager_sidebar.html' %}
+    {% include 'includes/manager_sidebar.html' %}
     {% else %}
-        {% include 'includes/admin_sidebar.html' %}
+    {% include 'includes/admin_sidebar.html' %}
     {% endif %}
 
     <div class="flex-1 lg:ml-64 flex flex-col h-full overflow-y-auto">
@@ -38,9 +40,10 @@
                 <!-- Header -->
                 <div class="mb-8 flex items-center justify-between">
                     <div class="flex items-center gap-4">
-                        <a href="{% url 'lista_facturas' %}" 
-                           class="w-10 h-10 rounded-xl bg-white border border-gray-200 flex items-center justify-center text-gray-500 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 transition-all shadow-sm group">
-                            <i class="fa-solid fa-arrow-left text-lg transform group-hover:-translate-x-1 transition-transform"></i>
+                        <a href="{% url 'lista_facturas' %}"
+                            class="w-10 h-10 rounded-xl bg-white border border-gray-200 flex items-center justify-center text-gray-500 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 transition-all shadow-sm group">
+                            <i
+                                class="fa-solid fa-arrow-left text-lg transform group-hover:-translate-x-1 transition-transform"></i>
                         </a>
                         <div>
                             <h1 class="text-3xl font-bold text-gray-900">Crear Factura Manual</h1>
@@ -51,12 +54,13 @@
 
                 <!-- Main Card -->
                 <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
-                    
+
                     <div class="mb-6 bg-blue-50 border border-blue-100 rounded-xl p-4 flex gap-3">
                         <i class="fa-solid fa-circle-info text-blue-500 mt-0.5"></i>
                         <div>
                             <p class="text-sm text-blue-800 font-medium">Información Automática</p>
-                            <p class="text-sm text-blue-600 mt-1">La factura se generará con los conceptos del contrato activo o plan de mantenimiento de la propiedad seleccionada.</p>
+                            <p class="text-sm text-blue-600 mt-1">La factura se generará con los conceptos del contrato
+                                activo o plan de mantenimiento de la propiedad seleccionada.</p>
                         </div>
                     </div>
 
@@ -72,55 +76,161 @@
 
                         <!-- Propiedad Field -->
                         <div>
-                            <label for="{{ form.propiedad.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">Propiedad</label>
+                            <label for="{{ form.propiedad.id_for_label }}"
+                                class="block text-sm font-semibold text-gray-700 mb-2">Propiedad</label>
                             <div class="relative">
-                                <span class="absolute left-3 top-3 text-gray-400"><i class="fa-solid fa-building"></i></span>
+                                <span class="absolute left-3 top-3 text-gray-400"><i
+                                        class="fa-solid fa-building"></i></span>
                                 {{ form.propiedad }}
                             </div>
                             {% if form.propiedad.errors %}
-                                <p class="mt-1 text-sm text-red-600">{{ form.propiedad.errors.0 }}</p>
+                            <p class="mt-1 text-sm text-red-600">{{ form.propiedad.errors.0 }}</p>
                             {% endif %}
                         </div>
 
                         <!-- Fecha Vencimiento -->
                         <div>
-                            <label for="{{ form.fecha_vencimiento.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">Fecha de Vencimiento</label>
+                            <label for="{{ form.fecha_vencimiento.id_for_label }}"
+                                class="block text-sm font-semibold text-gray-700 mb-2">Fecha de Vencimiento</label>
                             <div class="relative">
-                                <span class="absolute left-3 top-3 text-gray-400"><i class="fa-regular fa-calendar"></i></span>
+                                <span class="absolute left-3 top-3 text-gray-400"><i
+                                        class="fa-regular fa-calendar"></i></span>
                                 {{ form.fecha_vencimiento }}
                             </div>
                             {% if form.fecha_vencimiento.errors %}
-                                <p class="mt-1 text-sm text-red-600">{{ form.fecha_vencimiento.errors.0 }}</p>
+                            <p class="mt-1 text-sm text-red-600">{{ form.fecha_vencimiento.errors.0 }}</p>
                             {% endif %}
                         </div>
 
                         <!-- Plan Cuota -->
                         <div>
-                            <label for="{{ form.plan_cuota.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">Plan de Cuota (Opcional)</label>
+                            <label for="{{ form.plan_cuota.id_for_label }}"
+                                class="block text-sm font-semibold text-gray-700 mb-2">Plan de Cuota (Opcional)</label>
                             <div class="relative">
-                                <span class="absolute left-3 top-3 text-gray-400"><i class="fa-solid fa-file-contract"></i></span>
+                                <span class="absolute left-3 top-3 text-gray-400"><i
+                                        class="fa-solid fa-file-contract"></i></span>
                                 {{ form.plan_cuota }}
                             </div>
-                            <p class="mt-1 text-xs text-gray-500">Se seleccionará automáticamente si existe un contrato activo.</p>
+                            <p class="mt-1 text-xs text-gray-500">Se seleccionará automáticamente si existe un contrato
+                                activo.</p>
                             {% if form.plan_cuota.errors %}
-                                <p class="mt-1 text-sm text-red-600">{{ form.plan_cuota.errors.0 }}</p>
+                            <p class="mt-1 text-sm text-red-600">{{ form.plan_cuota.errors.0 }}</p>
                             {% endif %}
                         </div>
 
                         <!-- Observaciones -->
                         <div>
-                            <label for="{{ form.observaciones.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">Observaciones</label>
+                            <label for="{{ form.observaciones.id_for_label }}"
+                                class="block text-sm font-semibold text-gray-700 mb-2">Observaciones</label>
                             {{ form.observaciones }}
                             {% if form.observaciones.errors %}
-                                <p class="mt-1 text-sm text-red-600">{{ form.observaciones.errors.0 }}</p>
+                            <p class="mt-1 text-sm text-red-600">{{ form.observaciones.errors.0 }}</p>
                             {% endif %}
                         </div>
 
+                        <!-- Manual Details Section -->
+                        <div class="pt-6 border-t border-gray-100">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-bold text-gray-900">Conceptos Manuales</h3>
+                                <button type="button" id="add-concepto"
+                                    class="text-sm px-3 py-1.5 bg-blue-50 text-blue-600 font-medium rounded-lg hover:bg-blue-100 transition-colors flex items-center gap-2">
+                                    <i class="fa-solid fa-plus"></i> Agregar Concepto
+                                </button>
+                            </div>
+
+                            {{ detalles.management_form }}
+                            <div id="conceptos-container" class="space-y-3">
+                                {% for form_detalle in detalles %}
+                                <div
+                                    class="concepto-row grid grid-cols-1 md:grid-cols-12 gap-4 items-start p-4 bg-gray-50 rounded-xl border border-gray-200 relative group transition-all hover:bg-white hover:shadow-sm">
+                                    {{ form_detalle.id }}
+
+                                    <div class="md:col-span-5">
+                                        <label
+                                            class="block text-xs font-semibold text-gray-500 uppercase mb-1">Concepto</label>
+                                        {{ form_detalle.concepto_cobro }}
+                                        {% if form_detalle.concepto_cobro.errors %}
+                                        <p class="text-xs text-red-600 mt-1">{{ form_detalle.concepto_cobro.errors.0 }}
+                                        </p>
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="md:col-span-3">
+                                        <label
+                                            class="block text-xs font-semibold text-gray-500 uppercase mb-1">Monto</label>
+                                        <div class="relative">
+                                            <span class="absolute left-3 top-2 text-gray-400">$</span>
+                                            {{ form_detalle.monto }}
+                                        </div>
+                                        {% if form_detalle.monto.errors %}
+                                        <p class="text-xs text-red-600 mt-1">{{ form_detalle.monto.errors.0 }}</p>
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="md:col-span-3">
+                                        <label
+                                            class="block text-xs font-semibold text-gray-500 uppercase mb-1">Descripción
+                                            (Opcional)</label>
+                                        {{ form_detalle.descripcion }}
+                                    </div>
+
+                                    <div class="md:col-span-1 flex items-center justify-center pt-6">
+                                        {% if detalles.can_delete %}
+                                        <div class="hidden">{{ form_detalle.DELETE }}</div>
+                                        <!-- Hide default delete checkbox -->
+                                        <button type="button"
+                                            class="delete-row text-gray-400 hover:text-red-500 transition-colors p-2"
+                                            title="Eliminar">
+                                            <i class="fa-solid fa-trash"></i>
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+
+                            <!-- Empty form template for JS -->
+                            <div id="empty-form" class="hidden">
+                                <div
+                                    class="concepto-row grid grid-cols-1 md:grid-cols-12 gap-4 items-start p-4 bg-gray-50 rounded-xl border border-gray-200 relative group transition-all hover:bg-white hover:shadow-sm">
+                                    {{ detalles.empty_form.id }}
+                                    <div class="md:col-span-5">
+                                        <label
+                                            class="block text-xs font-semibold text-gray-500 uppercase mb-1">Concepto</label>
+                                        {{ detalles.empty_form.concepto_cobro }}
+                                    </div>
+                                    <div class="md:col-span-3">
+                                        <label
+                                            class="block text-xs font-semibold text-gray-500 uppercase mb-1">Monto</label>
+                                        <div class="relative">
+                                            <span class="absolute left-3 top-2 text-gray-400">$</span>
+                                            {{ detalles.empty_form.monto }}
+                                        </div>
+                                    </div>
+                                    <div class="md:col-span-3">
+                                        <label
+                                            class="block text-xs font-semibold text-gray-500 uppercase mb-1">Descripción
+                                            (Opcional)</label>
+                                        {{ detalles.empty_form.descripcion }}
+                                    </div>
+                                    <div class="md:col-span-1 flex items-center justify-center pt-6">
+                                        <div class="hidden">{{ detalles.empty_form.DELETE }}</div>
+                                        <button type="button"
+                                            class="delete-row text-gray-400 hover:text-red-500 transition-colors p-2">
+                                            <i class="fa-solid fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="pt-6 flex gap-3">
-                            <a href="{% url 'lista_facturas' %}" class="flex-1 px-4 py-3 bg-gray-100 text-gray-700 font-medium rounded-xl hover:bg-gray-200 text-center transition-colors">
+                            <a href="{% url 'lista_facturas' %}"
+                                class="flex-1 px-4 py-3 bg-gray-100 text-gray-700 font-medium rounded-xl hover:bg-gray-200 text-center transition-colors">
                                 Cancelar
                             </a>
-                            <button type="submit" class="flex-1 px-4 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all transform hover:-translate-y-0.5">
+                            <button type="submit"
+                                class="flex-1 px-4 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all transform hover:-translate-y-0.5">
                                 Crear Factura
                             </button>
                         </div>
@@ -136,22 +246,47 @@
         const propiedadSelect = document.getElementById('id_propiedad');
         const planCuotaSelect = document.getElementById('id_plan_cuota');
 
-        // Style the separate form inputs via JS to avoid touching forms.py if possible, 
-        // or ensure they have a base class. 
-        // For simplicity in this template implementation, we add classes to the rendered inputs:
-        const inputs = document.querySelectorAll('input[type="text"], input[type="date"], select, textarea');
-        inputs.forEach(input => {
-            input.classList.add('w-full', 'pl-10', 'pr-4', 'py-2.5', 'bg-gray-50', 'border', 'border-gray-200', 'rounded-xl', 'focus:bg-white', 'focus:border-blue-500', 'focus:ring-2', 'focus:ring-blue-100', 'outline-none', 'transition-all');
-        });
-        
-        // Fix textarea padding as it has no icon usually, or adjust relative placement
-        const textareas = document.querySelectorAll('textarea');
-        textareas.forEach(ta => {
-            ta.parentElement.querySelector('i')?.remove(); // Remove icon if present by mistake or adjust
-             ta.classList.remove('pl-10');
-             ta.classList.add('p-4');
-        });
+        // Helper to apply styles to new inputs
+        function applyStyles(container) {
+            const inputs = container.querySelectorAll('input[type="text"], input[type="number"], input[type="date"], select, textarea');
+            inputs.forEach(input => {
+                input.classList.add('w-full', 'pl-10', 'pr-4', 'py-2.5', 'bg-gray-50', 'border', 'border-gray-200', 'rounded-xl', 'focus:bg-white', 'focus:border-blue-500', 'focus:ring-2', 'focus:ring-blue-100', 'outline-none', 'transition-all');
+                // Adjust for textareas
+                if (input.tagName === 'TEXTAREA') {
+                    input.classList.remove('pl-10');
+                    input.classList.add('p-4');
+                }
+            });
+        }
 
+        // Initial style application
+        applyStyles(document);
+
+        // --- Formset Logic ---
+        const container = document.getElementById('conceptos-container');
+        const addButton = document.getElementById('add-concepto');
+        const totalFormsInput = document.getElementById('id_detalles-TOTAL_FORMS');
+        const emptyFormTemplate = document.getElementById('empty-form').firstElementChild;
+
+        if (addButton && container && totalFormsInput && emptyFormTemplate) {
+            addButton.addEventListener('click', function () {
+                const totalForms = parseInt(totalFormsInput.value);
+                const newRow = emptyFormTemplate.cloneNode(true);
+                newRow.innerHTML = newRow.innerHTML.replace(/__prefix__/g, totalForms);
+                container.appendChild(newRow);
+                applyStyles(newRow);
+                totalFormsInput.value = totalForms + 1;
+            });
+
+            container.addEventListener('click', function (e) {
+                if (e.target.closest('.delete-row')) {
+                    const row = e.target.closest('.concepto-row');
+                    const checkbox = row.querySelector('input[type="checkbox"][name$="-DELETE"]');
+                    if (checkbox) checkbox.checked = true;
+                    row.classList.add('hidden');
+                }
+            });
+        }
 
         // AJAX: Load plan info when "Propiedad" changes
         if (propiedadSelect) {

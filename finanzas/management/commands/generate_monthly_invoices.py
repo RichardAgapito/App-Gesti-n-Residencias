@@ -6,7 +6,7 @@ from datetime import date, timedelta
 from complejos.models import Complejo, PropiedadPersona
 from finanzas.models import (
     Factura, DetalleFactura, ConfiguracionFinanciera, 
-    ContratoFinanciero, PlanConceptoCobro, CargoAdicional
+    ContratoFinanciero, PlanConceptoCobro
 )
 
 class Command(BaseCommand):
@@ -183,26 +183,7 @@ class Command(BaseCommand):
                                 else:
                                     self.stdout.write(self.style.WARNING(f"    -> Contrato Financiamiento para {propiedad} no tiene monto_cuota definido."))
                         
-                        # --- PASO 4: Agregar Cargos Adicionales Pendientes ---
-                        cargos_pendientes = CargoAdicional.objects.filter(
-                            propiedad=propiedad,
-                            procesado=False
-                        )
-                        
-                        if cargos_pendientes.exists():
-                            for cargo in cargos_pendientes:
-                                DetalleFactura.objects.create(
-                                    factura=factura,
-                                    concepto_cobro=cargo.concepto,
-                                    monto=cargo.monto
-                                )
-                                total_acumulado += cargo.monto
-                                
-                                # Marcar como procesado
-                                cargo.procesado = True
-                                cargo.factura_asociada = factura
-                                cargo.save()
-                                self.stdout.write(f"    -> Cargo agregado: {cargo.monto}")
+
 
                         factura.save()
                         
