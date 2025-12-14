@@ -3,82 +3,151 @@
 
 {% block extra_css %}
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .glass-card {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+    </style>
 {% endblock %}
 
 {% block content %}
-<div class="min-h-screen bg-gray-50 flex font-sans">
+<div class="min-h-screen bg-gray-50 flex font-sans relative">
+    
+    <!-- Background Decor -->
+    <div class="absolute inset-0 overflow-hidden pointer-events-none">
+        <div class="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-4xl h-96 bg-gradient-to-b from-blue-50 to-transparent"></div>
+        <div class="absolute top-20 right-20 w-72 h-72 bg-indigo-100 rounded-full blur-3xl opacity-40"></div>
+        <div class="absolute bottom-20 left-20 w-96 h-96 bg-blue-100 rounded-full blur-3xl opacity-30"></div>
+    </div>
+
     {% if request.user.rol == 'GERENTE' %}
         {% include 'includes/manager_sidebar.html' %}
     {% else %}
         {% include 'includes/admin_sidebar.html' %}
     {% endif %}
 
-    <main class="flex-1 lg:ml-64 p-8">
-        <div class="max-w-2xl mx-auto">
-            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-                <div class="p-6 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
-                    <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2">
-                        <i class="fa-solid fa-pen-to-square text-blue-500"></i> Editar Amenidad
-                    </h3>
-                    <a href="{% url 'gestionar_amenidades' %}" class="text-gray-400 hover:text-gray-600 transition-colors">
-                        <i class="fa-solid fa-xmark text-xl"></i>
-                    </a>
-                </div>
-                
-                <form id="amenidad-edit-form" method="post" class="p-6 space-y-5">
-                    {% csrf_token %}
-                    
-                    {% if form.non_field_errors %}
-                        <div class="p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-r text-sm">
-                            {{ form.non_field_errors }}
-                        </div>
-                    {% endif %}
+    <main class="flex-1 lg:ml-64 p-8 relative">
+        
+        <div class="w-full max-w-5xl mx-auto relative z-10">
+            <!-- Back Button -->
+            <div class="mb-6">
+                <a href="{% url 'gestionar_amenidades' %}" class="inline-flex items-center gap-2 text-sm font-bold text-gray-400 hover:text-blue-600 transition-colors py-2 px-4 rounded-xl hover:bg-white/50">
+                    <i class="fa-solid fa-arrow-left"></i> Volver
+                </a>
+            </div>
 
-                    {% for field in form %}
+            <div class="bg-white rounded-3xl shadow-xl shadow-gray-200/50 border border-white overflow-hidden relative">
+                <!-- Header Decorative Line -->
+                <div class="h-1.5 w-full bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500"></div>
+
+                <div class="p-8 md:p-10">
+                    <div class="flex items-center gap-5 mb-8">
+                        <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center text-2xl shadow-lg shadow-blue-200 transform -rotate-3">
+                            <i class="fa-solid fa-pen-nib"></i>
+                        </div>
                         <div>
-                            <label for="{{ field.id_for_label }}" class="block text-xs font-bold text-gray-700 uppercase mb-2">{{ field.label }}</label>
-                            <div class="relative">
-                                {{ field }}
-                            </div>
-                            {% if field.help_text %}
-                                <p class="mt-1 text-xs text-gray-500">{{ field.help_text }}</p>
-                            {% endif %}
-                            {% if field.errors %}
-                                <p class="mt-1 text-xs text-red-600">{{ field.errors.0 }}</p>
-                            {% endif %}
+                            <h1 class="text-2xl font-extrabold text-gray-900 tracking-tight">Editar Amenidad</h1>
+                            <p class="text-gray-500 font-medium">Actualiza los detalles de este espacio.</p>
                         </div>
-                    {% endfor %}
-
-                    <div class="pt-4 flex gap-3">
-                        <a href="{% url 'gestionar_amenidades' %}" class="flex-1 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors text-center">
-                            Cancelar
-                        </a>
-                        <button type="submit" class="flex-1 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-200">
-                            Guardar Cambios
-                        </button>
                     </div>
-                </form>
+
+                    <form method="post" class="space-y-6" id="editForm">
+                        {% csrf_token %}
+                        
+                        {% if form.non_field_errors %}
+                            <div class="p-4 bg-red-50 border border-red-100 rounded-xl text-red-600 text-sm font-medium flex items-center gap-3">
+                                <i class="fa-solid fa-circle-exclamation text-lg"></i>
+                                <div>{{ form.non_field_errors }}</div>
+                            </div>
+                        {% endif %}
+
+                        <div class="space-y-5">
+                            <!-- Nombre & Descripción -->
+                            <div class="space-y-5">
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 ml-1">Nombre</label>
+                                    {{ form.nombre }}
+                                    {% if form.nombre.errors %}<p class="mt-1 ml-1 text-xs text-red-500 font-bold">{{ form.nombre.errors.0 }}</p>{% endif %}
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 ml-1">Descripción</label>
+                                    {{ form.descripcion }}
+                                </div>
+                            </div>
+
+                            <!-- Config Grid -->
+                            <div class="bg-gray-50 rounded-2xl p-5 border border-gray-100 grid grid-cols-1 md:grid-cols-2 gap-5">
+                                <div class="col-span-1 md:col-span-2">
+                                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Capacidad Máxima</label>
+                                    {{ form.capacidad }}
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Hora Apertura</label>
+                                    {{ form.hora_inicio }}
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Hora Cierre</label>
+                                    {{ form.hora_fin }}
+                                </div>
+                            </div>
+
+                            <!-- Reglas -->
+                            <div>
+                                <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 ml-1">Reglas de Uso</label>
+                                {{ form.reglas }}
+                            </div>
+                        </div>
+
+                        <div class="pt-6 mt-8 flex flex-col-reverse md:flex-row gap-4 border-t border-gray-100">
+                             <a href="{% url 'gestionar_amenidades' %}" class="flex-1 py-3.5 text-gray-500 font-bold rounded-xl hover:bg-gray-50 transition-colors text-center border border-transparent hover:border-gray-200">
+                                Cancelar cambios
+                            </a>
+                            <button type="submit" class="flex-1 py-3.5 bg-gray-900 hover:bg-black text-white font-bold rounded-xl shadow-lg shadow-gray-200 hover:shadow-xl transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2">
+                                <span>Guardar Actualización</span>
+                                <i class="fa-solid fa-check"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
+
     </main>
 </div>
 
 <style>
-    /* Global Input Styling */
-    #amenidad-edit-form input, #amenidad-edit-form textarea, #amenidad-edit-form select {
+    /* Premium Input Styles */
+    #editForm input[type="text"], 
+    #editForm input[type="number"], 
+    #editForm input[type="time"], 
+    #editForm textarea, 
+    #editForm select {
         width: 100%;
-        padding: 0.75rem 1rem;
-        border-radius: 0.75rem;
+        padding: 0.875rem 1rem;
+        border-radius: 0.875rem; /* rounded-xl+ */
         border: 1px solid #e5e7eb;
-        background-color: #f9fafb;
-        font-size: 0.875rem;
-        transition: all 0.2s;
+        background-color: #f9fafb; /* bg-gray-50 */
+        font-size: 0.95rem; /* slightly larger text */
+        color: #1f2937;
+        font-weight: 500;
+        transition: all 0.2s ease-in-out;
     }
-    #amenidad-edit-form input:focus, #amenidad-edit-form textarea:focus, #amenidad-edit-form select:focus {
+    
+    #editForm input:focus, 
+    #editForm textarea:focus, 
+    #editForm select:focus {
         outline: none;
-        border-color: #3b82f6;
+        border-color: #6366f1; /* indigo-500 */
         background-color: #ffffff;
-        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+        transform: translateY(-1px);
+    }
+
+    #editForm textarea {
+        min-height: 120px;
+        line-height: 1.6;
     }
 </style>
 {% endblock %}

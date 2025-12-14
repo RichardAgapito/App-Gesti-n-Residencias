@@ -29,30 +29,120 @@ class ComplejoForm(forms.ModelForm):
 
     class Meta:
         model = Complejo
-        fields = '__all__'
-
-    def clean_telefono_contacto(self):
-        telefono = self.cleaned_data.get('telefono_contacto')
-        if telefono:
-
-            if not telefono.isdigit():
-                raise ValidationError("Este campo solo debe contener números.")
-
-            if len(telefono) != 9:
-                raise ValidationError("El número de teléfono debe tener exactamente 9 dígitos.")
-        return telefono
+        exclude = ['administrador_responsable', 'telefono_contacto']
 
 class PropiedadForm(forms.ModelForm):
     class Meta:
         model = Propiedad
         exclude = ['numero_identificador', 'residentes', 'tipo', 'complejo']
+        widgets = {
+            'area': forms.NumberInput(attrs={
+                'placeholder': 'Ej: 120.5',
+                'class': 'w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all text-sm'
+            }),
+            'numero_habitaciones': forms.NumberInput(attrs={
+                'placeholder': 'Ej: 3',
+                'class': 'w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all text-sm'
+            }),
+            'numero_banos': forms.NumberInput(attrs={
+                'placeholder': 'Ej: 2',
+                'class': 'w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all text-sm'
+            }),
+            'piso_nivel': forms.NumberInput(attrs={
+                'placeholder': 'Ej: 1',
+                'class': 'w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all text-sm'
+            }),
+            'valor_estimado': forms.NumberInput(attrs={
+                'placeholder': 'Ej: 150000.00',
+                'class': 'w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all text-sm'
+            }),
+            'estado_ocupacion': forms.Select(attrs={
+                'placeholder': 'Seleccione un estado',
+                'class': 'w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all text-sm appearance-none'
+            }),
+        }
+
+    def __init__(self, *args, **kwargs):
+        self.complejo = kwargs.pop('complejo', None)
+        super().__init__(*args, **kwargs)
+
+    def clean(self):
+        cleaned_data = super().clean()
+        if self.complejo:
+            current_count = self.complejo.propiedades.count()
+            # Si estamos editando (self.instance.pk), no deberíamos contar la propia instancia, 
+            # pero PropiedadForm se usa principalmente para crear. 
+            # Si se usara para editar, el count incluiría la actual? 
+            # .count() es base de datos. Si la instancia existe, está en DB.
+            
+            # Sin embargo, la lógica de "límite" suele ser para CREAR nuevas.
+            # Si estoy editando una ya existente, no debería impedirme guardar cambios 
+            # solo porque el complejo está lleno (ya ocupo un lugar).
+            
+            if not self.instance.pk: # Solo validar al crear
+                if current_count >= self.complejo.numero_total_unidades:
+                    raise ValidationError(f"No se puede crear más propiedades. El complejo ha alcanzado su límite de {self.complejo.numero_total_unidades} unidades.")
+        return cleaned_data
 
 class CrearPropiedadesMultiplesForm(forms.ModelForm):
-    cantidad = forms.IntegerField(min_value=1, label='Cantidad de propiedades a crear')
+    cantidad = forms.IntegerField(
+        min_value=1, 
+        label='Cantidad de propiedades a crear', 
+        widget=forms.NumberInput(attrs={
+            'placeholder': 'Ej: 10',
+            'class': 'w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all text-sm'
+        })
+    )
 
     class Meta:
         model = Propiedad
         exclude = ['complejo', 'numero_identificador', 'residentes', 'tipo']
+        widgets = {
+            'area': forms.NumberInput(attrs={
+                'placeholder': 'Ej: 120.5',
+                'class': 'w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all text-sm'
+            }),
+            'numero_habitaciones': forms.NumberInput(attrs={
+                'placeholder': 'Ej: 3',
+                'class': 'w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all text-sm'
+            }),
+            'numero_banos': forms.NumberInput(attrs={
+                'placeholder': 'Ej: 2',
+                'class': 'w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all text-sm'
+            }),
+            'piso_nivel': forms.NumberInput(attrs={
+                'placeholder': 'Ej: 1',
+                'class': 'w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all text-sm'
+            }),
+            'valor_estimado': forms.NumberInput(attrs={
+                'placeholder': 'Ej: 150000.00',
+                'class': 'w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all text-sm'
+            }),
+            'estado_ocupacion': forms.Select(attrs={
+                'placeholder': 'Seleccione un estado',
+                'class': 'w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all text-sm appearance-none'
+            }),
+        }
+
+    def __init__(self, *args, **kwargs):
+        self.complejo = kwargs.pop('complejo', None)
+        super().__init__(*args, **kwargs)
+
+    def clean(self):
+        cleaned_data = super().clean()
+        cantidad = cleaned_data.get('cantidad')
+        
+        if self.complejo and cantidad:
+            current_count = self.complejo.propiedades.count()
+            espacios_disponibles = self.complejo.numero_total_unidades - current_count
+            
+            if cantidad > espacios_disponibles:
+                if espacios_disponibles <= 0:
+                     raise ValidationError(f"El complejo ya está lleno. No se pueden crear {cantidad} unidades nuevas.")
+                else:
+                    raise ValidationError(f"No hay suficiente espacio. Solo quedan {espacios_disponibles} unidades disponibles en este complejo.")
+        
+        return cleaned_data
 
 class EditarPropiedadForm(forms.ModelForm):
     class Meta:

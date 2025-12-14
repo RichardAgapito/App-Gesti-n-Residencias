@@ -55,15 +55,15 @@ def dashboard(request):
                 if is_occupied_manual or has_active_relation:
                     occupied_count += 1
 
-            # Usar el total configurado si existe, sino el real
-            denominator = complejo.numero_total_unidades if complejo.numero_total_unidades > 0 else total_propiedades
+            # Usar la cantidad de propiedades creadas (no la planificada)
+            denominator = total_propiedades
             
             porcentaje_ocupacion = int((occupied_count / denominator) * 100) if denominator > 0 else 0
             
             complejos_data.append({
                 'nombre': complejo.nombre,
                 'ocupacion': porcentaje_ocupacion,
-                'unidades': denominator # Mostrar el total planificado, no solo las creadas
+                'unidades': denominator
             })
 
         # Actividad reciente (últimos 30 días o sin límite para dev)
@@ -131,7 +131,7 @@ def dashboard(request):
                 if is_occupied_manual or has_active_relation:
                     occupied_count += 1
             
-            denominator = complejo.numero_total_unidades if complejo.numero_total_unidades > 0 else total_propiedades
+            denominator = total_propiedades
             porcentaje_ocupacion = int((occupied_count / denominator) * 100) if denominator > 0 else 0
 
             # 4. Actividad Reciente (Reservas recientes en el complejo)

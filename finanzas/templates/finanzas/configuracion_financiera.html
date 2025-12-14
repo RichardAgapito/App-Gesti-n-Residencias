@@ -55,7 +55,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="h-screen bg-gray-50 font-sans overflow-hidden">
+<div class="min-h-screen bg-gray-50 font-sans">
     
     <!-- Sidebar -->
     {% if request.user.rol == 'GERENTE' %}
@@ -65,8 +65,7 @@
     {% endif %}
 
     <!-- Main Content -->
-    <div class="lg:ml-64 flex flex-col h-full overflow-y-auto">
-        <main class="flex-1 p-8">
+    <main class="lg:ml-64 p-8">
             <div class="max-w-7xl mx-auto">
                 <!-- Header -->
                 <div class="mb-8 border-b border-gray-200 pb-6 flex items-center justify-between">
@@ -235,6 +234,5 @@
                 </form>
             </div>
         </main>
-    </div>
 </div>
 {% endblock %}

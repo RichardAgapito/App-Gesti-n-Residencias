@@ -18,120 +18,128 @@
     {% endif %}
 
     <main class="flex-1 lg:ml-64 p-8 h-screen overflow-y-auto">
-        <div class="max-w-4xl mx-auto">
-            <!-- Header -->
-            <div class="mb-8">
-                <a href="{% url 'detalle_complejo' complejo.id %}" class="inline-flex items-center text-gray-500 hover:text-blue-600 mb-4 transition-colors">
-                    <i class="fa-solid fa-arrow-left mr-2"></i> Volver al detalle
+        <!-- Header -->
+        <div class="mb-8">
+            <div class="flex items-center gap-3 mb-2">
+                <a href="{% url 'detalle_complejo' complejo.id %}" class="w-10 h-10 flex items-center justify-center rounded-xl bg-white border border-gray-200 text-gray-500 hover:text-blue-600 hover:border-blue-200 transition-all shadow-sm">
+                    <i class="fa-solid fa-arrow-left"></i>
                 </a>
-                <h1 class="text-3xl font-bold text-gray-900">Registrar Nueva Propiedad</h1>
-                <p class="text-gray-500 mt-1">Agregando unidad al complejo: <span class="font-semibold text-gray-700">{{ complejo.nombre }}</span></p>
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900">Registrar Nueva Propiedad</h1>
+                    <p class="text-gray-500 text-sm">Agregando unidad al complejo: <span class="font-semibold text-gray-700">{{ complejo.nombre }}</span></p>
+                </div>
             </div>
+        </div>
 
-            <!-- Form Card -->
-            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-                <div class="h-2 bg-gradient-to-r from-blue-500 to-indigo-600"></div>
+        <!-- Form Card -->
+        <div class="max-w-4xl mx-auto">
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
+                <div class="h-2 bg-gradient-to-r from-blue-500 to-indigo-600 mb-6 rounded-full"></div>
                 
-                <form method="post" class="p-8">
+                <form method="post" class="space-y-6">
                     {% csrf_token %}
                     
                     {% if form.non_field_errors %}
-                        <div class="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-r">
+                        <div class="p-4 mb-4 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">
+                             <div class="flex items-center gap-2 font-bold mb-1">
+                                <i class="fa-solid fa-triangle-exclamation"></i> Error
+                            </div>
                             {{ form.non_field_errors }}
                         </div>
                     {% endif %}
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-                        <!-- Área -->
-                        <div class="col-span-2 md:col-span-1">
-                            <label for="{{ form.area.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Área (m²)</label>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Area -->
+                        <div>
+                            <label for="{{ form.area.id_for_label }}" class="block text-xs font-bold text-gray-700 uppercase mb-2">
+                                {{ form.area.label }}
+                            </label>
                             <div class="relative">
-                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                                    <i class="fa-solid fa-ruler-combined"></i>
-                                </div>
+                                <i class="fa-solid fa-ruler-combined absolute left-4 top-3 text-gray-400"></i>
                                 {{ form.area }}
                             </div>
                             {% if form.area.errors %}
-                                <p class="mt-1 text-sm text-red-600">{{ form.area.errors.0 }}</p>
+                                <p class="mt-1 text-xs text-red-500 font-medium">{{ form.area.errors.0 }}</p>
                             {% endif %}
                         </div>
 
                         <!-- Piso/Nivel -->
-                        <div class="col-span-2 md:col-span-1">
-                            <label for="{{ form.piso_nivel.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Piso / Nivel</label>
+                        <div>
+                            <label for="{{ form.piso_nivel.id_for_label }}" class="block text-xs font-bold text-gray-700 uppercase mb-2">
+                                {{ form.piso_nivel.label }}
+                            </label>
                             <div class="relative">
-                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                                    <i class="fa-solid fa-layer-group"></i>
-                                </div>
+                                <i class="fa-solid fa-layer-group absolute left-4 top-3 text-gray-400"></i>
                                 {{ form.piso_nivel }}
                             </div>
                             {% if form.piso_nivel.errors %}
-                                <p class="mt-1 text-sm text-red-600">{{ form.piso_nivel.errors.0 }}</p>
+                                <p class="mt-1 text-xs text-red-500 font-medium">{{ form.piso_nivel.errors.0 }}</p>
                             {% endif %}
                         </div>
 
                         <!-- Habitaciones -->
-                        <div class="col-span-2 md:col-span-1">
-                            <label for="{{ form.numero_habitaciones.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Habitaciones</label>
+                        <div>
+                            <label for="{{ form.numero_habitaciones.id_for_label }}" class="block text-xs font-bold text-gray-700 uppercase mb-2">
+                                {{ form.numero_habitaciones.label }}
+                            </label>
                             <div class="relative">
-                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                                    <i class="fa-solid fa-bed"></i>
-                                </div>
+                                <i class="fa-solid fa-bed absolute left-4 top-3 text-gray-400"></i>
                                 {{ form.numero_habitaciones }}
                             </div>
                             {% if form.numero_habitaciones.errors %}
-                                <p class="mt-1 text-sm text-red-600">{{ form.numero_habitaciones.errors.0 }}</p>
+                                <p class="mt-1 text-xs text-red-500 font-medium">{{ form.numero_habitaciones.errors.0 }}</p>
                             {% endif %}
                         </div>
 
-                        <!-- Baños -->
-                        <div class="col-span-2 md:col-span-1">
-                            <label for="{{ form.numero_banos.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Baños</label>
+                         <!-- Baños -->
+                         <div>
+                            <label for="{{ form.numero_banos.id_for_label }}" class="block text-xs font-bold text-gray-700 uppercase mb-2">
+                                {{ form.numero_banos.label }}
+                            </label>
                             <div class="relative">
-                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                                    <i class="fa-solid fa-bath"></i>
-                                </div>
+                                <i class="fa-solid fa-bath absolute left-4 top-3 text-gray-400"></i>
                                 {{ form.numero_banos }}
                             </div>
                             {% if form.numero_banos.errors %}
-                                <p class="mt-1 text-sm text-red-600">{{ form.numero_banos.errors.0 }}</p>
+                                <p class="mt-1 text-xs text-red-500 font-medium">{{ form.numero_banos.errors.0 }}</p>
                             {% endif %}
                         </div>
 
                         <!-- Valor Estimado -->
-                        <div class="col-span-2 md:col-span-1">
-                            <label for="{{ form.valor_estimado.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Valor Estimado</label>
+                        <div>
+                            <label for="{{ form.valor_estimado.id_for_label }}" class="block text-xs font-bold text-gray-700 uppercase mb-2">
+                                {{ form.valor_estimado.label }}
+                            </label>
                             <div class="relative">
-                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                                    <i class="fa-solid fa-dollar-sign"></i>
-                                </div>
+                                <i class="fa-solid fa-dollar-sign absolute left-4 top-3 text-gray-400"></i>
                                 {{ form.valor_estimado }}
                             </div>
                             {% if form.valor_estimado.errors %}
-                                <p class="mt-1 text-sm text-red-600">{{ form.valor_estimado.errors.0 }}</p>
+                                <p class="mt-1 text-xs text-red-500 font-medium">{{ form.valor_estimado.errors.0 }}</p>
                             {% endif %}
                         </div>
 
-                        <!-- Estado Ocupación -->
-                        <div class="col-span-2 md:col-span-1">
-                            <label for="{{ form.estado_ocupacion.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Estado de Ocupación</label>
+                        <!-- Estado -->
+                        <div>
+                            <label for="{{ form.estado_ocupacion.id_for_label }}" class="block text-xs font-bold text-gray-700 uppercase mb-2">
+                                {{ form.estado_ocupacion.label }}
+                            </label>
                             <div class="relative">
-                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                                    <i class="fa-solid fa-key"></i>
-                                </div>
+                                <i class="fa-solid fa-key absolute left-4 top-3 text-gray-400"></i>
                                 {{ form.estado_ocupacion }}
                             </div>
                             {% if form.estado_ocupacion.errors %}
-                                <p class="mt-1 text-sm text-red-600">{{ form.estado_ocupacion.errors.0 }}</p>
+                                <p class="mt-1 text-xs text-red-500 font-medium">{{ form.estado_ocupacion.errors.0 }}</p>
                             {% endif %}
                         </div>
                     </div>
 
-                    <div class="mt-8 flex items-center justify-end gap-4 pt-6 border-t border-gray-100">
-                        <a href="{% url 'detalle_complejo' complejo.id %}" class="px-6 py-2.5 text-gray-700 font-medium hover:bg-gray-100 rounded-xl transition-colors">
+                    <div class="pt-6 mt-6 border-t border-gray-100 flex items-center justify-end gap-3">
+                        <a href="{% url 'detalle_complejo' complejo.id %}" class="px-6 py-2.5 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors">
                             Cancelar
                         </a>
-                        <button type="submit" class="px-8 py-2.5 bg-blue-600 text-white font-semibold rounded-xl shadow-lg shadow-blue-200 hover:bg-blue-700 hover:shadow-blue-300 transition-all transform hover:-translate-y-0.5">
+                        <button type="submit" class="px-6 py-2.5 text-sm font-bold text-white bg-blue-600 rounded-xl hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-200 transition-all flex items-center gap-2">
+                            <i class="fa-solid fa-save"></i>
                             Guardar Propiedad
                         </button>
                     </div>
@@ -140,26 +148,4 @@
         </div>
     </main>
 </div>
-
-<style>
-    /* Custom styles for form inputs to match Tailwind */
-    input[type="text"], input[type="number"], select {
-        width: 100%;
-        padding-left: 2.5rem; /* Space for icon */
-        padding-right: 1rem;
-        padding-top: 0.625rem;
-        padding-bottom: 0.625rem;
-        border-radius: 0.75rem;
-        border: 1px solid #e5e7eb;
-        background-color: #f9fafb;
-        font-size: 0.875rem;
-        transition: all 0.2s;
-    }
-    input[type="text"]:focus, input[type="number"]:focus, select:focus {
-        outline: none;
-        border-color: #3b82f6;
-        background-color: #ffffff;
-        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-    }
-</style>
 {% endblock %}

@@ -23,14 +23,13 @@
 {% endblock %}
 
 {% block content %}
-<div class="h-screen bg-gray-50 font-sans overflow-hidden">
+<div class="min-h-screen bg-gray-50 font-sans">
 
     <!-- Sidebar -->
     {% include 'includes/admin_sidebar.html' %}
 
     <!-- Main Content -->
-    <div class="lg:ml-64 flex flex-col h-full bg-gray-50 font-sans">
-        <main class="flex-1 p-8">
+    <main class="lg:ml-64 p-8">
             <div class="max-w-7xl mx-auto">
 
                 <!-- Header Section -->
@@ -121,6 +120,5 @@
                 </div>
             </div>
         </main>
-    </div>
 </div>
 {% endblock %}

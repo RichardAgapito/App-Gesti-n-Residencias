@@ -70,6 +70,10 @@
                     class="px-5 py-2.5 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 transition-all shadow-md shadow-blue-200 flex items-center gap-2">
                     <i class="fa-solid fa-plus"></i> Nueva Propiedad
                 </a>
+                <a href="{% url 'crear_propiedades_multiples' complejo.id %}"
+                    class="px-5 py-2.5 bg-indigo-600 text-white font-medium rounded-xl hover:bg-indigo-700 transition-all shadow-md shadow-indigo-200 flex items-center gap-2">
+                    <i class="fa-solid fa-layer-group"></i> Creación Múltiple
+                </a>
                 {% endif %}
             </div>
         </div>
