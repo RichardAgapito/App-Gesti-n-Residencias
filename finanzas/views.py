@@ -5,7 +5,7 @@ from .models import PlanCuota, ConceptoCobro, MetodoPago, Factura, Recaudo, Conf
 from .forms import (
     PlanCuotaForm, ConceptoCobroForm, MetodoPagoForm, FacturaForm, 
     DetalleFacturaFormSet, RecaudoForm, PlanConceptoCobroFormSet,
-    ConfiguracionFinancieraForm
+    ConfiguracionFinancieraForm, ResidenteRecaudoForm
 )
 from django.db import transaction, models
 from django.shortcuts import get_object_or_404, redirect, reverse
@@ -593,6 +593,73 @@ class MisFacturasView(LoginRequiredMixin, ResidenteRequiredMixin, ListView):
         return Factura.objects.filter(
             propiedad__residentes=self.request.user
         ).order_by('-fecha_emision').prefetch_related('detalles', 'detalles__concepto_cobro')
+
+class RegistrarPagoResidenteView(LoginRequiredMixin, ResidenteRequiredMixin, CreateView):
+    model = Recaudo
+    form_class = ResidenteRecaudoForm
+    template_name = 'finanzas/registrar_pago_residente.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        factura = get_object_or_404(Factura, pk=self.kwargs['pk'], propiedad__residentes=self.request.user)
+        context['factura'] = factura
+        return context
+
+    def get_initial(self):
+        initial = super().get_initial()
+        factura = get_object_or_404(Factura, pk=self.kwargs['pk'], propiedad__residentes=self.request.user)
+        initial['monto_pagado'] = factura.saldo_pendiente
+        return initial
+
+    def form_valid(self, form):
+        factura = get_object_or_404(Factura, pk=self.kwargs['pk'], propiedad__residentes=self.request.user)
+        if factura.estado == 'PAGADA':
+             form.add_error(None, "Esta factura ya está pagada.")
+             return self.form_invalid(form)
+             
+        recaudo = form.save(commit=False)
+        recaudo.factura = factura
+        recaudo.usuario_registro = self.request.user
+        recaudo.save()
+        messages.success(self.request, "Pago registrado correctamente. Queda pendiente de validación.")
+        return redirect('mis_facturas')
+
+class FacturaDetalleResidenteView(LoginRequiredMixin, ResidenteRequiredMixin, DetailView):
+    model = Factura
+    template_name = 'finanzas/detalle_factura_residente.html'
+    context_object_name = 'factura'
+
+    def get_queryset(self):
+        return Factura.objects.filter(propiedad__residentes=self.request.user)
+    success_url = reverse_lazy('mis_facturas')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['factura'] = get_object_or_404(Factura, pk=self.kwargs['pk'], propiedad__residentes=self.request.user)
+        return context
+
+    def get_initial(self):
+        initial = super().get_initial()
+        factura = get_object_or_404(Factura, pk=self.kwargs['pk'], propiedad__residentes=self.request.user)
+        initial['monto_pagado'] = factura.saldo_pendiente # Pre-fill with pending amount
+        return initial
+
+    def form_valid(self, form):
+        factura = get_object_or_404(Factura, pk=self.kwargs['pk'], propiedad__residentes=self.request.user)
+        
+        if factura.estado == 'PAGADA':
+             messages.error(self.request, "Esta factura ya está pagada.")
+             return redirect('mis_facturas')
+
+        recaudo = form.save(commit=False)
+        recaudo.factura = factura
+        recaudo.usuario_registro = self.request.user
+        recaudo.save()
+        
+        # Trigger any status update logic if needed (handled by signal/save usually)
+        
+        messages.success(self.request, "Pago registrado exitosamente. Será validado por la administración.")
+        return super().form_valid(form)
         
 class UpdateFinancialStatusView(LoginRequiredMixin, View):
     def post(self, request, *args, **kwargs):

@@ -1,0 +1,174 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+    <style>
+        .payment-container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .invoice-summary {
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            border: 1px solid #e2e8f0;
+        }
+        .invoice-details-table {
+            width: 100%;
+            margin-top: 1rem;
+            border-collapse: collapse;
+        }
+        .invoice-details-table th, .invoice-details-table td {
+            text-align: left;
+            padding: 0.75rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .invoice-details-table th {
+            font-weight: 600;
+            color: #475569;
+        }
+        .total-row {
+            font-weight: bold;
+            font-size: 1.1em;
+            color: #1e293b;
+        }
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #334155;
+        }
+        .form-control {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 0.375rem;
+            font-size: 1rem;
+        }
+        .btn-pay {
+            width: 100%;
+            padding: 1rem;
+            background-color: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .btn-pay:hover {
+            background-color: #1d4ed8;
+        }
+        .btn-cancel {
+            display: block;
+            width: 100%;
+            text-align: center;
+            margin-top: 1rem;
+            color: #64748b;
+            text-decoration: none;
+        }
+        .btn-cancel:hover {
+            color: #334155;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="payment-container">
+    <h2 class="text-2xl font-bold mb-6 text-gray-800"><i class="fa-solid fa-credit-card"></i> Registrar Pago</h2>
+    
+    <!-- Invoice Summary -->
+    <div class="invoice-summary">
+        <div class="flex justify-between items-center mb-4">
+            <div>
+                <h3 class="text-lg font-semibold text-gray-700">Factura #{{ factura.numero_factura }}</h3>
+                <p class="text-sm text-gray-500">Vencimiento: {{ factura.fecha_vencimiento }}</p>
+            </div>
+            <div class="text-right">
+                <p class="text-sm text-gray-500">Monto Pendiente</p>
+                <p class="text-2xl font-bold text-blue-600">${{ factura.saldo_pendiente|floatformat:2 }}</p>
+            </div>
+        </div>
+
+        <h4 class="font-medium text-gray-700 mb-2">Detalle de Cobros:</h4>
+        <table class="invoice-details-table">
+            <thead>
+                <tr>
+                    <th>Concepto</th>
+                    <th class="text-right">Monto</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for detalle in factura.detalles.all %}
+                <tr>
+                    <td>
+                        {{ detalle.concepto_cobro.nombre }}
+                        {% if detalle.descripcion %}
+                            <br><span class="text-xs text-gray-500">{{ detalle.descripcion }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-right">${{ detalle.monto|floatformat:2 }}</td>
+                </tr>
+                {% endfor %}
+                <tr class="total-row bg-gray-50">
+                    <td>Total Facturado</td>
+                    <td class="text-right">${{ factura.total_calculado|floatformat:2 }}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Payment Form -->
+    <form method="post">
+        {% csrf_token %}
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="form-group">
+                <label class="form-label">Método de Pago</label>
+                {{ form.metodo_pago }}
+                {% if form.metodo_pago.errors %}
+                    <p class="text-red-500 text-sm mt-1">{{ form.metodo_pago.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Monto a Pagar</label>
+                {{ form.monto_pagado }}
+                <p class="text-xs text-gray-500 mt-1">Por defecto: Saldo pendiente.</p>
+                {% if form.monto_pagado.errors %}
+                    <p class="text-red-500 text-sm mt-1">{{ form.monto_pagado.errors.0 }}</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Referencia / Nro. Transacción</label>
+            {{ form.referencia }}
+             <p class="text-xs text-gray-500 mt-1">Ingresa el número de operación bancaria para facilitar la conciliación.</p>
+            {% if form.referencia.errors %}
+                <p class="text-red-500 text-sm mt-1">{{ form.referencia.errors.0 }}</p>
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Observaciones (Opcional)</label>
+            {{ form.observaciones }}
+        </div>
+
+        <button type="submit" class="btn-pay">
+            <i class="fa-solid fa-check-circle mr-2"></i> Confirmar Pago
+        </button>
+    </form>
+
+    <a href="{% url 'mis_facturas' %}" class="btn-cancel">Cancelar y Volver</a>
+</div>
+{% endblock %}

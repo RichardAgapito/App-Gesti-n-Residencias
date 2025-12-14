@@ -1,0 +1,177 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Detalle Factura{% endblock %}
+
+{% block extra_css %}
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+    body {
+        font-family: 'Inter', sans-serif;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 flex font-sans overflow-hidden">
+
+    {% include 'includes/resident_sidebar.html' %}
+
+    <div class="flex-1 lg:ml-64 flex flex-col h-full overflow-y-auto">
+        <main class="flex-1 p-8">
+            <div class="max-w-3xl mx-auto">
+                <!-- Header -->
+                <div class="mb-6 flex items-center justify-between">
+                    <div class="flex items-center gap-4">
+                        <a href="{% url 'mis_facturas' %}"
+                            class="w-10 h-10 rounded-xl bg-white border border-gray-200 flex items-center justify-center text-gray-500 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 transition-all shadow-sm group">
+                            <i
+                                class="fa-solid fa-arrow-left text-lg transform group-hover:-translate-x-1 transition-transform"></i>
+                        </a>
+                        <h1 class="text-2xl font-bold text-gray-900">Detalle Factura</h1>
+                    </div>
+                </div>
+
+                <!-- Form-like Card -->
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
+                    <div class="flex items-center gap-3 mb-6 border-b border-gray-100 pb-4">
+                        <div class="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600">
+                            <i class="fa-solid fa-file-invoice text-xl"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-lg font-bold text-gray-900">Factura #{{ factura.numero_factura }}</h2>
+                            <p class="text-sm text-gray-500">Información general del cobro</p>
+                        </div>
+                    </div>
+
+                    <!-- Read-only Fields Grid -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                        <!-- Propiedad -->
+                        <div>
+                            <label
+                                class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Propiedad</label>
+                            <p class="text-gray-900 font-medium bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
+                                {{ factura.propiedad }}
+                            </p>
+                        </div>
+
+                        <!-- Plan -->
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Plan
+                                de Cuota</label>
+                            <p class="text-gray-900 font-medium bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
+                                {{ factura.plan_cuota|default:"N/A" }}
+                            </p>
+                        </div>
+
+                        <!-- Fechas -->
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Fecha
+                                Emisión</label>
+                            <p class="text-gray-900 font-medium bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
+                                {{ factura.fecha_emision|date:"d \d\e F, Y" }}
+                            </p>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Fecha
+                                Vencimiento</label>
+                            <p class="text-gray-900 font-medium bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
+                                {{ factura.fecha_vencimiento|date:"d \d\e F, Y" }}
+                            </p>
+                        </div>
+
+                        <!-- Estado y Totals -->
+                        <div>
+                            <label
+                                class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Estado</label>
+                            <div class="bg-gray-50 px-3 py-2 rounded-lg border border-gray-200 flex items-center gap-2">
+                                <span class="w-2 h-2 rounded-full 
+                                    {% if factura.estado == 'PAGADA' %} bg-green-500
+                                    {% elif factura.estado == 'PENDIENTE' %} bg-yellow-500
+                                    {% elif factura.estado == 'VENCIDA' %} bg-red-500
+                                    {% else %} bg-gray-500 {% endif %}"></span>
+                                <span class="font-medium text-gray-900">{{ factura.get_estado_display }}</span>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Total
+                                a Pagar</label>
+                            <p class="text-blue-600 font-bold bg-blue-50 px-3 py-2 rounded-lg border border-blue-100">
+                                ${{ factura.total_calculado|floatformat:2 }}
+                            </p>
+                        </div>
+                    </div>
+
+                    <hr class="border-gray-100 my-6">
+
+                    <!-- Details Table -->
+                    <div class="mb-6">
+                        <h3 class="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
+                            <i class="fa-solid fa-list-ul text-gray-400"></i> Desglose de Conceptos
+                        </h3>
+                        <div class="overflow-hidden rounded-lg border border-gray-200">
+                            <table class="w-full text-left text-sm">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-4 py-3 font-semibold text-gray-600 border-b border-gray-200">
+                                            Concepto</th>
+                                        <th
+                                            class="px-4 py-3 font-semibold text-gray-600 border-b border-gray-200 text-right">
+                                            Monto</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100">
+                                    {% for detalle in factura.detalles.all %}
+                                    <tr>
+                                        <td class="px-4 py-3 text-gray-900">
+                                            <div class="font-medium">{{ detalle.concepto_cobro.nombre }}</div>
+                                            {% if detalle.descripcion %}
+                                            <div class="text-xs text-gray-500 mt-0.5">{{ detalle.descripcion }}</div>
+                                            {% endif %}
+                                        </td>
+                                        <td class="px-4 py-3 text-gray-900 font-medium text-right">
+                                            ${{ detalle.monto|floatformat:2 }}
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="2" class="px-4 py-6 text-center text-gray-500 italic">
+                                            No hay detalles registrados.
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    {% if factura.observaciones %}
+                    <div class="mb-8">
+                        <label
+                            class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Observaciones</label>
+                        <p class="text-gray-700 bg-gray-50 p-4 rounded-lg border border-gray-200 text-sm">
+                            {{ factura.observaciones|linebreaksbr }}
+                        </p>
+                    </div>
+                    {% endif %}
+
+                    <!-- Action Buttons -->
+                    <div class="flex justify-end gap-3 pt-2">
+                        {% if factura.estado == 'PENDIENTE' or factura.estado == 'VENCIDA' %}
+                        <a href="{% url 'registrar_pago_residente' factura.pk %}"
+                            class="inline-flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors shadow-sm">
+                            <i class="fa-solid fa-money-bill-wave"></i> Pagar Ahora
+                        </a>
+                        {% endif %}
+                    </div>
+
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+{% endblock %}

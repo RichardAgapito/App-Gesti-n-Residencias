@@ -236,3 +236,24 @@ class ConfiguracionFinancieraForm(forms.ModelForm):
             self.initial['dia_corte'] = None
             self.initial['dias_vencimiento'] = None
             self.initial['tasa_interes_mora_diaria'] = None
+
+class ResidenteRecaudoForm(RecaudoForm):
+    class Meta(RecaudoForm.Meta):
+        fields = ['metodo_pago', 'referencia', 'monto_pagado', 'observaciones'] # Exclude fecha_pago
+        
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Filter active payment methods only
+        self.fields['metodo_pago'].queryset = MetodoPago.objects.filter(activo=True)
+        self.fields['monto_pagado'].label = "Monto a Pagar"
+        
+        # Make monto_pagado read-only if you want to force full payment, 
+        # or leave editable for partial payments. User request said "registre los datos", 
+        # usually implies entering amount. We'll leave it editable but maybe pre-filled in View.
+        
+    def save(self, commit=True):
+        recaudo = super().save(commit=False)
+        recaudo.fecha_pago = timezone.localdate() # Always today for resident self-report
+        if commit:
+            recaudo.save()
+        return recaudo

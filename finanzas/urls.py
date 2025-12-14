@@ -22,7 +22,10 @@ from .views import (
     UpdateFinancialStatusView, # Added
     ConfiguracionFinancieraUpdateView,
     SeleccionarComplejoFinanzasView, # Added
-    get_conceptos_contrato # Added
+    SeleccionarComplejoFinanzasView, # Added
+    get_conceptos_contrato, # Added
+    RegistrarPagoResidenteView, # Added
+    FacturaDetalleResidenteView # Added
 )
 
 urlpatterns = [
@@ -60,4 +63,6 @@ urlpatterns = [
     # NUEVA RUTA:
     path('facturas/actualizar-estados/', UpdateFinancialStatusView.as_view(), name='actualizar_estados_financieros'),
     path('ajax/get-conceptos-contrato/', get_conceptos_contrato, name='get_conceptos_contrato'), # Helper para crear factura
+    path('facturas/<int:pk>/pagar/', RegistrarPagoResidenteView.as_view(), name='registrar_pago_residente'),
+    path('facturas/<int:pk>/detalle-residente/', FacturaDetalleResidenteView.as_view(), name='detalle_factura_residente'),
 ]

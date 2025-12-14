@@ -2,67 +2,138 @@
 {% load static %}
 
 {% block extra_css %}
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-
-    <link rel="stylesheet" href="{% static 'css/complejos.css' %}"> {# Reusing existing CSS for now #}
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+    tailwind.config = {
+        theme: {
+            extend: {
+                colors: {
+                    primary: '#3b82f6',
+                }
+            }
+        }
+    }
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+    body {
+        font-family: 'Inter', sans-serif;
+    }
+</style>
 {% endblock %}
 
 {% block content %}
-<div class="min-h-screen bg-gray-50 flex font-sans">
-    
+<div class="h-screen bg-gray-50 flex font-sans overflow-hidden">
+
     {% include 'includes/resident_sidebar.html' %}
 
-    <main class="flex-1 lg:ml-64 h-screen overflow-y-auto">
-        <div class="complejos-container" style="margin: 0; width: 100%; max-width: none; padding: 2rem; height: auto; overflow: visible;">
-            <div class="list-header">
-                <h1><i class="fa-solid fa-file-invoice-dollar"></i> Mis Facturas</h1>
-                <a href="{% url 'dashboard' %}" class="btn btn-secondary">Volver</a>
-            </div>
-            <hr>
-
-            <main class="results-content">
-                {% if facturas %}
-                    <div style="display: flex; flex-direction: column; gap: 20px;">
-                        {% for factura in facturas %}
-                            <div style="border: 1px solid #ddd; border-radius: 8px; padding: 20px; background: white; border-left: 5px solid {% if factura.estado == 'PAGADA' %}green{% elif factura.estado == 'VENCIDA' %}red{% else %}orange{% endif %};">
-                                
-                                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 10px;">
-                                    <div>
-                                        <h3 style="margin: 0;">{{ factura.numero_factura }}</h3>
-                                        <small style="color: #666;">Vencimiento: {{ factura.fecha_vencimiento }}</small>
-                                    </div>
-                                    <div style="text-align: right;">
-                                        <span style="font-weight: bold; font-size: 1.2em;">${{ factura.total_calculado|floatformat:2 }}</span>
-                                        <br>
-                                        <span class="badge">{{ factura.get_estado_display }}</span>
-                                    </div>
-                                </div>
-
-                                <table style="width: 100%; font-size: 0.9em; color: #555;">
-                                    {% for detalle in factura.detalles.all %}
-                                        <tr>
-                                            <td>{{ detalle.concepto_cobro.nombre }}</td>
-                                            <td style="text-align: right;">${{ detalle.monto }}</td>
-                                        </tr>
-                                    {% endfor %}
-                                </table>
-
-                                {% if factura.estado == 'PENDIENTE' or factura.estado == 'VENCIDA' %}
-                                    <div style="margin-top: 15px; text-align: right;">
-                                        <button disabled style="background: #ccc; border: none; padding: 8px 15px; border-radius: 4px; color: white;">
-                                            Pagar Online (Próximamente)
-                                        </button>
-                                    </div>
-                                {% endif %}
-                            </div>
-                        {% endfor %}
+    <div class="flex-1 lg:ml-64 flex flex-col h-full overflow-y-auto">
+        <main class="flex-1 p-8">
+            <div class="max-w-7xl mx-auto">
+                <!-- Header -->
+                <div class="mb-8 flex flex-col xl:flex-row xl:items-center xl:justify-between gap-6">
+                    <div class="flex items-center gap-4">
+                        <a href="{% url 'dashboard' %}"
+                            class="w-10 h-10 rounded-xl bg-white border border-gray-200 flex items-center justify-center text-gray-500 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 transition-all shadow-sm group">
+                            <i
+                                class="fa-solid fa-arrow-left text-lg transform group-hover:-translate-x-1 transition-transform"></i>
+                        </a>
+                        <div>
+                            <h1 class="text-3xl font-bold text-gray-900">Mis Facturas</h1>
+                            <p class="text-gray-500 mt-1">Historial de pagos y facturas pendientes</p>
+                        </div>
                     </div>
-                {% else %}
-                    <p>No tienes facturas registradas.</p>
-                {% endif %}
-            </main>
-        </div>
-    </main>
+                </div>
+
+                <!-- Content Table -->
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+                    {% if facturas %}
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-gray-50/50 border-b border-gray-100">
+                                    <th class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                        Factura</th>
+                                    <th class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                        Fecha Emisión</th>
+                                    <th class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                        Fecha Vencimiento</th>
+                                    <th class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                        Estado</th>
+                                    <th
+                                        class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">
+                                        Total</th>
+                                    <th
+                                        class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-center">
+                                        Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100">
+                                {% for factura in facturas %}
+                                <tr class="hover:bg-blue-50/40 transition-colors group">
+                                    <td class="px-6 py-4">
+                                        <div class="font-medium text-gray-900">#{{ factura.numero_factura }}</div>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <span class="text-sm text-gray-900">{{ factura.fecha_emision|date:"d M Y"
+                                            }}</span>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <span class="text-sm text-gray-500">{{ factura.fecha_vencimiento|date:"d M Y"
+                                            }}</span>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border
+                                                    {% if factura.estado == 'PAGADA' %} bg-green-50 text-green-700 border-green-100 ring-1 ring-green-600/10
+                                                    {% elif factura.estado == 'PENDIENTE' %} bg-yellow-50 text-yellow-700 border-yellow-100 ring-1 ring-yellow-600/10
+                                                    {% elif factura.estado == 'VENCIDA' %} bg-red-50 text-red-700 border-red-100 ring-1 ring-red-600/10
+                                                    {% else %} bg-gray-50 text-gray-600 border-gray-200 {% endif %}">
+                                            <span class="w-1.5 h-1.5 rounded-full 
+                                                        {% if factura.estado == 'PAGADA' %} bg-green-600
+                                                        {% elif factura.estado == 'PENDIENTE' %} bg-yellow-600
+                                                        {% elif factura.estado == 'VENCIDA' %} bg-red-600
+                                                        {% else %} bg-gray-500 {% endif %}"></span>
+                                            {{ factura.get_estado_display }}
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 text-right">
+                                        <span
+                                            class="text-sm font-bold text-gray-900 group-hover:text-blue-700 transition-colors">
+                                            ${{ factura.total_calculado|floatformat:2 }}
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        <div class="flex items-center justify-center gap-2">
+                                            <a href="{% url 'detalle_factura_residente' factura.pk %}"
+                                                class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-white border border-gray-200 text-gray-400 hover:text-blue-600 hover:border-blue-200 hover:shadow-sm transition-all"
+                                                title="Ver Detalle">
+                                                <i class="fa-regular fa-eye text-sm"></i>
+                                            </a>
+                                            {% if factura.estado == 'PENDIENTE' or factura.estado == 'VENCIDA' %}
+                                            <a href="{% url 'registrar_pago_residente' factura.pk %}"
+                                                class="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors shadow-sm text-xs">
+                                                <i class="fa-solid fa-money-bill-wave"></i> Pagar
+                                            </a>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="flex flex-col items-center justify-center py-20 text-center">
+                        <div class="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+                            <i class="fa-regular fa-file-lines text-2xl text-gray-400"></i>
+                        </div>
+                        <h3 class="text-lg font-medium text-gray-900">No tienes facturas</h3>
+                        <p class="text-gray-500 mt-1">Cuando se generen cargos, aparecerán aquí.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </main>
+    </div>
 </div>
 {% endblock %}
