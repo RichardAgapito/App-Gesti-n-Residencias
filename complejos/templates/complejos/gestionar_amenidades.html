@@ -11,251 +11,319 @@
             width: 4px;
         }
         .custom-scrollbar::-webkit-scrollbar-track {
-            background: #f1f1f1;
+            background: rgba(0,0,0,0);
         }
         .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #d1d5db;
+            background: #cbd5e1;
             border-radius: 4px;
         }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: #9ca3af;
+        .fade-enter {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        .fade-enter-active {
+            opacity: 1;
+            transform: translateY(0);
+            transition: opacity 300ms ease-out, transform 300ms ease-out;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+        
+        /* Premium Card Hover Effect */
+        .amenity-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .amenity-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
         }
     </style>
 {% endblock %}
 
 {% block content %}
-<div class="min-h-screen bg-gray-50 flex font-sans">
+<div class="min-h-screen bg-gray-50 flex font-sans relative">
     
+    <!-- Background Accents -->
+    <!-- Background Accents (Contained) -->
+    <div class="absolute inset-0 overflow-hidden pointer-events-none">
+        <div class="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-blue-50/80 to-transparent"></div>
+        <div class="absolute -top-40 -right-40 w-96 h-96 bg-indigo-100 rounded-full blur-3xl opacity-50"></div>
+    </div>
+
     {% if request.user.rol == 'GERENTE' %}
         {% include 'includes/manager_sidebar.html' %}
     {% else %}
         {% include 'includes/admin_sidebar.html' %}
     {% endif %}
 
-    <main class="flex-1 lg:ml-64 p-8 h-screen overflow-y-auto custom-scrollbar">
-        <!-- Header -->
-        <div class="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-                <h1 class="text-3xl font-bold text-gray-900 flex items-center gap-3">
-                    <span class="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center text-xl">
-                        <i class="fa-solid fa-star"></i>
-                    </span>
-                    Gestionar Amenidades
-                </h1>
-                <p class="text-gray-500 mt-1 ml-14">Configura las áreas comunes y sus reglas de uso</p>
+    <main class="flex-1 lg:ml-64 p-8 h-screen overflow-y-auto custom-scrollbar relative">
+        
+        <!-- Header & Stats Section -->
+        <div class="mb-10">
+            <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
+                <div>
+                    <h1 class="text-4xl font-extrabold text-gray-900 tracking-tight">Amenidades</h1>
+                    <p class="text-gray-500 mt-2 text-lg">Gestiona los espacios comunes y servicios del complejo.</p>
+                </div>
+                
+                <!-- Quick Stats Row -->
+                <div class="flex gap-4">
+                    <div class="glass-panel px-6 py-3 rounded-2xl flex items-center gap-4 bg-white/50">
+                        <div class="w-10 h-10 rounded-xl bg-blue-100/50 text-blue-600 flex items-center justify-center text-lg">
+                            <i class="fa-solid fa-layer-group"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Total</p>
+                            <p class="text-xl font-bold text-gray-900 leading-none">{{ amenidades.count }}</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <div class="grid grid-cols-1 xl:grid-cols-12 gap-8">
-            <!-- Formulario de Creación (Columna Izquierda - 4/12) -->
-            <div class="xl:col-span-4 space-y-6">
-                <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden sticky top-6">
-                    <div class="p-6 border-b border-gray-100 bg-gray-50">
-                        <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2">
-                            <i class="fa-solid fa-plus-circle text-blue-500"></i> Nueva Amenidad
-                        </h3>
+        <!-- Action Bar (Only for Admins) -->
+        {% if request.user.rol == 'ADMIN' %}
+        <div class="sticky top-2 z-30 mb-8 transition-all duration-300" id="actionBar">
+            <div class="bg-white/80 backdrop-blur-md border border-white/40 shadow-sm rounded-2xl p-2 flex items-center justify-between gap-4">
+                
+                <!-- Search -->
+                <div class="flex-1 max-w-lg relative group">
+                    <i class="fa-solid fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 group-focus-within:text-blue-500 transition-colors"></i>
+                    <input type="text" id="searchInput" placeholder="Buscar amenidad..." 
+                        class="w-full pl-11 pr-4 py-3 bg-gray-50/50 border-none rounded-xl focus:ring-2 focus:ring-blue-100 focus:bg-white transition-all text-sm font-medium placeholder-gray-400">
+                </div>
+
+                <!-- Add Button -->
+                <button onclick="toggleForm()" id="toggleBtn" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg shadow-blue-200 transition-all transform active:scale-95 hover:-translate-y-0.5 flex items-center gap-2">
+                    <i class="fa-solid fa-plus"></i>
+                    <span class="hidden md:inline">Nueva Amenidad</span>
+                </button>
+            </div>
+        </div>
+        {% else %}
+         <!-- Search for Managers (without Create Button) -->
+         <div class="sticky top-2 z-30 mb-8 transition-all duration-300">
+            <div class="bg-white/80 backdrop-blur-md border border-white/40 shadow-sm rounded-2xl p-2 flex items-center gap-4">
+                <div class="flex-1 relative group">
+                    <i class="fa-solid fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 group-focus-within:text-blue-500 transition-colors"></i>
+                    <input type="text" id="searchInput" placeholder="Buscar amenidad..." 
+                        class="w-full pl-11 pr-4 py-3 bg-gray-50/50 border-none rounded-xl focus:ring-2 focus:ring-blue-100 focus:bg-white transition-all text-sm font-medium placeholder-gray-400">
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Collapsible Create Form (Hidden by default, Only for Admins) -->
+        {% if request.user.rol == 'ADMIN' %}
+        <div id="createFormPanel" class="hidden mb-10">
+            <div class="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden relative">
+                <!-- Decorative gradient line -->
+                <div class="h-1 w-full bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500"></div>
+                
+                <div class="p-8">
+                    <div class="flex justify-between items-start mb-6">
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-900">Registrar Nueva Amenidad</h2>
+                            <p class="text-gray-500 text-sm mt-1">Completa los detalles para habilitar un nuevo espacio.</p>
+                        </div>
+                        <button onclick="toggleForm()" class="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
                     </div>
-                    
-                    <form method="post" class="p-6 space-y-5">
+
+                    <form method="post" class="space-y-6">
                         {% csrf_token %}
-                        
                         {% if form.non_field_errors %}
-                            <div class="p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-r text-sm">
+                            <div class="p-4 bg-red-50 text-red-600 rounded-xl text-sm font-medium">
                                 {{ form.non_field_errors }}
                             </div>
                         {% endif %}
 
-                        <!-- Nombre -->
-                        <div>
-                            <label for="{{ form.nombre.id_for_label }}" class="block text-xs font-bold text-gray-700 uppercase mb-2">Nombre de la Amenidad</label>
-                            <div class="relative">
-                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                                    <i class="fa-solid fa-tag"></i>
-                                </div>
-                                {{ form.nombre }}
-                            </div>
-                            {% if form.nombre.errors %}
-                                <p class="mt-1 text-xs text-red-600">{{ form.nombre.errors.0 }}</p>
-                            {% endif %}
-                        </div>
-
-                        <!-- Descripción -->
-                        <div>
-                            <label for="{{ form.descripcion.id_for_label }}" class="block text-xs font-bold text-gray-700 uppercase mb-2">Descripción</label>
-                            <div class="relative">
-                                {{ form.descripcion }}
-                            </div>
-                            {% if form.descripcion.errors %}
-                                <p class="mt-1 text-xs text-red-600">{{ form.descripcion.errors.0 }}</p>
-                            {% endif %}
-                        </div>
-
-                        <div class="grid grid-cols-2 gap-4">
-                            <!-- Capacidad -->
-                            <div>
-                                <label for="{{ form.capacidad.id_for_label }}" class="block text-xs font-bold text-gray-700 uppercase mb-2">Capacidad</label>
-                                <div class="relative">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                                        <i class="fa-solid fa-users"></i>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-6">
+                            <!-- Name & Desc (Col 8) -->
+                            <div class="lg:col-span-8 space-y-5">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                    <div class="md:col-span-2">
+                                        <label class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">Nombre del Espacio</label>
+                                        {{ form.nombre }}
                                     </div>
+                                    <div class="md:col-span-2">
+                                        <label class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">Descripción</label>
+                                        {{ form.descripcion }}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Config (Col 4) -->
+                            <div class="lg:col-span-4 bg-gray-50/50 rounded-2xl p-5 border border-gray-100 space-y-4">
+                                <div>
+                                    <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1 block">Capacidad (Personas)</label>
                                     {{ form.capacidad }}
                                 </div>
-                            </div>
-                            <!-- Costo (si existe en el modelo, si no, omitir o ajustar) -->
-                            <!-- Asumiendo que no hay costo en el modelo actual basado en forms.py anterior, solo capacidad -->
-                        </div>
-
-                        <div class="grid grid-cols-2 gap-4">
-                            <!-- Hora Inicio -->
-                            <div>
-                                <label for="{{ form.hora_inicio.id_for_label }}" class="block text-xs font-bold text-gray-700 uppercase mb-2">Apertura</label>
-                                <div class="relative">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                                        <i class="fa-regular fa-clock"></i>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1 block">Apertura</label>
+                                        {{ form.hora_inicio }}
                                     </div>
-                                    {{ form.hora_inicio }}
+                                    <div>
+                                        <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1 block">Cierre</label>
+                                        {{ form.hora_fin }}
+                                    </div>
                                 </div>
-                            </div>
-                            <!-- Hora Fin -->
-                            <div>
-                                <label for="{{ form.hora_fin.id_for_label }}" class="block text-xs font-bold text-gray-700 uppercase mb-2">Cierre</label>
-                                <div class="relative">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                                        <i class="fa-solid fa-clock"></i>
-                                    </div>
-                                    {{ form.hora_fin }}
+                                <div>
+                                    <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1 block">Reglas (Opcional)</label>
+                                    {{ form.reglas }}
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Reglas -->
-                        <div>
-                            <label for="{{ form.reglas.id_for_label }}" class="block text-xs font-bold text-gray-700 uppercase mb-2">Reglas de Uso</label>
-                            <div class="relative">
-                                {{ form.reglas }}
-                            </div>
+                        <div class="pt-4 border-t border-gray-50 flex justify-end">
+                            <button type="button" onclick="toggleForm()" class="mr-4 px-6 py-2.5 text-gray-500 font-medium hover:text-gray-700 transition-colors">Cancelar</button>
+                            <button type="submit" class="px-8 py-2.5 bg-blue-600 text-white font-bold rounded-xl shadow-lg shadow-blue-200 hover:bg-blue-700 hover:shadow-blue-300 transition-all transform hover:-translate-y-0.5">
+                                Guardar Amenidad
+                            </button>
                         </div>
-
-                        <button type="submit" class="w-full py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 flex items-center justify-center gap-2 transform hover:-translate-y-0.5">
-                            <i class="fa-solid fa-plus"></i> Crear Amenidad
-                        </button>
                     </form>
                 </div>
             </div>
+        </div>
+        {% endif %}
 
-            <!-- Lista de Amenidades (Columna Derecha - 8/12) -->
-            <div class="xl:col-span-8">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {% for amenidad in amenidades %}
-                        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 group">
-                            <div class="p-6">
-                                <div class="flex justify-between items-start mb-4">
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center text-xl shadow-sm">
-                                            <i class="fa-solid fa-umbrella-beach"></i>
-                                        </div>
-                                        <div>
-                                            <h3 class="font-bold text-gray-900 text-lg">{{ amenidad.nombre }}</h3>
-                                            <p class="text-xs text-gray-500 flex items-center gap-1">
-                                                <i class="fa-regular fa-clock"></i>
-                                                {{ amenidad.hora_inicio|time:"H:i" }} - {{ amenidad.hora_fin|time:"H:i" }}
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <div class="flex gap-1">
-                                        <a href="{% url 'editar_amenidad' amenidad.id %}" class="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:bg-blue-50 hover:text-blue-600 transition-colors" title="Editar">
-                                            <i class="fa-solid fa-pen-to-square"></i>
-                                        </a>
-                                        <a href="{% url 'eliminar_amenidad' amenidad.id %}" class="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:bg-red-50 hover:text-red-600 transition-colors" title="Eliminar">
-                                            <i class="fa-solid fa-trash-can"></i>
-                                        </a>
-                                    </div>
-                                </div>
+        <!-- Amenities Grid -->
+        <h3 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-6 ml-1">Espacios Disponibles</h3>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6" id="amenitiesGrid">
+            {% for amenidad in amenidades %}
+                <div class="amenity-card bg-white rounded-3xl border border-gray-100 overflow-hidden relative group h-full flex flex-col amenity-item" data-name="{{ amenidad.nombre|lower }}">
+                    
+                    <!-- Decorative Background Icon (Abstract) -->
+                    <div class="absolute -right-6 -top-6 text-[150px] text-gray-50 opacity-50 transform rotate-12 transition-transform group-hover:rotate-6 pointer-events-none">
+                        <i class="fa-solid fa-umbrella-beach"></i>
+                    </div>
 
-                                <p class="text-gray-600 text-sm mb-4 line-clamp-2 min-h-[2.5rem]">
-                                    {{ amenidad.descripcion|default:"Sin descripción disponible." }}
-                                </p>
-
-                                <div class="flex items-center justify-between pt-4 border-t border-gray-100">
-                                    <div class="flex items-center gap-2 text-sm text-gray-500">
-                                        <i class="fa-solid fa-users text-gray-400"></i>
-                                        <span>Capacidad: <strong class="text-gray-700">{{ amenidad.capacidad }}</strong></span>
-                                    </div>
-                                    
-                                    <a href="{% url 'bloquear_horario' amenidad.id %}" class="text-xs font-bold text-orange-600 hover:text-orange-700 bg-orange-50 hover:bg-orange-100 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1">
-                                        <i class="fa-solid fa-ban"></i> Bloqueos
-                                    </a>
-                                </div>
-
-                                {% if amenidad.bloqueos %}
-                                    <div class="mt-4 bg-red-50 rounded-xl p-3 border border-red-100">
-                                        <p class="text-xs font-bold text-red-800 mb-2 flex items-center gap-1">
-                                            <i class="fa-solid fa-circle-exclamation"></i> Horarios Bloqueados Activos
-                                        </p>
-                                        <ul class="space-y-1.5">
-                                            {% for bloqueo in amenidad.bloqueos|slice:":3" %}
-                                                <li class="flex justify-between items-center text-xs text-red-700 bg-white/50 px-2 py-1 rounded">
-                                                    <span>{{ bloqueo.fecha_inicio|date:"d M H:i" }} - {{ bloqueo.fecha_fin|date:"H:i" }}</span>
-                                                    <a href="{% url 'unblock_horario' bloqueo.id %}" class="text-red-500 hover:text-red-700" title="Desbloquear">
-                                                        <i class="fa-solid fa-xmark"></i>
-                                                    </a>
-                                                </li>
-                                            {% endfor %}
-                                            {% if amenidad.bloqueos|length > 3 %}
-                                                <li class="text-xs text-center text-red-600 pt-1">
-                                                    +{{ amenidad.bloqueos|length|add:"-3" }} más
-                                                </li>
-                                            {% endif %}
-                                        </ul>
-                                    </div>
+                    <div class="p-6 relative z-10 flex-1 flex flex-col">
+                        <div class="flex justify-between items-start mb-4">
+                            <span class="w-12 h-12 rounded-2xl bg-white border border-gray-100 shadow-sm flex items-center justify-center text-xl text-gray-800">
+                                <i class="fa-solid fa-star"></i>
+                            </span>
+                            <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                {% if request.user.rol == 'ADMIN' %}
+                                <a href="{% url 'editar_amenidad' amenidad.id %}" class="p-2 text-gray-400 hover:text-blue-600 transition-colors"><i class="fa-solid fa-pen"></i></a>
+                                <a href="{% url 'eliminar_amenidad' amenidad.id %}" class="p-2 text-gray-400 hover:text-red-600 transition-colors"><i class="fa-solid fa-trash"></i></a>
                                 {% endif %}
                             </div>
                         </div>
-                    {% empty %}
-                        <div class="col-span-full flex flex-col items-center justify-center py-16 bg-white rounded-2xl border border-dashed border-gray-300 text-center">
-                            <div class="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
-                                <i class="fa-solid fa-umbrella-beach text-gray-300 text-2xl"></i>
-                            </div>
-                            <h4 class="text-gray-900 font-medium mb-1">No hay amenidades registradas</h4>
-                            <p class="text-gray-500 text-sm max-w-xs">Utiliza el formulario de la izquierda para agregar áreas comunes como piscina, gimnasio o salón.</p>
+
+                        <h3 class="text-xl font-bold text-gray-900 mb-2 truncate" title="{{ amenidad.nombre }}">{{ amenidad.nombre }}</h3>
+                        
+                        <div class="flex items-center gap-3 text-xs font-medium text-gray-500 mb-6">
+                            <span class="flex items-center gap-1 bg-gray-50 px-2 py-1 rounded-md border border-gray-100">
+                                <i class="fa-solid fa-users text-gray-400"></i> Max {{ amenidad.capacidad }}
+                            </span>
+                            <span class="flex items-center gap-1 bg-gray-50 px-2 py-1 rounded-md border border-gray-100">
+                                <i class="fa-regular fa-clock text-gray-400"></i> {{ amenidad.hora_inicio|time:"H:i" }} - {{ amenidad.hora_fin|time:"H:i" }}
+                            </span>
                         </div>
-                    {% endfor %}
+
+                        <p class="text-gray-500 text-sm line-clamp-2 mb-6 flex-1">
+                            {{ amenidad.descripcion|default:"Sin descripción." }}
+                        </p>
+
+                        <!-- Footer Actions -->
+                         <div class="mt-auto pt-4 border-t border-gray-50">
+                            {% if amenidad.bloqueos %}
+                                <div class="mb-3 flex items-center gap-2 text-xs text-red-600 bg-red-50 px-3 py-1.5 rounded-lg border border-red-100">
+                                    <i class="fa-solid fa-circle-exclamation"></i>
+                                    <span class="font-bold">{{ amenidad.bloqueos|length }} Bloqueos activos</span>
+                                </div>
+                            {% endif %}
+                            
+                            <a href="{% url 'bloquear_horario' amenidad.id %}" class="w-full flex items-center justify-center py-2.5 rounded-xl bg-gray-50 text-gray-600 font-bold text-sm hover:bg-gray-100 hover:text-gray-900 transition-colors">
+                                Gestionar Mantenimiento
+                            </a>
+                        </div>
+                    </div>
                 </div>
-            </div>
+            {% empty %}
+                <div class="col-span-full py-20 text-center">
+                    <div class="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <i class="fa-solid fa-layer-group text-gray-300 text-3xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900">Sin amenidades</h3>
+                    <p class="text-gray-500 mt-2">Registra la primera amenidad usando el botón superior.</p>
+                </div>
+            {% endfor %}
         </div>
+
     </main>
 </div>
 
+<script>
+    function toggleForm() {
+        const panel = document.getElementById('createFormPanel');
+        const btn = document.getElementById('toggleBtn');
+        
+        if (panel.classList.contains('hidden')) {
+            panel.classList.remove('hidden');
+            panel.classList.add('fade-enter');
+            // Give browser a moment to process the remove hidden before adding active for animation
+            setTimeout(() =>     panel.classList.add('fade-enter-active'), 10);
+            
+            btn.innerHTML = '<i class="fa-solid fa-minus"></i><span class="hidden md:inline">Cerrar Formulario</span>';
+            btn.classList.replace('bg-blue-600', 'bg-gray-200');
+            btn.classList.replace('text-white', 'text-gray-800');
+        } else {
+            panel.classList.remove('fade-enter-active');
+            setTimeout(() => panel.classList.add('hidden'), 300);
+            
+            btn.innerHTML = '<i class="fa-solid fa-plus"></i><span class="hidden md:inline">Nueva Amenidad</span>';
+            btn.classList.replace('bg-gray-200', 'bg-blue-600');
+            btn.classList.replace('text-gray-800', 'text-white');
+        }
+    }
+
+    // Simple Client-side Search
+    document.getElementById('searchInput').addEventListener('keyup', function(e) {
+        const val = e.target.value.toLowerCase();
+        document.querySelectorAll('.amenity-item').forEach(item => {
+            const name = item.dataset.name;
+            if (name.includes(val)) {
+                item.style.display = 'flex'; // Restore flex display
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    });
+</script>
+
 <style>
-    /* Custom styles for form inputs to match Tailwind */
-    input[type="text"], input[type="number"], input[type="time"], textarea, select {
+    /* Specific Form Overrides for Horizontal Layout */
+    .form-input-premium {
         width: 100%;
-        padding-left: 1rem; 
-        padding-right: 1rem;
-        padding-top: 0.75rem;
-        padding-bottom: 0.75rem;
+        background-color: #F9FAFB;
+        border: 1px solid #E5E7EB;
         border-radius: 0.75rem;
-        border: 1px solid #e5e7eb;
-        background-color: #f9fafb;
+        padding: 0.75rem 1rem;
         font-size: 0.875rem;
         transition: all 0.2s;
     }
-    
-    /* Add padding left for inputs with icons */
-    .relative input[type="text"], .relative input[type="number"], .relative input[type="time"] {
-        padding-left: 2.5rem;
-    }
-
-    input:focus, textarea:focus, select:focus {
+    .form-input-premium:focus {
+        background-color: white;
+        border-color: #3B82F6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
         outline: none;
-        border-color: #3b82f6;
-        background-color: #ffffff;
-        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
     }
 
-    textarea {
-        resize: vertical;
-        min-height: 80px;
+    /* Apply to all generated inputs in form */
+    form input[type="text"], 
+    form input[type="number"], 
+    form input[type="time"], 
+    form select, 
+    form textarea {
+        @apply w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-100 focus:bg-white focus:border-blue-500 transition-all outline-none;
     }
 </style>
 {% endblock %}

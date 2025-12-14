@@ -136,33 +136,7 @@
                             {% endif %}
                         </div>
 
-                        <!-- Administrador -->
-                        <div class="col-span-2 md:col-span-1">
-                            <label for="{{ form.administrador_responsable.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Administrador Responsable</label>
-                            <div class="relative">
-                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                                    <i class="fa-solid fa-user-tie"></i>
-                                </div>
-                                {{ form.administrador_responsable }}
-                            </div>
-                            {% if form.administrador_responsable.errors %}
-                                <p class="mt-1 text-sm text-red-600">{{ form.administrador_responsable.errors.0 }}</p>
-                            {% endif %}
-                        </div>
 
-                        <!-- Teléfono -->
-                        <div class="col-span-2 md:col-span-1">
-                            <label for="{{ form.telefono_contacto.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Teléfono de Contacto</label>
-                            <div class="relative">
-                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                                    <i class="fa-solid fa-phone"></i>
-                                </div>
-                                {{ form.telefono_contacto }}
-                            </div>
-                            {% if form.telefono_contacto.errors %}
-                                <p class="mt-1 text-sm text-red-600">{{ form.telefono_contacto.errors.0 }}</p>
-                            {% endif %}
-                        </div>
 
                         <!-- Amenidades -->
                         <div class="col-span-2 mt-4">

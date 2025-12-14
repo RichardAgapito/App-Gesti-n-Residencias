@@ -20,19 +20,29 @@ from collections import defaultdict
 from visitas.models import PreAutorizacion
 
 
-@user_passes_test(es_admin, login_url='/')
+@user_passes_test(es_admin_o_gerente, login_url='/')
 def gestionar_amenidades_view(request):
+    # Determine QuerySet based on Role
+    if request.user.rol == CustomUser.Rol.GERENTE:
+        if not request.user.complejo_asignado:
+            return redirect('dashboard')
+        qs = request.user.complejo_asignado.amenidades.all()
+    else:
+        qs = Amenidad.objects.all()
+
     if request.method == 'POST':
-        form = AmenidadForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect('gestionar_amenidades')
+        # ONLY ADMIN can create amenities
+        if request.user.rol == CustomUser.Rol.ADMIN:
+            form = AmenidadForm(request.POST)
+            if form.is_valid():
+                amenidad = form.save()
+                return redirect('gestionar_amenidades')
     else:
         form = AmenidadForm()
     
-    amenidades = Amenidad.objects.prefetch_related(
+    amenidades = qs.prefetch_related(
         models.Prefetch('reservas', queryset=Reserva.objects.filter(estado='bloqueada'), to_attr='bloqueos')
-    ).all()
+    )
 
     context = {
         'form': form,
@@ -70,9 +80,18 @@ def eliminar_amenidad_view(request, amenidad_id):
     return render(request, 'complejos/eliminar_amenidad.html', context)
 
 
-@user_passes_test(es_admin, login_url='/')
+@user_passes_test(es_admin_o_gerente, login_url='/')
 def bloquear_horario_view(request, amenidad_id):
     amenidad = get_object_or_404(Amenidad, id=amenidad_id)
+
+    # Manager Permission Check
+    if request.user.rol == CustomUser.Rol.GERENTE:
+        if not request.user.complejo_asignado:
+            return redirect('dashboard')
+        # Ensure amenity belongs to manager's complex
+        if not request.user.complejo_asignado.amenidades.filter(id=amenidad.id).exists():
+             return redirect('gestionar_amenidades')
+
     if request.method == 'POST':
         form = BloquearHorarioForm(request.POST, amenidad=amenidad)
         if form.is_valid():
@@ -100,9 +119,18 @@ def bloquear_horario_view(request, amenidad_id):
     return render(request, 'complejos/bloquear_horario.html', context)
 
 
-@user_passes_test(es_admin, login_url='/')
+@user_passes_test(es_admin_o_gerente, login_url='/')
 def unblock_horario_view(request, reserva_id):
     reserva = get_object_or_404(Reserva, id=reserva_id)
+
+    # Manager Permission Check
+    if request.user.rol == CustomUser.Rol.GERENTE:
+        if not request.user.complejo_asignado:
+            return redirect('dashboard')
+        # Check amenity owner
+        if not request.user.complejo_asignado.amenidades.filter(id=reserva.amenidad.id).exists():
+             return redirect('gestionar_amenidades')
+             
     if reserva.estado == 'bloqueada':
         reserva.delete()
     return redirect('gestionar_amenidades')
@@ -117,10 +145,15 @@ def lista_complejos(request):
     estado = request.GET.get('estado')
 
     # 1. Obtener QuerySet con anotaciones
-    # 1. Obtener QuerySet con prefetch para evitar N+1
+    # 1. Obtener QuerySet con prefetch para evitar N+1 y traer al gerente
     complejos_qs = Complejo.objects.prefetch_related(
         'propiedades',
-        'propiedades__personas_asociadas'
+        'propiedades__personas_asociadas',
+        models.Prefetch(
+            'personal_asignado',
+            queryset=get_user_model().objects.filter(rol='GERENTE', is_active=True),
+            to_attr='gerentes_asignados'
+        )
     ).annotate(
         total_amenidades=Count('amenidades', distinct=True)
     )
@@ -130,6 +163,9 @@ def lista_complejos(request):
 
     # 3. Calcular porcentajes en los objetos de la lista usando lógica Python
     for c in complejos_list:
+        # Asignar gerente (tomamos el primero si existe, ya que debería ser uno por complejo)
+        c.gerente_obj = c.gerentes_asignados[0] if c.gerentes_asignados else None
+
         occupied_count = 0
         # Usamos .all() que utiliza el caché del prefetch
         propiedades = c.propiedades.all()
@@ -151,8 +187,9 @@ def lista_complejos(request):
         
         c.unidades_ocupadas = occupied_count
         
-        # Usar el total real si el configurado es 0 o inconsistente
-        denominator = c.numero_total_unidades if c.numero_total_unidades > 0 else real_total
+        # Usamos el total real de unidades creadas
+        c.total_construido = real_total
+        denominator = real_total
         
         if denominator > 0:
             c.porcentaje_ocupacion = int((c.unidades_ocupadas / denominator) * 100)
@@ -250,7 +287,7 @@ def detalle_complejo(request, complejo_id):
 def crear_propiedad(request, complejo_id):
     complejo = get_object_or_404(Complejo, id=complejo_id)
     if request.method == 'POST':
-        form = PropiedadForm(request.POST)
+        form = PropiedadForm(request.POST, complejo=complejo)
         if form.is_valid():
             propiedad = form.save(commit=False)
             propiedad.complejo = complejo
@@ -271,14 +308,14 @@ def crear_propiedad(request, complejo_id):
             propiedad.save()
             return redirect('detalle_complejo', complejo_id=complejo.id)
     else:
-        form = PropiedadForm()
+        form = PropiedadForm(complejo=complejo)
     return render(request, 'complejos/crear_propiedad.html', {'form': form, 'complejo': complejo})
 
 @user_passes_test(es_admin, login_url='/')
 def crear_propiedades_multiples(request, complejo_id):
     complejo = get_object_or_404(Complejo, id=complejo_id)
     if request.method == 'POST':
-        form = CrearPropiedadesMultiplesForm(request.POST)
+        form = CrearPropiedadesMultiplesForm(request.POST, complejo=complejo)
         if form.is_valid():
             cantidad = form.cleaned_data['cantidad']
             
@@ -308,7 +345,7 @@ def crear_propiedades_multiples(request, complejo_id):
                 propiedad.save()
             return redirect('detalle_complejo', complejo_id=complejo.id)
     else:
-        form = CrearPropiedadesMultiplesForm()
+        form = CrearPropiedadesMultiplesForm(complejo=complejo)
     return render(request, 'complejos/crear_propiedades_multiples.html', {'form': form, 'complejo': complejo})
 
 @user_passes_test(es_admin, login_url='/')
@@ -1009,7 +1046,7 @@ def crear_contrato_global(request):
                     role2 = 'co-inquilino'
                 else:
                     role2 = 'co-' + tipo_relacion_form # Fallback
-
+                
                 PropiedadPersona.objects.create(
                     propiedad=propiedad_persona.propiedad,
                     persona=persona2,
@@ -1088,7 +1125,9 @@ def seleccionar_complejo_contrato(request):
                 occupied_count += 1
         
         c.unidades_ocupadas = occupied_count
-        denominator = c.numero_total_unidades if c.numero_total_unidades > 0 else real_total
+        # Usamos el total real de unidades creadas
+        c.total_construido = real_total
+        denominator = real_total
         
         if denominator > 0:
             c.porcentaje_ocupacion = int((c.unidades_ocupadas / denominator) * 100)

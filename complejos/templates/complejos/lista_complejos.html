@@ -56,7 +56,7 @@
                     <div class="complejo-card bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 group overflow-hidden flex flex-col"
                          data-nombre="{{ complejo.nombre|lower }}" 
                          data-direccion="{{ complejo.calle|lower }} {{ complejo.ciudad|lower }}"
-                         data-admin="{{ complejo.administrador_responsable|default:''|lower }}">
+                         data-admin="{{ complejo.gerente_obj.persona|default:''|lower }}">
                         <!-- Card Header Gradient -->
                         <div class="h-2 bg-gradient-to-r from-blue-500 to-indigo-600"></div>
                         
@@ -105,7 +105,7 @@
                                          style="width: {{ complejo.porcentaje_ocupacion }}%"></div>
                                 </div>
                                 <p class="text-xs text-gray-400 mt-1.5 text-right">
-                                    {{ complejo.unidades_ocupadas }} de {{ complejo.numero_total_unidades }} unidades
+                                    {{ complejo.unidades_ocupadas }} de {{ complejo.total_construido }} unidades
                                 </p>
                             </div>
 
@@ -119,10 +119,10 @@
                                     </div>
                                 </div>
                                 <div>
-                                    <p class="text-xs text-gray-400 uppercase font-semibold mb-1">Admin</p>
-                                    <div class="flex items-center gap-1.5 text-gray-700 font-medium truncate" title="{{ complejo.administrador_responsable }}">
-                                        <i class="fa-solid fa-user-shield text-indigo-400 text-xs"></i>
-                                        <span class="truncate">{{ complejo.administrador_responsable|default:"N/A"|truncatechars:10 }}</span>
+                                    <p class="text-xs text-gray-400 uppercase font-semibold mb-1">Gerente</p>
+                                    <div class="flex items-center gap-1.5 text-gray-700 font-medium truncate" title="{{ complejo.gerente_obj.persona|default:'Sin asignar' }}">
+                                        <i class="fa-solid fa-user-tie text-indigo-400 text-xs"></i>
+                                        <span class="truncate">{{ complejo.gerente_obj.persona|default:"Sin asignar"|truncatechars:15 }}</span>
                                     </div>
                                 </div>
                             </div>

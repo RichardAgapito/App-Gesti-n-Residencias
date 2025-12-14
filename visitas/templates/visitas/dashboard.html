@@ -1,68 +1,150 @@
-{% extends 'base_dashboard.html' %}
+{% extends 'base.html' %}
 {% load static %}
 
-{% block extra_css %}
-    <link rel="stylesheet" href="{% static 'css/visitas_dashboard.css' %}">
-{% endblock extra_css %}
-
 {% block content %}
-<div class="dashboard-container">
-    <div class="sidebar">
-        <h2><i class="fa-solid fa-id-card"></i> Panel de Portería</h2>
-        <a href="{% url 'lista_visitantes' %}"><i class="fa-solid fa-users"></i> Gestionar Visitantes</a>
-        <a href="{% url 'lista_visitas' %}"><i class="fa-solid fa-car"></i> Gestionar Visitas</a>
-        <a href="{% url 'lista_preautorizaciones' %}"><i class="fa-solid fa-calendar-check"></i> Gestionar Pre-Autorizaciones</a>
-    </div>
+<div class="h-screen bg-gray-50 font-sans overflow-hidden">
+    
+    <!-- Sidebar -->
+    {% include 'includes/guard_sidebar.html' %}
 
-    <div class="main-content">
-        <header>
-            <h1>Bienvenido, {{ request.user.persona.nombres|default:request.user.email }}</h1>
-            <form method="post" action="{% url 'logout' %}">
-                {% csrf_token %}
-                <button type="submit"><i class="fa-solid fa-right-from-bracket"></i> Cerrar Sesión</button>
-            </form>
+    <!-- Main Content Wrapper -->
+    <div class="lg:ml-64 flex flex-col h-full overflow-y-auto">
+        <main class="flex-1 p-8 relative">
+        <div class="max-w-7xl mx-auto space-y-8">
+            
+        <!-- Header -->
+        <header class="flex justify-between items-center mb-8">
+            <div>
+                <h1 class="text-4xl font-bold text-gray-900">Panel de Seguridad</h1>
+                <p class="text-sm text-gray-500 mt-1">Control de acceso y gestión de visitas</p>
+            </div>
+            <div class="flex items-center gap-4 bg-[#EFF6FF] p-5 rounded-xl shadow-sm border border-blue-50">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold shadow-md">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-[16px] font-bold text-gray-900">Guardia</p>
+                        <p class="text-xs text-gray-500">{{ request.user.email }}</p>
+                    </div>
+                </div>
+            </div>
         </header>
 
-        <section class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-icon" style="color: #3498db;">
-                    <i class="fa-solid fa-user-group"></i>
+            <!-- Stats Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <!-- Stat 1 -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-500 mb-1">Visitantes Activos</p>
+                        <h3 class="text-4xl font-bold text-gray-900">{{ visitantes_dentro }}</h3>
+                    </div>
+                    <div class="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center text-blue-600">
+                        <i class="fa-solid fa-users-viewfinder text-xl"></i>
+                    </div>
                 </div>
-                <div class="stat-info">
-                    <h3>Visitantes Dentro del Complejo: <span>{{ visitantes_dentro }}</span></h3>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon" style="color: #f39c12;">
-                    <i class="fa-solid fa-calendar-check"></i>
-                </div>
-                <div class="stat-info">
-                    <h3>Autorizaciones Pendientes: <span>{{ autorizaciones_pendientes }}</span></h3>
-                </div>
-            </div>
-        </section>
 
-        <section class="quick-actions">
-            <h2><i class="fa-solid fa-bolt"></i> Acciones Rápidas</h2>
-            <div class="quick-actions-grid">
-                <a href="{% url 'crear_visitante' %}" class="action-card">
-                    <div class="action-icon"><i class="fa-solid fa-user-plus"></i></div>
-                    <h3>Registrar Visitante</h3>
-                    <p>Añadir un nuevo visitante al sistema.</p>
-                </a>
-                <a href="{% url 'crear_visita' %}" class="action-card">
-                    <div class="action-icon"><i class="fa-solid fa-car-side"></i></div>
-                    <h3>Registrar Visita</h3>
-                    <p>Registrar una nueva visita a una propiedad.</p>
-                </a>
-                
-                <a href="{% url 'lista_preautorizaciones' %}" class="action-card">
-                    <div class="action-icon"><i class="fa-solid fa-calendar-check"></i></div>
-                    <h3>Gestionar Pre-Autorizaciones</h3>
-                    <p>Aprobar o cancelar solicitudes de residentes.</p>
-                </a>
+                <!-- Stat 2 -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-500 mb-1">Pre-Autorizaciones</p>
+                        <h3 class="text-4xl font-bold text-gray-900">{{ autorizaciones_pendientes }}</h3>
+                    </div>
+                    <div class="w-12 h-12 bg-amber-50 rounded-lg flex items-center justify-center text-amber-600">
+                        <i class="fa-regular fa-clock text-xl"></i>
+                    </div>
                 </div>
-        </section>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Acciones Rápidas -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                    <h3 class="text-lg font-bold text-gray-900 mb-6">Acciones Rápidas</h3>
+                    <div class="space-y-4">
+                        
+                        <!-- Registrar Visitante -->
+                        <a href="{% url 'crear_visitante' %}" class="flex items-center gap-4 p-4 rounded-xl bg-gray-50 hover:bg-blue-50 transition-colors group border border-gray-100 hover:border-blue-100">
+                            <div class="w-12 h-12 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                                <i class="fa-solid fa-user-plus text-xl"></i>
+                            </div>
+                            <div>
+                                <h4 class="text-sm font-bold text-gray-900 group-hover:text-blue-700">Registrar Nuevo Visitante</h4>
+                                <p class="text-xs text-gray-500">Dar de alta persona en el sistema</p>
+                            </div>
+                            <div class="ml-auto text-gray-400 group-hover:text-blue-500">
+                                <i class="fa-solid fa-chevron-right"></i>
+                            </div>
+                        </a>
+
+                        <!-- Registrar Entrada -->
+                        <a href="{% url 'crear_visita' %}" class="flex items-center gap-4 p-4 rounded-xl bg-gray-50 hover:bg-indigo-50 transition-colors group border border-gray-100 hover:border-indigo-100">
+                            <div class="w-12 h-12 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                                <i class="fa-solid fa-car-side text-xl"></i>
+                            </div>
+                            <div>
+                                <h4 class="text-sm font-bold text-gray-900 group-hover:text-indigo-700">Registrar Entrada / Salida</h4>
+                                <p class="text-xs text-gray-500">Control de acceso vehicular o peatonal</p>
+                            </div>
+                            <div class="ml-auto text-gray-400 group-hover:text-indigo-500">
+                                <i class="fa-solid fa-chevron-right"></i>
+                            </div>
+                        </a>
+
+                        <!-- Validar Pre-Auth -->
+                        <a href="{% url 'lista_preautorizaciones' %}" class="flex items-center gap-4 p-4 rounded-xl bg-gray-50 hover:bg-emerald-50 transition-colors group border border-gray-100 hover:border-emerald-100">
+                            <div class="w-12 h-12 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                                <i class="fa-solid fa-qrcode text-xl"></i>
+                            </div>
+                            <div>
+                                <h4 class="text-sm font-bold text-gray-900 group-hover:text-emerald-700">Validar Pre-Autorización</h4>
+                                <p class="text-xs text-gray-500">Escanear o buscar autorizaciones</p>
+                            </div>
+                            <div class="ml-auto text-gray-400 group-hover:text-emerald-500">
+                                <i class="fa-solid fa-chevron-right"></i>
+                            </div>
+                        </a>
+
+                    </div>
+                </div>
+
+                <!-- Últimos Accesos (Actividad Reciente) -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                    <h3 class="text-lg font-bold text-gray-900 mb-6">Últimos Accesos</h3>
+                    <div class="space-y-6">
+                        {% for visita in visitas_recientes %}
+                        <div class="flex items-start gap-4">
+                            <div class="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
+                                <i class="fa-solid fa-user-clock text-blue-600"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-900 font-medium">
+                                    <span class="font-bold">{{ visita.visitante.nombres }}</span>
+                                    <span class="text-gray-500">→</span>
+                                    <span class="font-bold text-gray-700">{{ visita.propiedad.numero_identificador }}</span>
+                                </p>
+                                <p class="text-xs text-gray-500 mt-1">{{ visita.fecha_hora_ingreso|timesince }} atrás</p>
+                            </div>
+                            <div class="ml-auto">
+                                {% if visita.estado == 'en_curso' %}
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                                        Dentro
+                                    </span>
+                                {% else %}
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
+                                        Salió
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% empty %}
+                        <p class="text-sm text-gray-500">No hay registros recientes.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
     </div>
 </div>
 {% endblock content %}

@@ -1,104 +1,170 @@
-{% extends 'base_dashboard.html' %}
+{% extends 'base.html' %}
 {% load static %}
-{% block extra_css %}
-    <link rel="stylesheet" href="{% static 'css/lista_visitas.css' %}">
-{% endblock extra_css %}
 
 {% block content %}
-<div class="user-list-container">
-    <div class="list-header">
-        <h1>Gestión de Visitas</h1>
-        <a href="{% url 'crear_visita' %}" class="btn btn-primary">
-            <i class="fa-solid fa-plus"></i> Registrar Nueva Visita
-        </a>
-    </div>
-    <hr>
+<div class="min-h-screen bg-gray-50 flex font-sans text-gray-900">
+    
+    <!-- Sidebar -->
+    {% include 'includes/guard_sidebar.html' %}
 
-    <div class="list-layout-container">
-        <aside class="filter-sidebar">
-            <h3><i class="fa-solid fa-filter"></i> Filtrar Visitas</h3>
-            <form method="get" action="" class="filters-form-vertical">
-                <div class="form-group">
-                    <label for="id_q">Buscar:</label>
-                    <input id="id_q" type="search" name="q" placeholder="Visitante, propiedad..." value="{{ request.GET.q }}">
+    <!-- Main Content -->
+    <main class="flex-1 lg:ml-64 p-8 relative">
+        <div class="max-w-7xl mx-auto">
+            
+            <!-- Header -->
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                <div>
+                    <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">Registro de Visitas</h1>
+                    <p class="text-gray-500 mt-1">Gestiona el historial de ingresos y salidas del complejo.</p>
                 </div>
-                <div class="form-group">
-                    <label for="id_estado">Estado:</label>
-                    <select id="id_estado" name="estado">
-                        <option value=""{% if not request.GET.estado %} selected{% endif %}>Todos</option>
-                        {% for value, name in estado_choices %}
-                            <option value="{{ value }}"{% if request.GET.estado == value %} selected{% endif %}>{{ name }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="id_propiedad">Propiedad:</label>
-                    <select id="id_propiedad" name="propiedad">
-                        <option value=""{% if not request.GET.propiedad %} selected{% endif %}>Todas</option>
-                        {% for propiedad in propiedades %}
-                            <option value="{{ propiedad.id }}"{% if request.GET.propiedad == propiedad.id|stringformat:"s" %} selected{% endif %}>{{ propiedad.numero_identificador }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <button type="submit">Buscar y Filtrar</button>
-            </form>
-        </aside>
+                <a href="{% url 'crear_visita' %}" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg shadow-blue-200 transition-all transform active:scale-95 hover:-translate-y-0.5 flex items-center gap-2">
+                    <i class="fa-solid fa-plus"></i>
+                    <span>Nueva Visita</span>
+                </a>
+            </div>
 
-        <main class="results-content">
-            <h3>Visitas Registradas</h3>
+            <!-- Filters & Search -->
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 mb-8">
+                <form method="get" class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+                    <!-- Search -->
+                    <div class="md:col-span-4 lg:col-span-5">
+                        <label class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 block ml-1">Buscar</label>
+                        <div class="relative">
+                            <i class="fa-solid fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                            <input type="text" name="q" value="{{ request.GET.q }}" placeholder="Nombre, documento o propiedad..." class="w-full pl-11 pr-4 py-2.5 bg-gray-50 border-transparent focus:bg-white focus:border-blue-500 rounded-xl transition-all text-sm font-medium">
+                        </div>
+                    </div>
 
-            {% if page_obj.object_list %}
-                <table class="visitas-table">
-                    <thead>
-                        <tr>
-                            <th>Visitante</th>
-                            <th>Propiedad</th>
-                            <th>Ingreso</th>
-                            <th>Salida</th>
-                            <th>Estado</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for visita in page_obj.object_list %}
-                            <tr>
-                                <td>{{ visita.visitante.nombres }} {{ visita.visitante.apellidos }}</td>
-                                <td>{{ visita.propiedad.numero_identificador }}</td>
-                                <td>{{ visita.fecha_hora_ingreso|date:"d/m/Y H:i" }}</td>
-                                <td>{% if visita.fecha_hora_salida %}{{ visita.fecha_hora_salida|date:"d/m/Y H:i" }}{% else %}Pendiente{% endif %}</td>
-                                <td><span class="status-{{ visita.estado }}">{{ visita.get_estado_display }}</span></td>
-                                <td class="action-links">
-                                    <a href="{% url 'detalle_visita' visita.id %}" class="btn btn-info btn-sm">Detalles</a>
-                                    <a href="{% url 'editar_visita' visita.id %}" class="btn btn-warning btn-sm">Registrar Salida</a>
+                    <!-- Filter: Estado -->
+                    <div class="md:col-span-3 lg:col-span-3">
+                        <label class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 block ml-1">Estado</label>
+                        <select name="estado" class="w-full px-4 py-2.5 bg-gray-50 border-transparent focus:bg-white focus:border-blue-500 rounded-xl transition-all text-sm font-medium appearance-none">
+                            <option value="">Todos los estados</option>
+                            {% for value, name in estado_choices %}
+                                <option value="{{ value }}" {% if request.GET.estado == value %}selected{% endif %}>{{ name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Filter: Propiedad -->
+                    <div class="md:col-span-3 lg:col-span-3">
+                        <label class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 block ml-1">Propiedad</label>
+                        <select name="propiedad" class="w-full px-4 py-2.5 bg-gray-50 border-transparent focus:bg-white focus:border-blue-500 rounded-xl transition-all text-sm font-medium appearance-none">
+                            <option value="">Todas</option>
+                            {% for propiedad in propiedades %}
+                                <option value="{{ propiedad.id }}" {% if request.GET.propiedad == propiedad.id|stringformat:"s" %}selected{% endif %}>{{ propiedad.numero_identificador }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Submit -->
+                    <div class="md:col-span-2 lg:col-span-1">
+                        <button type="submit" class="w-full py-2.5 bg-gray-900 hover:bg-black text-white rounded-xl transition-colors flex items-center justify-center">
+                            <i class="fa-solid fa-filter"></i>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Table Card -->
+            <div class="bg-white rounded-3xl shadow-xl shadow-gray-200/50 border border-gray-100 overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-gray-50 border-b border-gray-100 text-xs uppercase tracking-wider text-gray-500 font-bold">
+                                <th class="px-6 py-4 rounded-tl-3xl">Visitante</th>
+                                <th class="px-6 py-4">Propiedad</th>
+                                <th class="px-6 py-4 text-center">Ingreso</th>
+                                <th class="px-6 py-4 text-center">Salida</th>
+                                <th class="px-6 py-4 text-center">Estado</th>
+                                <th class="px-6 py-4 text-right rounded-tr-3xl">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-50">
+                            {% for visita in page_obj.object_list %}
+                            <tr class="hover:bg-blue-50/30 transition-colors group">
+                                <td class="px-6 py-4">
+                                    <div class="font-bold text-gray-900">{{ visita.visitante.nombres }} {{ visita.visitante.apellidos }}</div>
+                                    <div class="text-xs text-gray-400">{{ visita.visitante.numero_documento }}</div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="bg-gray-100 text-gray-600 px-2 py-1 rounded-lg text-xs font-bold border border-gray-200">
+                                        {{ visita.propiedad.numero_identificador }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 text-center text-sm font-medium text-gray-600">
+                                    {{ visita.fecha_hora_ingreso|date:"d M, H:i" }}
+                                </td>
+                                <td class="px-6 py-4 text-center text-sm font-medium text-gray-500">
+                                    {% if visita.fecha_hora_salida %}
+                                        {{ visita.fecha_hora_salida|date:"d M, H:i" }}
+                                    {% else %}
+                                        <span class="text-blue-500 font-bold text-xs bg-blue-50 px-2 py-1 rounded-lg">En curso</span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-6 py-4 text-center">
+                                    {% if visita.estado == 'en_curso' %}
+                                        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700 border border-green-200">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span> Activa
+                                        </span>
+                                    {% else %}
+                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-500 border border-gray-200">
+                                            Finalizada
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-6 py-4 text-right">
+                                    <div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <a href="{% url 'detalle_visita' visita.id %}" class="w-8 h-8 rounded-lg bg-gray-50 text-gray-400 hover:text-blue-600 hover:bg-blue-50 flex items-center justify-center transition-all" title="Ver Detalles">
+                                            <i class="fa-solid fa-eye"></i>
+                                        </a>
+                                        {% if visita.estado == 'en_curso' %}
+                                        <a href="{% url 'editar_visita' visita.id %}" class="w-8 h-8 rounded-lg bg-amber-50 text-amber-500 hover:text-amber-700 hover:bg-amber-100 flex items-center justify-center transition-all" title="Registrar Salida / Editar">
+                                            <i class="fa-solid fa-stopwatch"></i>
+                                        </a>
+                                        {% endif %}
+                                    </div>
                                 </td>
                             </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-
-                <div class="pagination">
-                    <span class="step-links">
-                        {% if page_obj.has_previous %}
-                            <a href="?page=1">&laquo; primera</a>
-                            <a href="?page={{ page_obj.previous_page_number }}">anterior</a>
-                        {% endif %}
-
-                        <span class="current">
-                            Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}.
-                        </span>
-
-                        {% if page_obj.has_next %}
-                            <a href="?page={{ page_obj.next_page_number }}">siguiente</a>
-                            <a href="?page={{ page_obj.paginator.num_pages }}">última &raquo;</a>
-                        {% endif %}
-                    </span>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" class="px-6 py-12 text-center text-gray-400">
+                                    <div class="flex flex-col items-center justify-center gap-3">
+                                        <div class="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center text-2xl mb-2">
+                                            <i class="fa-solid fa-clipboard-list"></i>
+                                        </div>
+                                        <p class="font-medium">No se encontraron visitas registradas.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
-            {% else %}
-                <p class="no-results-message">No se encontraron visitas.</p>
-            {% endif %}
-        </main>
-    </div>
 
-    <a href="{% url 'dashboard_visitas' %}" class="back-link">← Volver al Dashboard</a>
+                <!-- Pagination -->
+                {% if page_obj.paginator.num_pages > 1 %}
+                <div class="px-6 py-4 border-t border-gray-100 bg-gray-50/50 flex items-center justify-between">
+                    <span class="text-xs font-medium text-gray-500">
+                        Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                    </span>
+                    <div class="flex gap-2">
+                        {% if page_obj.has_previous %}
+                        <a href="?page={{ page_obj.previous_page_number }}&q={{ request.GET.q }}&estado={{ request.GET.estado }}&propiedad={{ request.GET.propiedad }}" class="px-3 py-1.5 rounded-lg bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 text-xs font-bold transition-colors">
+                            Anterior
+                        </a>
+                        {% endif %}
+                        {% if page_obj.has_next %}
+                        <a href="?page={{ page_obj.next_page_number }}&q={{ request.GET.q }}&estado={{ request.GET.estado }}&propiedad={{ request.GET.propiedad }}" class="px-3 py-1.5 rounded-lg bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 text-xs font-bold transition-colors">
+                            Siguiente
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+        </div>
+    </main>
 </div>
 {% endblock %}

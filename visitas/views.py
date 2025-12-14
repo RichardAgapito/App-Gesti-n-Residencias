@@ -35,9 +35,14 @@ def get_residentes_por_propiedad(request, propiedad_id):
 def dashboard(request):
     visitantes_dentro = Visita.objects.filter(estado='en_curso').count()
     autorizaciones_pendientes = PreAutorizacion.objects.filter(estado='pendiente').count()
+    
+    # Fetch recent activity for the feed
+    visitas_recientes = Visita.objects.select_related('visitante', 'propiedad').order_by('-fecha_hora_ingreso')[:6]
+
     context = {
         'visitantes_dentro': visitantes_dentro,
         'autorizaciones_pendientes': autorizaciones_pendientes,
+        'visitas_recientes': visitas_recientes,
     }
     return render(request, 'visitas/dashboard.html', context)
 
