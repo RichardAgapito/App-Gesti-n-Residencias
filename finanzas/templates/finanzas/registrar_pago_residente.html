@@ -2,90 +2,110 @@
 {% load static %}
 
 {% block extra_css %}
-    <style>
-        .payment-container {
-            max-width: 800px;
-            margin: 2rem auto;
-            padding: 2rem;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-        .invoice-summary {
-            background: #f8fafc;
-            border-radius: 8px;
-            padding: 1.5rem;
-            margin-bottom: 2rem;
-            border: 1px solid #e2e8f0;
-        }
-        .invoice-details-table {
-            width: 100%;
-            margin-top: 1rem;
-            border-collapse: collapse;
-        }
-        .invoice-details-table th, .invoice-details-table td {
-            text-align: left;
-            padding: 0.75rem;
-            border-bottom: 1px solid #e2e8f0;
-        }
-        .invoice-details-table th {
-            font-weight: 600;
-            color: #475569;
-        }
-        .total-row {
-            font-weight: bold;
-            font-size: 1.1em;
-            color: #1e293b;
-        }
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-        .form-label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 500;
-            color: #334155;
-        }
-        .form-control {
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid #cbd5e1;
-            border-radius: 0.375rem;
-            font-size: 1rem;
-        }
-        .btn-pay {
-            width: 100%;
-            padding: 1rem;
-            background-color: #2563eb;
-            color: white;
-            border: none;
-            border-radius: 0.5rem;
-            font-weight: 600;
-            font-size: 1.1rem;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-        .btn-pay:hover {
-            background-color: #1d4ed8;
-        }
-        .btn-cancel {
-            display: block;
-            width: 100%;
-            text-align: center;
-            margin-top: 1rem;
-            color: #64748b;
-            text-decoration: none;
-        }
-        .btn-cancel:hover {
-            color: #334155;
-        }
-    </style>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+<style>
+    .hidden {
+        display: none !important;
+    }
+</style>
+<style>
+    .payment-container {
+        max-width: 800px;
+        margin: 2rem auto;
+        padding: 2rem;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .invoice-summary {
+        background: #f8fafc;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        border: 1px solid #e2e8f0;
+    }
+
+    .invoice-details-table {
+        width: 100%;
+        margin-top: 1rem;
+        border-collapse: collapse;
+    }
+
+    .invoice-details-table th,
+    .invoice-details-table td {
+        text-align: left;
+        padding: 0.75rem;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .invoice-details-table th {
+        font-weight: 600;
+        color: #475569;
+    }
+
+    .total-row {
+        font-weight: bold;
+        font-size: 1.1em;
+        color: #1e293b;
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+        color: #334155;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #cbd5e1;
+        border-radius: 0.375rem;
+        font-size: 1rem;
+    }
+
+    .btn-pay {
+        width: 100%;
+        padding: 1rem;
+        background-color: #2563eb;
+        color: white;
+        border: none;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        font-size: 1.1rem;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+    .btn-pay:hover {
+        background-color: #1d4ed8;
+    }
+
+    .btn-cancel {
+        display: block;
+        width: 100%;
+        text-align: center;
+        margin-top: 1rem;
+        color: #64748b;
+        text-decoration: none;
+    }
+
+    .btn-cancel:hover {
+        color: #334155;
+    }
+</style>
 {% endblock %}
 
 {% block content %}
 <div class="payment-container">
     <h2 class="text-2xl font-bold mb-6 text-gray-800"><i class="fa-solid fa-credit-card"></i> Registrar Pago</h2>
-    
+
     <!-- Invoice Summary -->
     <div class="invoice-summary">
         <div class="flex justify-between items-center mb-4">
@@ -113,7 +133,7 @@
                     <td>
                         {{ detalle.concepto_cobro.nombre }}
                         {% if detalle.descripcion %}
-                            <br><span class="text-xs text-gray-500">{{ detalle.descripcion }}</span>
+                        <br><span class="text-xs text-gray-500">{{ detalle.descripcion }}</span>
                         {% endif %}
                     </td>
                     <td class="text-right">${{ detalle.monto|floatformat:2 }}</td>
@@ -128,46 +148,150 @@
     </div>
 
     <!-- Payment Form -->
-    <form method="post">
+    <form method="post" id="pagoResidenteForm">
         {% csrf_token %}
-        
+
+        {{ form.monto_pagado }} {# Hidden field #}
+
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div class="form-group">
                 <label class="form-label">Método de Pago</label>
                 {{ form.metodo_pago }}
                 {% if form.metodo_pago.errors %}
-                    <p class="text-red-500 text-sm mt-1">{{ form.metodo_pago.errors.0 }}</p>
+                <p class="text-red-500 text-sm mt-1">{{ form.metodo_pago.errors.0 }}</p>
                 {% endif %}
             </div>
 
-            <div class="form-group">
-                <label class="form-label">Monto a Pagar</label>
-                {{ form.monto_pagado }}
-                <p class="text-xs text-gray-500 mt-1">Por defecto: Saldo pendiente.</p>
-                {% if form.monto_pagado.errors %}
-                    <p class="text-red-500 text-sm mt-1">{{ form.monto_pagado.errors.0 }}</p>
+            {# Moved Tarjeta Tipo here, hidden by default, toggled by JS #}
+            <div class="form-group hidden" id="card-type-group">
+                <label class="form-label">Tipo de Tarjeta</label>
+                {{ form.tarjeta_tipo }}
+                {% if form.tarjeta_tipo.errors %}
+                <p class="text-red-500 text-sm mt-1">{{ form.tarjeta_tipo.errors.0 }}</p>
                 {% endif %}
             </div>
         </div>
 
-        <div class="form-group">
-            <label class="form-label">Referencia / Nro. Transacción</label>
-            {{ form.referencia }}
-             <p class="text-xs text-gray-500 mt-1">Ingresa el número de operación bancaria para facilitar la conciliación.</p>
-            {% if form.referencia.errors %}
-                <p class="text-red-500 text-sm mt-1">{{ form.referencia.errors.0 }}</p>
-            {% endif %}
+        {# Dynamic Fields Container #}
+        <div id="dynamic-fields" class="p-4 bg-gray-50 rounded-xl border border-gray-100 mb-4 hidden">
+            {# EFECTIVO #}
+            <!-- No specific fields -->
+
+            {# TARJETA #}
+            <div class="payment-group hidden" data-type="TARJETA">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="form-group">
+                        <label class="form-label">Número de Tarjeta</label>
+                        {{ form.numero_tarjeta }}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Titular de la Tarjeta</label>
+                        {{ form.tarjeta_titular }}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Fecha Expiración (MM/YY)</label>
+                        {{ form.fecha_expiracion }}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">CVV</label>
+                        {{ form.codigo_cvv }}
+                    </div>
+                </div>
+            </div>
+
+            {# TRANSFERENCIA / DEPOSITO #}
+            <div class="payment-group hidden" data-type="TRANSFERENCIA DEPOSITO_BANCARIO">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="form-group">
+                        <label class="form-label">Banco de Origen</label>
+                        {{ form.banco_origen }}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Número de Operación / Ref.</label>
+                        {{ form.numero_operacion }}
+                        <p class="text-xs text-gray-500 mt-1">Importante para verificar su pago.</p>
+                    </div>
+                </div>
+            </div>
+
+            {# BILLETERA DIGITAL #}
+            <div class="payment-group hidden" data-type="BILLETERA_DIGITAL">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="form-group">
+                        <label class="form-label">Número Celular (Yape/Plin)</label>
+                        {{ form.billetera_numero_celular }}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">ID de Transacción</label>
+                        {{ form.billetera_numero_transaccion }}
+                    </div>
+                    <div class="form-group col-span-2">
+                        <label class="form-label">Comprobante (Imagen)</label>
+                        {{ form.comprobante_imagen }}
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <div class="form-group">
-            <label class="form-label">Observaciones (Opcional)</label>
-            {{ form.observaciones }}
-        </div>
+
 
         <button type="submit" class="btn-pay">
             <i class="fa-solid fa-check-circle mr-2"></i> Confirmar Pago
         </button>
     </form>
+
+    {{ metodos_pago_tipos|json_script:"metodos-pago-data" }}
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const metodoPagoSelect = document.getElementById('id_metodo_pago');
+            const metodosDataInfo = JSON.parse(document.getElementById('metodos-pago-data').textContent);
+            const dynamicContainer = document.getElementById('dynamic-fields');
+            const paymentGroups = document.querySelectorAll('.payment-group');
+
+            function updateFields() {
+                const selectedId = metodoPagoSelect.value;
+                if (!selectedId) {
+                    dynamicContainer.classList.add('hidden');
+                    return;
+                }
+
+                const tipo = metodosDataInfo[selectedId];
+                let hasVisibleFields = false;
+
+                paymentGroups.forEach(group => {
+                    const types = group.dataset.type.split(' ');
+                    if (types.includes(tipo)) {
+                        group.classList.remove('hidden');
+                        hasVisibleFields = true;
+                    } else {
+                        group.classList.add('hidden');
+                    }
+                });
+
+                if (hasVisibleFields) {
+                    dynamicContainer.classList.remove('hidden');
+                } else {
+                    dynamicContainer.classList.add('hidden');
+                }
+
+                // Toggle logic for the moved Card Type field (Top Grid)
+                const cardTypeGroup = document.getElementById('card-type-group');
+                if (cardTypeGroup) {
+                    if (tipo === 'TARJETA') {
+                        cardTypeGroup.classList.remove('hidden');
+                    } else {
+                        cardTypeGroup.classList.add('hidden');
+                    }
+                }
+            }
+
+            if (metodoPagoSelect) {
+                metodoPagoSelect.addEventListener('change', updateFields);
+                updateFields(); // Trigger on load
+            }
+        });
+    </script>
 
     <a href="{% url 'mis_facturas' %}" class="btn-cancel">Cancelar y Volver</a>
 </div>

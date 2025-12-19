@@ -14,7 +14,7 @@ from complejos.models import Complejo
 from complejos.models import Complejo, PropiedadPersona, Reserva
 from django.http import JsonResponse
 from django.template.loader import render_to_string
-from finanzas.models import Factura, ContratoFinanciero, Recaudo
+from finanzas.models import Factura, ContratoFinanciero, Recaudo, ConfiguracionFinanciera
 
 from django.db.models import Count, Sum
 from visitas.models import Visita
@@ -406,4 +406,61 @@ class ContratoResidenteView(LoginRequiredMixin, UserPassesTestMixin, TemplateVie
         contrato_activo = PropiedadPersona.objects.filter(persona=user, estado='activo').first()
         
         context['contrato_activo'] = contrato_activo
+        
+        # Extended Logic for Financial Details (mirrors detalle_contrato)
+        contrato_financiero = None
+        plan_efectivo = None
+        es_plan_default = False
+        config_efectiva = None
+        es_config_default = False
+
+        if contrato_activo:
+            try:
+                contrato_financiero = contrato_activo.contrato_financiero
+            except Exception:
+                contrato_financiero = None
+
+            if contrato_financiero:
+                 # Plan Efectivo
+                 if contrato_financiero.plan:
+                     plan_efectivo = contrato_financiero.plan
+                     es_plan_default = False
+                 else:
+                     config_global = ConfiguracionFinanciera.objects.filter(
+                         complejo=contrato_activo.propiedad.complejo, 
+                         propiedad__isnull=True
+                     ).first()
+                     if config_global and config_global.plan_mantenimiento_default:
+                         plan_efectivo = config_global.plan_mantenimiento_default
+                         es_plan_default = True
+
+                 # Configuración Efectiva
+                 config_personal = ConfiguracionFinanciera.objects.filter(propiedad=contrato_activo.propiedad).first()
+                 if config_personal:
+                     config_efectiva = config_personal
+                     es_config_default = False
+                 else:
+                     config_global = ConfiguracionFinanciera.objects.filter(
+                         complejo=contrato_activo.propiedad.complejo, 
+                         propiedad__isnull=True
+                     ).first()
+                     if config_global:
+                         config_efectiva = config_global
+                         es_config_default = True
+        
+        # Prepare robust style string for template to avoid IDE parsing errors
+        progreso_val = 0
+        if contrato_financiero and contrato_financiero.porcentaje_progreso_cuotas:
+            progreso_val = int(contrato_financiero.porcentaje_progreso_cuotas)
+        
+        context.update({
+            'contrato': contrato_activo, # Alias for template compatibility
+            'contrato_financiero': contrato_financiero,
+            'plan_efectivo': plan_efectivo,
+            'es_plan_default': es_plan_default,
+            'config_efectiva': config_efectiva,
+            'es_config_default': es_config_default,
+            'progreso_val': progreso_val,
+        })
+        
         return context

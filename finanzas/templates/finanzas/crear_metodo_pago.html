@@ -5,31 +5,33 @@
 {% block global_styles %}{% endblock %}
 
 {% block extra_css %}
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#3b82f6',
-                    }
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+    tailwind.config = {
+        theme: {
+            extend: {
+                colors: {
+                    primary: '#3b82f6',
                 }
             }
         }
-    </script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Inter', sans-serif; }
-    </style>
+    }
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+    body {
+        font-family: 'Inter', sans-serif;
+    }
+</style>
 {% endblock %}
 
 {% block content %}
 <div class="h-screen bg-gray-50 flex font-sans overflow-hidden">
-    
+
     {% if request.user.rol == 'GERENTE' %}
-        {% include 'includes/manager_sidebar.html' %}
+    {% include 'includes/manager_sidebar.html' %}
     {% else %}
-        {% include 'includes/admin_sidebar.html' %}
+    {% include 'includes/admin_sidebar.html' %}
     {% endif %}
 
     <div class="flex-1 lg:ml-64 flex flex-col h-full overflow-y-auto">
@@ -38,9 +40,10 @@
                 <!-- Header -->
                 <div class="mb-8 flex items-center justify-between">
                     <div class="flex items-center gap-4">
-                        <a href="{% url 'lista_metodos_pago' %}" 
-                           class="w-10 h-10 rounded-xl bg-white border border-gray-200 flex items-center justify-center text-gray-500 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 transition-all shadow-sm group">
-                            <i class="fa-solid fa-arrow-left text-lg transform group-hover:-translate-x-1 transition-transform"></i>
+                        <a href="{% url 'lista_metodos_pago' %}"
+                            class="w-10 h-10 rounded-xl bg-white border border-gray-200 flex items-center justify-center text-gray-500 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 transition-all shadow-sm group">
+                            <i
+                                class="fa-solid fa-arrow-left text-lg transform group-hover:-translate-x-1 transition-transform"></i>
                         </a>
                         <div>
                             <h1 class="text-3xl font-bold text-gray-900">Nuevo Método de Pago</h1>
@@ -51,7 +54,7 @@
 
                 <!-- Main Card -->
                 <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
-                    
+
                     <form method="post" class="space-y-6">
                         {% csrf_token %}
 
@@ -64,26 +67,29 @@
 
                         {% for field in form %}
                         <div>
-                            <label for="{{ field.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
+                            <label for="{{ field.id_for_label }}"
+                                class="block text-sm font-semibold text-gray-700 mb-2">
                                 {{ field.label }}
                             </label>
                             <div class="relative">
                                 {{ field }}
                             </div>
                             {% if field.help_text %}
-                                <p class="mt-1 text-xs text-gray-500">{{ field.help_text }}</p>
+                            <p class="mt-1 text-xs text-gray-500">{{ field.help_text }}</p>
                             {% endif %}
                             {% if field.errors %}
-                                <p class="mt-1 text-sm text-red-600">{{ field.errors.0 }}</p>
+                            <p class="mt-1 text-sm text-red-600">{{ field.errors.0 }}</p>
                             {% endif %}
                         </div>
                         {% endfor %}
 
                         <div class="pt-6 flex gap-3">
-                            <a href="{% url 'lista_metodos_pago' %}" class="flex-1 px-4 py-3 bg-gray-100 text-gray-700 font-medium rounded-xl hover:bg-gray-200 text-center transition-colors">
+                            <a href="{% url 'lista_metodos_pago' %}"
+                                class="flex-1 px-4 py-3 bg-gray-100 text-gray-700 font-medium rounded-xl hover:bg-gray-200 text-center transition-colors">
                                 Cancelar
                             </a>
-                            <button type="submit" class="flex-1 px-4 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all transform hover:-translate-y-0.5">
+                            <button type="submit"
+                                class="flex-1 px-4 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all transform hover:-translate-y-0.5">
                                 Guardar Método
                             </button>
                         </div>
@@ -102,38 +108,58 @@
             input.classList.add('w-full', 'px-4', 'py-3', 'bg-gray-50', 'border', 'border-gray-200', 'rounded-xl', 'focus:bg-white', 'focus:border-blue-500', 'focus:ring-2', 'focus:ring-blue-100', 'outline-none', 'transition-all');
         });
 
-        // Style Checkboxes (if any)
+        // Style Checkboxes
         const checkboxes = document.querySelectorAll('input[type="checkbox"]');
         checkboxes.forEach(checkbox => {
             checkbox.classList.add('w-5', 'h-5', 'text-blue-600', 'rounded', 'border-gray-300', 'focus:ring-blue-500');
-            // Checkbox wrapper alignment
-            // checkbox.parentElement.classList.add('flex', 'items-center', 'gap-2');
+            // Helper to align checkbox with label if needed (usually handled by parent div)
+            const parent = checkbox.closest('div');
+            if (parent) {
+                parent.classList.add('flex', 'items-center', 'gap-3');
+                // Fix label order/style for checkbox
+                const label = parent.querySelector('label');
+                if (label) {
+                    label.classList.remove('mb-2', 'block');
+                    // Move checkbox before label if not already
+                    if (checkbox.nextElementSibling !== label) {
+                        parent.insertBefore(checkbox, label);
+                    }
+                }
+            }
         });
 
-        // --- Conditional Logic for Bank Account ---
+        // --- Conditional Logic for Bank Account Details ---
         const tipoSelect = document.getElementById('id_tipo');
-        const cuentaField = document.getElementById('id_cuenta_banco')?.closest('div');
 
-        function toggleCuentaField() {
-            if (!tipoSelect || !cuentaField) return;
-            
+        // Fields to toggle
+        const bankFields = [
+            document.getElementById('id_banco'),
+            document.getElementById('id_numero_cuenta'),
+            document.getElementById('id_tipo_cuenta')
+        ];
+
+        function toggleBankFields() {
+            if (!tipoSelect) return;
+
             const selectedValue = tipoSelect.value;
-            // Hide if 'EFECTIVO' (ensure value matches model choice key EXACTLY)
-            if (selectedValue === 'EFECTIVO') {
-                cuentaField.style.display = 'none';
-                // Optional: Clear value when hidden
-                // const input = document.getElementById('id_cuenta_banco');
-                // if(input) input.value = ''; 
-            } else {
-                cuentaField.style.display = 'block';
-            }
+            // Show only for TRANSFERENCIA or DEPOSITO_BANCARIO
+            const showBankDetails = ['TRANSFERENCIA', 'DEPOSITO_BANCARIO'].includes(selectedValue);
+
+            bankFields.forEach(field => {
+                if (field) {
+                    const container = field.closest('div').parentElement; // div containing label + input div
+                    if (container) {
+                        container.style.display = showBankDetails ? 'block' : 'none';
+                    }
+                }
+            });
         }
 
-        if (tipoSelect && cuentaField) {
+        if (tipoSelect) {
             // Run on load
-            toggleCuentaField();
+            toggleBankFields();
             // Run on change
-            tipoSelect.addEventListener('change', toggleCuentaField);
+            tipoSelect.addEventListener('change', toggleBankFields);
         }
     });
 </script>

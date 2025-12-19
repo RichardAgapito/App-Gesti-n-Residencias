@@ -475,6 +475,8 @@ class RecaudoCreateView(LoginRequiredMixin, GerenteRequiredMixin, CreateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['factura'] = get_object_or_404(Factura, pk=self.kwargs['factura_pk'])
+        # Pass payment method types for dynamic JS toggling
+        context['metodos_pago_tipos'] = {m.id: m.tipo for m in MetodoPago.objects.all()}
         return context
 
     def form_valid(self, form):
@@ -603,6 +605,8 @@ class RegistrarPagoResidenteView(LoginRequiredMixin, ResidenteRequiredMixin, Cre
         context = super().get_context_data(**kwargs)
         factura = get_object_or_404(Factura, pk=self.kwargs['pk'], propiedad__residentes=self.request.user)
         context['factura'] = factura
+        # Pass payment method types for dynamic JS toggling
+        context['metodos_pago_tipos'] = {m.id: m.tipo for m in MetodoPago.objects.all()}
         return context
 
     def get_initial(self):

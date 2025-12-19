@@ -65,10 +65,9 @@ PlanConceptoCobroFormSet = inlineformset_factory(
 class ConceptoCobroForm(forms.ModelForm):
     class Meta:
         model = ConceptoCobro
-        fields = ['nombre', 'descripcion', 'tipo', 'obligatorio', 'complejo'] # Added complejo
+        fields = ['nombre', 'tipo', 'obligatorio', 'complejo'] # Added complejo
         widgets = {
             'nombre': forms.TextInput(attrs={'class': 'form-control'}),
-            'descripcion': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
             'tipo': forms.Select(attrs={'class': 'form-control'}),
             'obligatorio': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'complejo': forms.Select(attrs={'class': 'form-control'}), # Added complejo widget
@@ -99,9 +98,12 @@ class MetodoPagoForm(forms.ModelForm):
         widgets = {
             'nombre': forms.TextInput(attrs={'class': 'form-control'}),
             'tipo': forms.Select(attrs={'class': 'form-control'}),
-            'cuenta_banco': forms.TextInput(attrs={'class': 'form-control'}),
             'activo': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
-            'comision': forms.NumberInput(attrs={'class': 'form-control'}),
+            # Nuevos campos
+            'requiere_aprobacion': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'banco': forms.TextInput(attrs={'class': 'form-control'}),
+            'numero_cuenta': forms.TextInput(attrs={'class': 'form-control'}),
+            'tipo_cuenta': forms.Select(attrs={'class': 'form-control'}),
         }
 
 class FacturaForm(forms.ModelForm):
@@ -160,22 +162,39 @@ DetalleFacturaFormSet = inlineformset_factory(
 class RecaudoForm(forms.ModelForm):
     class Meta:
         model = Recaudo
-        fields = ['fecha_pago', 'monto_pagado', 'metodo_pago', 'referencia', 'observaciones']
+        fields = ['fecha_pago', 'monto_pagado', 'metodo_pago', 'observaciones', 
+                  'numero_tarjeta', 'tarjeta_titular', 'numero_operacion', 
+                  'billetera_numero_transaccion', 'recibido_por'] # Added specific fields explicitly if needed, or exclude them if handled in clean.
+                  # It's better to include all possible fields or use __all__ and exclude unrelated.
+                  # Let's list common ones or just remove 'referencia'.
+        # Actually, since Recaudo now has many specific fields, we should probably include them or use fields='__all__' excluding automatic ones.
+        # But to fix the immediate error:
+        fields = ['fecha_pago', 'monto_pagado', 'metodo_pago',
+                  'numero_operacion', 'billetera_numero_transaccion', 
+                  'numero_tarjeta', 'tarjeta_titular', 'tarjeta_tipo',
+                  'fecha_expiracion', 'codigo_cvv',
+                  'recibido_por', 'billetera_numero_celular', 'comprobante_imagen',
+                  'banco_origen']
+
         widgets = {
             'fecha_pago': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
             'monto_pagado': forms.NumberInput(attrs={'class': 'form-control'}),
             'metodo_pago': forms.Select(attrs={'class': 'form-control'}),
-            'referencia': forms.TextInput(attrs={'class': 'form-control'}),
-            'observaciones': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'numero_operacion': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Núm. Operación / Ref.'}),
+            'billetera_numero_transaccion': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'ID Transacción'}),
+            'numero_tarjeta': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Número de Tarjeta'}),
+            'fecha_expiracion': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'MM/YY', 'maxlength': '5'}),
+            'codigo_cvv': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'CVV', 'maxlength': '3', 'type': 'password'}),
         }
 
     def clean(self):
         cleaned_data = super().clean()
         monto_pagado = cleaned_data.get('monto_pagado')
         fecha_pago = cleaned_data.get('fecha_pago')
-        factura = self.instance.factura if self.instance else self.initial.get('factura') # Get factura from instance or initial data
+        factura = self.instance.factura if self.instance else self.initial.get('factura')
         metodo_pago = cleaned_data.get('metodo_pago')
-        referencia = cleaned_data.get('referencia')
+        
+        # Removed 'referencia'
 
         if monto_pagado is not None and monto_pagado <= 0:
             self.add_error('monto_pagado', 'El monto pagado debe ser mayor que cero.')
@@ -187,16 +206,25 @@ class RecaudoForm(forms.ModelForm):
             if factura.estado not in ['PENDIENTE', 'VENCIDA']:
                 self.add_error(None, f'No se puede registrar un pago para una factura en estado {factura.get_estado_display()}.')
             
-            # Check for duplicate payments for the same invoice, amount, method, and reference within a reasonable timeframe (e.g., same day)
-            # This is a basic check. A more robust solution might involve a unique_together constraint on the model
-            # or a more complex deduplication logic.
-            if Recaudo.objects.filter(
+            # Update duplicate check avoiding 'referencia'
+            # Check for duplicate payments for the same invoice, amount, method within a reasonable timeframe
+            query = Recaudo.objects.filter(
                 factura=factura,
                 monto_pagado=monto_pagado,
                 metodo_pago=metodo_pago,
-                referencia=referencia,
-                fecha_pago=fecha_pago # Strict check, might need to be more flexible
-            ).exclude(pk=self.instance.pk if self.instance else None).exists():
+                fecha_pago=fecha_pago
+            ).exclude(pk=self.instance.pk if self.instance else None)
+            
+            # If we want to check for specific identifier (reference equivalent)
+            numero_operacion = cleaned_data.get('numero_operacion')
+            billetera_transaccion = cleaned_data.get('billetera_numero_transaccion')
+            
+            if numero_operacion:
+                query = query.filter(numero_operacion=numero_operacion)
+            if billetera_transaccion:
+                query = query.filter(billetera_numero_transaccion=billetera_transaccion)
+
+            if query.exists():
                 self.add_error(None, 'Ya existe un pago con los mismos detalles para esta factura.')
 
         return cleaned_data
@@ -239,17 +267,23 @@ class ConfiguracionFinancieraForm(forms.ModelForm):
 
 class ResidenteRecaudoForm(RecaudoForm):
     class Meta(RecaudoForm.Meta):
-        fields = ['metodo_pago', 'referencia', 'monto_pagado', 'observaciones'] # Exclude fecha_pago
-        
+        fields = ['metodo_pago', 'monto_pagado',
+                  'numero_operacion', 'billetera_numero_transaccion',
+                  'numero_tarjeta', 'tarjeta_titular', 'tarjeta_tipo',
+                  'fecha_expiracion', 'codigo_cvv',
+                  'billetera_numero_celular', 'comprobante_imagen',
+                  'banco_origen']
+                  # Include all possible input fields the resident might need.
+                  # Logic in View/Template will handle hiding/showing based on method.
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Filter active payment methods only
         self.fields['metodo_pago'].queryset = MetodoPago.objects.filter(activo=True)
         self.fields['monto_pagado'].label = "Monto a Pagar"
         
-        # Make monto_pagado read-only if you want to force full payment, 
-        # or leave editable for partial payments. User request said "registre los datos", 
-        # usually implies entering amount. We'll leave it editable but maybe pre-filled in View.
+        # Make monto_pagado hidden as per user request (assumed full payment/handled in view)
+        self.fields['monto_pagado'].widget = forms.HiddenInput()
         
     def save(self, commit=True):
         recaudo = super().save(commit=False)

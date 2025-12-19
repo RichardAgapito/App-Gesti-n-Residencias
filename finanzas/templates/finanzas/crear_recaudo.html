@@ -2,7 +2,16 @@
 {% load static %}
 
 {% block extra_css %}
-    <link rel="stylesheet" href="{% static 'css/crear_complejo.css' %}"> {# Reusing existing CSS for now #}
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'css/crear_complejo.css' %}">
+<style>
+    .hidden {
+        display: none !important;
+    }
+
+    /* Ensure hidden works even without Tailwind if something fails */
+</style>
 {% endblock %}
 
 {% block content %}
@@ -11,22 +20,155 @@
     <p><strong>Monto Total Factura:</strong> ${{ factura.monto_total }}</p>
     <p><strong>Estado Actual:</strong> {{ factura.get_estado_display }}</p>
     <hr>
-    <form method="post">
+    <form method="post" id="recaudoForm">
         {% csrf_token %}
-        {% for field in form %}
-            <div class="form-group">
-                {{ field.label_tag }}
-                {{ field }}
-                {% if field.help_text %}
-                    <small class="form-text text-muted">{{ field.help_text }}</small>
-                {% endif %}
-                {% for error in field.errors %}
-                    <div class="alert alert-danger">{{ error }}</div>
-                {% endfor %}
+
+        {# Common Fields #}
+        <div class="form-group">
+            {{ form.metodo_pago.label_tag }}
+            {{ form.metodo_pago }}
+            {{ form.metodo_pago.errors }}
+        </div>
+
+        <div class="form-group">
+            {{ form.fecha_pago.label_tag }}
+            {{ form.fecha_pago }}
+            {{ form.fecha_pago.errors }}
+        </div>
+
+        <div class="form-group">
+            {{ form.monto_pagado.label_tag }}
+            {{ form.monto_pagado }}
+            {{ form.monto_pagado.errors }}
+        </div>
+
+        {# Dynamic Fields Container #}
+        <div id="dynamic-fields" class="p-4 bg-gray-50 rounded-xl border border-gray-100 mb-4 hidden">
+
+            {# EFECTIVO #}
+            <div class="payment-group hidden" data-type="EFECTIVO">
+                <div class="form-group">
+                    {{ form.recibido_por.label_tag }}
+                    {{ form.recibido_por }}
+                    {{ form.recibido_por.errors }}
+                </div>
             </div>
-        {% endfor %}
+
+            {# TARJETA #}
+            <div class="payment-group hidden" data-type="TARJETA">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="form-group">
+                        {{ form.numero_tarjeta.label_tag }}
+                        {{ form.numero_tarjeta }}
+                        {{ form.numero_tarjeta.errors }}
+                    </div>
+                    <div class="form-group">
+                        {{ form.tarjeta_titular.label_tag }}
+                        {{ form.tarjeta_titular }}
+                        {{ form.tarjeta_titular.errors }}
+                    </div>
+                    <div class="form-group">
+                        {{ form.tarjeta_tipo.label_tag }}
+                        {{ form.tarjeta_tipo }}
+                        {{ form.tarjeta_tipo.errors }}
+                    </div>
+                    <div class="form-group">
+                        {{ form.fecha_expiracion.label_tag }}
+                        {{ form.fecha_expiracion }}
+                        {{ form.fecha_expiracion.errors }}
+                    </div>
+                    <div class="form-group">
+                        {{ form.codigo_cvv.label_tag }}
+                        {{ form.codigo_cvv }}
+                        {{ form.codigo_cvv.errors }}
+                    </div>
+                </div>
+            </div>
+
+            {# TRANSFERENCIA / DEPOSITO #}
+            <div class="payment-group hidden" data-type="TRANSFERENCIA DEPOSITO_BANCARIO">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="form-group">
+                        {{ form.banco_origen.label_tag }}
+                        {{ form.banco_origen }}
+                        {{ form.banco_origen.errors }}
+                    </div>
+                    <div class="form-group">
+                        {{ form.numero_operacion.label_tag }}
+                        {{ form.numero_operacion }}
+                        {{ form.numero_operacion.errors }}
+                    </div>
+                </div>
+            </div>
+
+            {# BILLETERA DIGITAL #}
+            <div class="payment-group hidden" data-type="BILLETERA_DIGITAL">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="form-group">
+                        {{ form.billetera_numero_celular.label_tag }}
+                        {{ form.billetera_numero_celular }}
+                        {{ form.billetera_numero_celular.errors }}
+                    </div>
+                    <div class="form-group">
+                        {{ form.billetera_numero_transaccion.label_tag }}
+                        {{ form.billetera_numero_transaccion }}
+                        {{ form.billetera_numero_transaccion.errors }}
+                    </div>
+                    <div class="form-group col-span-2">
+                        {{ form.comprobante_imagen.label_tag }}
+                        {{ form.comprobante_imagen }}
+                        {{ form.comprobante_imagen.errors }}
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
         <button type="submit" class="btn-submit">Registrar Pago</button>
     </form>
     <a href="{% url 'lista_facturas' %}" class="back-link">Cancelar y Volver a la Lista de Facturas</a>
 </div>
+
+{{ metodos_pago_tipos|json_script:"metodos-pago-data" }}
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const metodoPagoSelect = document.getElementById('id_metodo_pago');
+        const metodosDataInfo = JSON.parse(document.getElementById('metodos-pago-data').textContent);
+        const dynamicContainer = document.getElementById('dynamic-fields');
+        const paymentGroups = document.querySelectorAll('.payment-group');
+
+        function updateFields() {
+            const selectedId = metodoPagoSelect.value;
+            if (!selectedId) {
+                dynamicContainer.classList.add('hidden');
+                return;
+            }
+
+            const tipo = metodosDataInfo[selectedId];
+            let hasVisibleFields = false;
+
+            paymentGroups.forEach(group => {
+                const types = group.dataset.type.split(' ');
+                if (types.includes(tipo)) {
+                    group.classList.remove('hidden');
+                    hasVisibleFields = true;
+                } else {
+                    group.classList.add('hidden');
+                }
+            });
+
+            if (hasVisibleFields) {
+                dynamicContainer.classList.remove('hidden');
+            } else {
+                dynamicContainer.classList.add('hidden');
+            }
+        }
+
+        if (metodoPagoSelect) {
+            metodoPagoSelect.addEventListener('change', updateFields);
+            updateFields(); // Trigger on load
+        }
+    });
+</script>
 {% endblock %}
