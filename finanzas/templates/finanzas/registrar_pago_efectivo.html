@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="h-screen bg-gray-50 flex font-sans overflow-hidden">
+
+    <!-- Sidebar -->
+    {% include 'includes/manager_sidebar.html' %}
+
+    <!-- Main Content -->
+    <div class="flex-1 lg:ml-64 flex flex-col h-full overflow-y-auto">
+        <main class="flex-1 p-8">
+            <div class="max-w-3xl mx-auto">
+
+                <!-- Header -->
+                <div class="mb-8 flex items-center justify-between">
+                    <div class="flex items-center gap-4">
+                        <a href="{% url 'reporte_cobranza' %}"
+                            class="w-10 h-10 rounded-xl bg-white border border-gray-200 flex items-center justify-center text-gray-500 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 transition-all shadow-sm group">
+                            <i
+                                class="fa-solid fa-arrow-left text-lg transform group-hover:-translate-x-1 transition-transform"></i>
+                        </a>
+                        <div>
+                            <h1 class="text-3xl font-bold text-gray-900">Registrar Pago en Efectivo</h1>
+                            <p class="text-gray-500 mt-1">Recepción directa de dinero por Gerencia</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Card -->
+                <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+                    <div class="p-8">
+                        <div class="mb-6 p-4 bg-green-50 rounded-xl border border-green-100 flex items-start gap-3">
+                            <i class="fa-solid fa-money-bill-wave text-green-600 text-xl mt-1"></i>
+                            <div>
+                                <h3 class="text-sm font-bold text-green-800">Pago Directo</h3>
+                                <p class="text-xs text-green-700 mt-1">Este pago se registrará automáticamente como
+                                    <strong>APROBADO</strong> y el método de pago será <strong>Efectivo</strong>.
+                                </p>
+                            </div>
+                        </div>
+
+                        <form method="POST" class="space-y-6">
+                            {% csrf_token %}
+
+                            {% if form.non_field_errors %}
+                            <div class="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                                {{ form.non_field_errors }}
+                            </div>
+                            {% endif %}
+
+                            <!-- Factura Select -->
+                            <div>
+                                <label for="{{ form.factura.id_for_label }}"
+                                    class="block text-sm font-semibold text-gray-700 mb-2">Factura Pendiente</label>
+                                {{ form.factura }}
+                                {% if form.factura.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ form.factura.errors.0 }}</p>
+                                {% endif %}
+                                <p class="mt-1 text-xs text-gray-500">Seleccione la factura que se está pagando.</p>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <!-- Monto -->
+                                <div>
+                                    <label for="{{ form.monto_pagado.id_for_label }}"
+                                        class="block text-sm font-semibold text-gray-700 mb-2">Monto Recibido</label>
+                                    <div class="relative">
+                                        <div
+                                            class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <span class="text-gray-500 sm:text-sm">$</span>
+                                        </div>
+                                        {{ form.monto_pagado }}
+                                    </div>
+                                    {% if form.monto_pagado.errors %}
+                                    <p class="mt-1 text-sm text-red-600">{{ form.monto_pagado.errors.0 }}</p>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Recibido Por -->
+                                <div>
+                                    <label for="{{ form.recibido_por.id_for_label }}"
+                                        class="block text-sm font-semibold text-gray-700 mb-2">Recibido Por
+                                        (Responsable)</label>
+                                    {{ form.recibido_por }}
+                                    {% if form.recibido_por.errors %}
+                                    <p class="mt-1 text-sm text-red-600">{{ form.recibido_por.errors.0 }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+
+
+                            <div class="pt-6 border-t border-gray-100 flex items-center justify-end gap-3">
+                                <a href="{% url 'reporte_cobranza' %}"
+                                    class="px-6 py-2.5 rounded-xl border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition-colors">
+                                    Cancelar
+                                </a>
+                                <button type="submit"
+                                    class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold shadow-lg hover:shadow-xl hover:from-green-700 hover:to-emerald-700 transition-all transform hover:-translate-y-0.5">
+                                    <i class="fa-regular fa-save mr-2"></i> Registrar Pago
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<script>
+    // Simple script to update max amount based on selected invoice if we want to get fancy later
+    // For now standard form behavior
+</script>
+{% endblock %}

@@ -301,3 +301,54 @@ class ResidenteRecaudoForm(RecaudoForm):
         if commit:
             recaudo.save()
         return recaudo
+
+class PagoEfectivoForm(forms.ModelForm):
+    # Field to select the invoice to pay
+    factura = forms.ModelChoiceField(
+        queryset=Factura.objects.none(), 
+        label="Factura a Pagar",
+        widget=forms.Select(attrs={'class': 'form-control select2'}) # Assuming select2 or similar is available/styled
+    )
+
+    class Meta:
+        model = Recaudo
+        fields = ['monto_pagado', 'recibido_por']
+        widgets = {
+             'monto_pagado': forms.NumberInput(attrs={'class': 'form-control pl-8', 'placeholder': '0.00'}),
+             'recibido_por': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nombre quien recibe'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        
+        if user and user.rol == 'GERENTE' and user.complejo_asignado:
+             # Filter invoices: From this complex, and NOT COMPLETED (Pendiente or Vencida)
+             self.fields['factura'].queryset = Factura.objects.filter(
+                 propiedad__complejo=user.complejo_asignado
+             ).exclude(
+                 estado='PAGADA' # Exclude paid ones
+             ).exclude(
+                 estado='ANULADA'
+             ).exclude(
+                 estado='CANCELADA'
+             ).order_by('propiedad__numero_identificador', '-fecha_emision')
+             
+             # Improve label representation
+             self.fields['factura'].label_from_instance = lambda obj: f"{obj.propiedad} - {obj.numero_factura} (Saldo: ${obj.saldo_pendiente})"
+        
+        # Pre-fill 'recibido_por' with current user name as default
+        if user:
+             self.fields['recibido_por'].initial = str(user)
+
+
+    def clean(self):
+        cleaned_data = super().clean()
+        factura = cleaned_data.get('factura')
+        monto = cleaned_data.get('monto_pagado')
+        
+        if factura and monto:
+             if monto > factura.saldo_pendiente:
+                  self.add_error('monto_pagado', f"El monto excede el saldo pendiente (${factura.saldo_pendiente}).")
+                  
+        return cleaned_data

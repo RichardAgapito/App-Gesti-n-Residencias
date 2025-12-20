@@ -5,7 +5,7 @@ from .models import PlanCuota, ConceptoCobro, MetodoPago, Factura, Recaudo, Conf
 from .forms import (
     PlanCuotaForm, ConceptoCobroForm, MetodoPagoForm, FacturaForm, 
     DetalleFacturaFormSet, RecaudoForm, PlanConceptoCobroFormSet,
-    ConfiguracionFinancieraForm, ResidenteRecaudoForm
+    ConfiguracionFinancieraForm, ResidenteRecaudoForm, PagoEfectivoForm
 )
 from django.db import transaction, models
 from django.shortcuts import get_object_or_404, redirect, reverse
@@ -798,6 +798,57 @@ class ConfiguracionFinancieraUpdateView(LoginRequiredMixin, GerenteRequiredMixin
 
     def form_valid(self, form):
         messages.success(self.request, "Configuración financiera actualizada correctamente.")
+        return super().form_valid(form)
+
+
+class RegistrarPagoEfectivoView(LoginRequiredMixin, GerenteRequiredMixin, CreateView):
+    model = Recaudo
+    form_class = PagoEfectivoForm
+    template_name = 'finanzas/registrar_pago_efectivo.html'
+    success_url = reverse_lazy('reporte_cobranza')
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
+
+    def form_valid(self, form):
+        with transaction.atomic():
+            recaudo = form.save(commit=False)
+            
+            # 1. Assign Invoice from the form selection
+            # The field is named 'factura' in the form, but model relation is 'factura'
+            recaudo.factura = form.cleaned_data['factura']
+            
+            # 2. Get or Create 'Efectivo' Payment Method
+            try:
+                metodo_efectivo = MetodoPago.objects.get(tipo='EFECTIVO', activo=True)
+            except MetodoPago.DoesNotExist:
+                 # Fallback: Create one if it doesn't exist (Unlikely in prod but safe)
+                 # Or better, error out. But for robustness let's try to find any effective.
+                 metodo_efectivo = MetodoPago.objects.filter(tipo='EFECTIVO').first()
+                 if not metodo_efectivo:
+                      form.add_error(None, "No existe un método de pago 'Efectivo' configurado en el sistema.")
+                      return self.form_invalid(form)
+
+            recaudo.metodo_pago = metodo_efectivo
+            
+            # 3. Force Approved Status
+            recaudo.estado = Recaudo.Estado.APROBADO
+            recaudo.fecha_aprobacion = timezone.now()
+            recaudo.usuario_aprobacion = self.request.user # Manager approves implicitely
+            recaudo.usuario_registro = self.request.user
+            
+            # 4. Set Payment Date to NOW
+            recaudo.fecha_pago = timezone.localdate()
+            
+            recaudo.save()
+            
+            # 5. Update Invoice State
+            recaudo.factura._update_factura_estado()
+        
+        messages.success(self.request, f"Pago de ${recaudo.monto_pagado} registrado y aprobado en Efectivo.")
+        return redirect(self.success_url)
         # Preserve complejo_id in success URL if needed
         response = super().form_valid(form)
         if 'complejo_id' in self.request.GET:
