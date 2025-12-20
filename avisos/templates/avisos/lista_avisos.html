@@ -5,137 +5,190 @@
     {% if user.is_staff %}Avisos Enviados{% else %}Bandeja de Entrada{% endif %}
 {% endblock %}
 
-{% block bootstrap_css %}{% endblock %}
-{% block global_styles %}{% endblock %}
-
 {% block extra_css %}
-    <script src="https://cdn.tailwindcss.com"></script>
-    {% if not user.is_staff %}
-        <link rel="stylesheet" href="{% static 'css/resident_dashboard.css' %}">
-    {% endif %}
+<!-- Tailwind CSS included in base.html -->
+<style>
+    .notice-card {
+        transition: all 0.2s ease-in-out;
+    }
+    .notice-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+</style>
 {% endblock %}
 
 {% block content %}
 <div class="min-h-screen bg-gray-50 flex font-sans">
     
-    {% if user.is_staff %}
-        {% if request.user.rol == 'GERENTE' %}
-            {% include 'includes/manager_sidebar.html' %}
-        {% else %}
-            {% include 'includes/admin_sidebar.html' %}
-        {% endif %}
+    {% if request.user.rol == 'GERENTE' %}
+        {% include 'includes/manager_sidebar.html' %}
+    {% elif user.is_staff %}
+        {% include 'includes/admin_sidebar.html' %}
     {% else %}
         {% include 'includes/resident_sidebar.html' %}
     {% endif %}
 
-    <main class="flex-1 lg:ml-64 h-screen overflow-y-auto">
-        <!-- We use a wrapper div to handle the padding/layout expected by the inner content -->
-        <div class="p-8">
-            <!-- Header -->
-            <div class="mb-6 flex items-center justify-between">
+    <main class="flex-1 lg:ml-64 p-8">
+        
+        <!-- Header -->
+        <header class="mb-8">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
-                    <h1 class="text-3xl font-bold text-gray-900">
-                        <i class="fa-solid fa-bullhorn text-blue-600"></i> 
-                        {% if user.is_staff %}
+                    <h1 class="text-3xl font-bold text-gray-900 tracking-tight flex items-center gap-3">
+                        <i class="fa-solid fa-bullhorn text-blue-600"></i>
+                        {% if user.is_staff or request.user.rol == 'GERENTE' %}
                             Avisos Enviados
                         {% else %}
-                            Bandeja de Entrada
+                            Avisos de la Comunidad
                         {% endif %}
                     </h1>
-                    <p class="text-gray-600 mt-1">
-                        {% if user.is_staff %}
-                            Gestiona los avisos del sistema
+                    <p class="text-gray-500 mt-2 text-lg">
+                        {% if user.is_staff or request.user.rol == 'GERENTE' %}
+                            Gestiona y envía comunicados a los residentes.
                         {% else %}
-                            Avisos de tu complejo
+                            Mantente informado de las últimas novedades.
                             {% if avisos_no_leidos > 0 %}
-                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 ml-2">
-                                    {{ avisos_no_leidos }} sin leer
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 ml-2">
+                                    {{ avisos_no_leidos }} nuevos
                                 </span>
                             {% endif %}
                         {% endif %}
                     </p>
                 </div>
-                <div class="flex gap-2">
-                    <a href="{% url 'dashboard' %}" class="flex items-center gap-2 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors">
-                        <i class="fa-solid fa-arrow-left"></i> Volver al Dashboard
-                    </a>
-                    {% if user.is_staff %}
-                        <a href="{% url 'avisos:crear_aviso' %}" class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                            <i class="fa-solid fa-plus-circle"></i> Crear Aviso
+
+                <div class="flex gap-3">
+                    {% if user.is_staff or request.user.rol == 'GERENTE' %}
+                        <a href="{% url 'avisos:crear_aviso' %}" class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-semibold rounded-xl shadow-lg shadow-blue-200 hover:bg-blue-700 hover:shadow-blue-300 transition-all transform hover:-translate-y-0.5 hover:no-underline">
+                            <i class="fa-solid fa-plus"></i>
+                            <span>Nuevo Aviso</span>
                         </a>
                     {% endif %}
                 </div>
             </div>
+        </header>
 
-            <!-- Content Container -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                {% if user.is_staff %}
-                    {# --- VISTA PARA ADMIN --- #}
-                    {% if avisos %}
+        <!-- Content -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden min-h-[500px]">
+            <!-- Header Gradient -->
+            <div class="h-1.5 bg-gradient-to-r from-blue-500 to-indigo-600"></div>
+
+            <div class="p-6">
+                {% if avisos %}
+                    {% if user.is_staff or request.user.rol == 'GERENTE' %}
+                        <!-- ADMIN VIEW: Table -->
                         <div class="overflow-x-auto">
                             <table class="w-full">
-                                <thead class="bg-gray-50 border-b border-gray-200">
+                                <thead class="bg-gray-50 border-b border-gray-100">
                                     <tr>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Título</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Complejo</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha de Envío</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                                        <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Título</th>
+                                        <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Complejo</th>
+                                        <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Tipo</th>
+                                        <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Fecha</th>
+                                        <th class="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Acciones</th>
                                     </tr>
                                 </thead>
-                                <tbody class="bg-white divide-y divide-gray-200">
+                                <tbody class="divide-y divide-gray-50">
                                     {% for aviso in avisos %}
-                                        <tr class="hover:bg-gray-50">
-                                            <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ aviso.titulo }}</td>
-                                            <td class="px-6 py-4 text-sm text-gray-600">{{ aviso.complejo.nombre }}</td>
-                                            <td class="px-6 py-4 text-sm text-gray-600">{{ aviso.get_tipo_aviso_display }}</td>
-                                            <td class="px-6 py-4 text-sm text-gray-600">{{ aviso.fecha_creacion|date:"d/m/Y H:i" }}</td>
-                                            <td class="px-6 py-4 text-sm">
-                                                <a href="{% url 'avisos:detalle_aviso' aviso.pk %}" class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700">
-                                                    Ver Detalle
-                                                </a>
-                                            </td>
-                                        </tr>
+                                    <tr class="hover:bg-blue-50/30 transition-colors group">
+                                        <td class="px-6 py-4">
+                                            <div class="text-sm font-bold text-gray-900">{{ aviso.titulo }}</div>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <div class="text-sm text-gray-600">{{ aviso.complejo.nombre }}</div>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100">
+                                                {{ aviso.get_tipo_aviso_display }}
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4 text-sm text-gray-500">
+                                            {{ aviso.fecha_creacion|date:"d M Y, H:i" }}
+                                        </td>
+                                        <td class="px-6 py-4 text-right">
+                                            <a href="{% url 'avisos:detalle_aviso' aviso.pk %}" class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors" title="Ver detalle">
+                                                <i class="fa-solid fa-eye"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
                                     {% endfor %}
                                 </tbody>
                             </table>
                         </div>
                     {% else %}
-                        <div class="text-center py-8">
-                            <i class="fa-solid fa-inbox text-gray-300 text-6xl mb-4"></i>
-                            <h4 class="text-gray-600 text-lg mb-2">No has enviado ningún aviso.</h4>
-                            <a href="{% url 'avisos:crear_aviso' %}" class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors mt-3">
-                                Crear mi primer aviso
-                            </a>
-                        </div>
-                    {% endif %}
-
-                {% else %}
-                    {# --- VISTA PARA RESIDENTE --- #}
-                    {% if avisos %}
-                        <div class="notice-list">
+                        <!-- RESIDENT VIEW: Cards -->
+                        <div class="grid grid-cols-1 gap-4">
                             {% for aviso in avisos %}
-                                <a href="{% url 'avisos:detalle_aviso' aviso.pk %}" class="notice-item {% if user not in aviso.leido_por.all %}unread{% endif %}">
-                                    <div class="notice-header">
-                                        <h5>{{ aviso.titulo }}</h5>
-                                        <span class="notice-time">{{ aviso.fecha_creacion|date:"d M Y, H:i" }}</span>
-                                    </div>
-                                    <p class="notice-content">{{ aviso.contenido|truncatewords:25 }}</p>
+                                <a href="{% url 'avisos:detalle_aviso' aviso.pk %}" class="block notice-card bg-white border border-gray-100 rounded-xl p-6 hover:border-blue-200 group relative hover:no-underline">
+                                    <!-- Unread Indicator -->
                                     {% if user not in aviso.leido_por.all %}
-                                        <span class="notice-new-badge">Nuevo</span>
+                                        <div class="absolute top-6 right-6">
+                                            <span class="flex h-3 w-3">
+                                                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                                                <span class="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span>
+                                            </span>
+                                        </div>
                                     {% endif %}
+
+                                    <div class="flex items-start gap-4">
+                                        <div class="flex-shrink-0 w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                                            <i class="fa-solid fa-envelope-open-text text-xl"></i>
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <div class="flex items-center gap-3 mb-1">
+                                                <span class="text-xs font-semibold uppercase tracking-wider text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-100">
+                                                    {{ aviso.get_tipo_aviso_display }}
+                                                </span>
+                                                <span class="text-xs text-gray-400">
+                                                    {{ aviso.fecha_creacion|date:"d M Y" }}
+                                                </span>
+                                            </div>
+                                            <h3 class="text-lg font-bold text-gray-900 mb-2 truncate pr-8 group-hover:text-blue-600 transition-colors">
+                                                {{ aviso.titulo }}
+                                            </h3>
+                                            <p class="text-gray-500 text-sm line-clamp-2">
+                                                {{ aviso.contenido|striptags }}
+                                            </p>
+                                        </div>
+                                        <div class="self-center text-gray-300 group-hover:text-blue-500 transition-colors pl-4">
+                                            <i class="fa-solid fa-chevron-right"></i>
+                                        </div>
+                                    </div>
                                 </a>
                             {% endfor %}
                         </div>
-                    {% else %}
-                        <div class="text-center py-8">
-                            <i class="fa-solid fa-inbox text-gray-300 text-6xl mb-4"></i>
-                            <h4 class="text-gray-600 text-lg mb-2">No hay avisos para mostrar.</h4>
-                            <p class="text-gray-500">No tienes avisos recibidos en este momento.</p>
-                        </div>
                     {% endif %}
+                {% else %}
+                    <!-- Empty State -->
+                    <div class="flex flex-col items-center justify-center py-20 text-center">
+                        <div class="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center mb-6">
+                            <i class="fa-solid fa-inbox text-4xl text-gray-300"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-900 mb-2">
+                            {% if user.is_staff or request.user.rol == 'GERENTE' %}No has enviado avisos{% else %}Bandeja vacía{% endif %}
+                        </h3>
+                        <p class="text-gray-500 max-w-sm mx-auto mb-8">
+                            {% if user.is_staff or request.user.rol == 'GERENTE' %}
+                                Comienza a comunicarte con la comunidad creando tu primer aviso importante.
+                            {% else %}
+                                No hay avisos nuevos en este momento. Te notificaremos cuando haya novedades.
+                            {% endif %}
+                        </p>
+                        {% if user.is_staff or request.user.rol == 'GERENTE' %}
+                            <a href="{% url 'avisos:crear_aviso' %}" class="px-6 py-2.5 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition-colors shadow-lg shadow-blue-200">
+                                Crear Aviso
+                            </a>
+                        {% endif %}
+                    </div>
                 {% endif %}
             </div>
+            
+            <!-- Footer/Pagination placeholder -->
+            {% if avisos %}
+                <div class="bg-gray-50 px-6 py-4 border-t border-gray-100">
+                    <p class="text-sm text-gray-500">Mostrando últimos {{ avisos|length }} avisos</p>
+                </div>
+            {% endif %}
         </div>
     </main>
 </div>
