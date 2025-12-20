@@ -191,7 +191,16 @@ class RecaudoForm(forms.ModelForm):
         cleaned_data = super().clean()
         monto_pagado = cleaned_data.get('monto_pagado')
         fecha_pago = cleaned_data.get('fecha_pago')
-        factura = self.instance.factura if self.instance else self.initial.get('factura')
+        
+        # Safe access to invoice
+        factura = None
+        if self.instance and self.instance.pk:
+            factura = self.instance.factura
+        elif hasattr(self, 'factura_context'):
+            factura = self.factura_context
+        else:
+            factura = self.initial.get('factura')
+
         metodo_pago = cleaned_data.get('metodo_pago')
         
         # Removed 'referencia'
@@ -277,6 +286,7 @@ class ResidenteRecaudoForm(RecaudoForm):
                   # Logic in View/Template will handle hiding/showing based on method.
 
     def __init__(self, *args, **kwargs):
+        self.factura_context = kwargs.pop('factura', None)
         super().__init__(*args, **kwargs)
         # Filter active payment methods only
         self.fields['metodo_pago'].queryset = MetodoPago.objects.filter(activo=True)

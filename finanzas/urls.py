@@ -25,7 +25,8 @@ from .views import (
     SeleccionarComplejoFinanzasView, # Added
     get_conceptos_contrato, # Added
     RegistrarPagoResidenteView, # Added
-    FacturaDetalleResidenteView # Added
+    FacturaDetalleResidenteView, # Added
+    aprobar_recaudo # Added
 )
 
 urlpatterns = [
@@ -49,6 +50,7 @@ urlpatterns = [
     path('facturas/<int:pk>/editar/', FacturaUpdateView.as_view(), name='editar_factura'),
     path('facturas/<int:factura_pk>/registrar-pago/', RecaudoCreateView.as_view(), name='registrar_pago'),
     path('reporte-cobranza/', ReporteCobranzaView.as_view(), name='reporte_cobranza'),
+    path('recaudos/<int:pk>/aprobar/', aprobar_recaudo, name='aprobar_recaudo'),
     path('facturas/generar-automatico/', GenerateInvoicesView.as_view(), name='generar_facturas_automatico'), # Added
     path('recibo/<int:pk>/', ReciboPagoView.as_view(), name='ver_recibo'), # Added
     path('ajax/get-conceptos-plan/', get_conceptos_plan, name='get_conceptos_plan'), # Added

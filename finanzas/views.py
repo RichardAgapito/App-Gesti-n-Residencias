@@ -16,6 +16,13 @@ from django.core.management import call_command
 from io import StringIO
 from complejos.models import Complejo, PropiedadPersona # Added PropiedadPersona
 from finanzas.models import ContratoFinanciero # Added ContratoFinanciero
+from django.contrib.auth.decorators import login_required, user_passes_test
+
+def es_admin_o_gerente(user):
+    return user.is_authenticated and (user.rol == 'ADMIN' or user.rol == 'GERENTE')
+
+def es_residente(user):
+    return user.is_authenticated and user.rol == 'RESIDENTE'
 
 
 class AdminRequiredMixin(UserPassesTestMixin):
@@ -502,9 +509,41 @@ class ReporteCobranzaView(LoginRequiredMixin, GerenteRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         queryset = self.get_queryset()
-        total_recaudado = queryset.aggregate(total=models.Sum('monto_pagado'))['total'] or 0
+        
+        # Calculate TOTAL collected (only approved)
+        total_recaudado = queryset.filter(estado=Recaudo.Estado.APROBADO).aggregate(total=models.Sum('monto_pagado'))['total'] or 0
         context['total_recaudado'] = total_recaudado
+
+        # Split into Pending and Recent History
+        context['recaudos_pendientes'] = queryset.filter(estado=Recaudo.Estado.PENDIENTE).order_by('fecha_pago')
+        context['recaudos_aprobados'] = queryset.filter(estado=Recaudo.Estado.APROBADO).order_by('-fecha_pago')[:50] # Limit history
+        
         return context
+
+@login_required
+@user_passes_test(es_admin_o_gerente)
+def aprobar_recaudo(request, pk):
+    recaudo = get_object_or_404(Recaudo, pk=pk)
+    
+    # Permission check for managers
+    if request.user.rol == 'GERENTE' and request.user.complejo_asignado:
+        if recaudo.factura.propiedad.complejo != request.user.complejo_asignado:
+             messages.error(request, "No tienes permiso para aprobar este pago.")
+             return redirect('reporte_cobranza')
+
+    if request.method == 'POST':
+        if recaudo.estado == Recaudo.Estado.PENDIENTE:
+            recaudo.estado = Recaudo.Estado.APROBADO
+            recaudo.save()
+            
+            # Update invoice balance/status
+            recaudo.factura._update_factura_estado()
+            
+            messages.success(request, f"Pago de {recaudo.monto_pagado} aprobado correctamente.")
+        else:
+            messages.warning(request, "El pago ya no está pendiente.")
+    
+    return redirect('reporte_cobranza')
 
 # Vistas para Residente
 class MisFacturasView(LoginRequiredMixin, ResidenteRequiredMixin, ListView):
@@ -543,7 +582,7 @@ class GenerateInvoicesView(LoginRequiredMixin, View):
         return redirect(reverse('lista_facturas'))
 
 from django.http import JsonResponse
-from django.contrib.auth.decorators import login_required
+# from django.contrib.auth.decorators import login_required (Moved to top)
 
 # Vistas para Recibo de Pago
 class ReciboPagoView(LoginRequiredMixin, GerenteRequiredMixin, DetailView):
@@ -615,6 +654,12 @@ class RegistrarPagoResidenteView(LoginRequiredMixin, ResidenteRequiredMixin, Cre
         initial['monto_pagado'] = factura.saldo_pendiente
         return initial
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        factura = get_object_or_404(Factura, pk=self.kwargs['pk'], propiedad__residentes=self.request.user)
+        kwargs['factura'] = factura
+        return kwargs
+
     def form_valid(self, form):
         factura = get_object_or_404(Factura, pk=self.kwargs['pk'], propiedad__residentes=self.request.user)
         if factura.estado == 'PAGADA':
@@ -624,8 +669,21 @@ class RegistrarPagoResidenteView(LoginRequiredMixin, ResidenteRequiredMixin, Cre
         recaudo = form.save(commit=False)
         recaudo.factura = factura
         recaudo.usuario_registro = self.request.user
+        
+        # Check if payment method requires approval
+        if recaudo.metodo_pago.requiere_aprobacion:
+            recaudo.estado = Recaudo.Estado.PENDIENTE
+            messages.warning(self.request, "Pago registrado. Está pendiente de aprobación por la administración.")
+        else:
+            recaudo.estado = Recaudo.Estado.APROBADO
+            messages.success(self.request, "Pago registrado y aprobado correctamente.")
+
         recaudo.save()
-        messages.success(self.request, "Pago registrado correctamente. Queda pendiente de validación.")
+        
+        # Update invoice status if approved
+        if recaudo.estado == Recaudo.Estado.APROBADO:
+            factura._update_factura_estado()
+
         return redirect('mis_facturas')
 
 class FacturaDetalleResidenteView(LoginRequiredMixin, ResidenteRequiredMixin, DetailView):

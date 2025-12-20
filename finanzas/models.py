@@ -85,7 +85,8 @@ class Factura(models.Model):
 
     @property
     def monto_pagado_total(self):
-        return sum(recaudo.monto_pagado for recaudo in self.recaudos.all())
+        # Only sum APPROVED payments
+        return sum(recaudo.monto_pagado for recaudo in self.recaudos.filter(estado=Recaudo.Estado.APROBADO))
 
     @property
     def esta_pagada(self):
@@ -342,7 +343,8 @@ class Recaudo(models.Model):
         super().clean()
         
         # Validar que el monto no exceda el saldo de la factura (si existe factura)
-        if self.factura:
+        # Use simple ID check first to avoid DB query or error if not set
+        if hasattr(self, 'factura_id') and self.factura_id:
             saldo_actual = self.factura.saldo_pendiente
             # Si estamos editando, sumar el monto anterior al saldo
             if self.pk:
