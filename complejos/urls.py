@@ -26,6 +26,7 @@ urlpatterns = [
     path('reservas/', views.crear_reserva_view, name='crear_reserva'),
     path('mis-reservas/', views.mis_reservas_view, name='mis_reservas'),
     path('reservas/amenidad/<int:amenidad_id>/disponibilidad/', views.ver_disponibilidad_view, name='ver_disponibilidad'),
+    path('mis-reservas/<int:reserva_id>/cancelar/', views.residente_cancelar_reserva, name='residente_cancelar_reserva'),
     path('admin/reservas/', views.admin_reservas_view, name='admin_reservas'),
     path('admin/reservas/crear/', views.admin_crear_reserva, name='admin_crear_reserva'),
     path('admin/reservas/<int:reserva_id>/editar/', views.admin_editar_reserva, name='admin_editar_reserva'),

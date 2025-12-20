@@ -1255,3 +1255,19 @@ def eliminar_contrato(request, contrato_id):
     
     # If GET, redirect back to edit page (safety fallback)
     return redirect('editar_contrato', contrato_id=contrato_id)
+
+@login_required
+@user_passes_test(es_residente)
+def residente_cancelar_reserva(request, reserva_id):
+    reserva = get_object_or_404(Reserva, id=reserva_id)
+    
+    # Security check: must belong to the logged-in user
+    if reserva.residente != request.user:
+        return redirect('mis_reservas')
+        
+    # Logic check: can only cancel if pending
+    if reserva.estado == 'pendiente':
+        reserva.estado = 'cancelada'
+        reserva.save()
+    
+    return redirect('mis_reservas')

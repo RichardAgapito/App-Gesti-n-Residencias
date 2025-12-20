@@ -1,107 +1,156 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block bootstrap_css %}{% endblock %}
-{% block global_styles %}{% endblock %}
-
 {% block extra_css %}
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-
-    <link rel="stylesheet" href="{% static 'css/resident_dashboard.css' %}">
-    <style>
-        .reservas-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 1.5rem;
-            background-color: #ffffff;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-            overflow: hidden;
-        }
-        .reservas-table th, .reservas-table td {
-            border-bottom: 1px solid #e0e0e0;
-            padding: 1rem 1.5rem;
-            text-align: left;
-        }
-        .reservas-table thead { background-color: #f4f7f6; }
-        .reservas-table th { font-weight: 600; color: #34495e; }
-        .reservas-table tbody tr:last-child td { border-bottom: none; }
-        .reservas-table tbody tr:hover { background-color: #f8faff; }
-        
-        .status-pendiente { color: #f39c12; font-weight: 600; }
-        .status-usado { color: #27ae60; font-weight: 600; }
-        .status-vencido, .status-cancelado { color: #e74c3c; font-weight: 600; }
-
-        .btn-primary {
-            background-color: #f39c12; color: white;
-            padding: 10px 18px; border-radius: 4px;
-        }
-        .btn-primary:hover { background-color: #e67e22; }
-        
-        .action-links a { text-decoration: none; margin-right: 10px; }
-        .action-links .btn-edit { color: #f39c12; }
-        .action-links .btn-cancel { color: #e74c3c; }
-    </style>
+<!-- Tailwind CSS CDN -->
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+    body {
+        font-family: 'Inter', sans-serif;
+    }
+</style>
 {% endblock %}
 
 {% block content %}
 <div class="min-h-screen bg-gray-50 flex font-sans">
-    
+
     {% include 'includes/resident_sidebar.html' %}
 
-    <main class="flex-1 lg:ml-64 h-screen overflow-y-auto">
-        <div class="main-content" style="height: auto; overflow: visible; width: 100%; margin-left: 0;">
-            <header>
-                <h1><i class="fa-solid fa-id-card-clip"></i> Mis Pre-Autorizaciones</h1>
+    <main class="flex-1 lg:ml-64 p-8 min-h-screen">
+        <!-- Header -->
+        <div class="mb-8">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900 tracking-tight">Mis Pre-Autorizaciones</h1>
+                    <p class="text-gray-500 mt-1 text-lg">Gestiona el acceso de tus visitantes y proveedores</p>
+                </div>
+
                 {% if has_active_contract %}
-                <a href="{% url 'residente_crear_preautorizacion' %}" class="btn btn-primary">
-                    <i class="fa-solid fa-plus"></i> Nueva Autorización
+                <a href="{% url 'residente_crear_preautorizacion' %}"
+                    class="group flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-semibold rounded-xl shadow-lg shadow-blue-200 hover:bg-blue-700 hover:shadow-blue-300 transition-all transform hover:-translate-y-0.5">
+                    <i class="fa-solid fa-plus transition-transform group-hover:rotate-90"></i>
+                    <span>Nueva Autorización</span>
                 </a>
                 {% endif %}
-            </header>
+            </div>
 
-            {% if not has_active_contract %}
-            <div class="content-locked-message">
-                <h3><i class="fa-solid fa-triangle-exclamation"></i> Funcionalidad Limitada</h3>
-                <p>No puedes gestionar pre-autorizaciones porque no tienes un contrato activo.</p>
+            {% if not has_active_contract and not autorizaciones %}
+            <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-xl shadow-sm mb-6">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <i class="fa-solid fa-triangle-exclamation text-yellow-400"></i>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm text-yellow-700">
+                            <span class="font-bold">Aviso:</span> No tienes un contrato activo para gestionar accesos.
+                        </p>
+                    </div>
+                </div>
             </div>
             {% endif %}
 
+        </div>
+
+        <!-- Content Container -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <!-- Header Gradient -->
+            <div class="h-1.5 bg-gradient-to-r from-blue-500 to-indigo-600"></div>
+
             {% if autorizaciones %}
-                <table class="reservas-table">
-                    <thead>
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-gray-50 border-b border-gray-100">
                         <tr>
-                            <th>Visitante</th>
-                            <th>Documento</th>
-                            <th>Fecha Esperada</th>
-                            <th>Vigencia</th>
-                            <th>Estado</th>
-                            <th>Acciones</th>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                Visitante</th>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                Documento</th>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                Vigencia Desde</th>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                Vigencia Hasta</th>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                Estado</th>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                Acciones</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody class="divide-y divide-gray-50">
                         {% for pa in autorizaciones %}
-                            <tr>
-                                <td>{{ pa.nombre_visitante }}</td>
-                                <td>{{ pa.documento_visitante }}</td>
-                                <td>{{ pa.fecha_hora_esperada|date:"d M Y, H:i" }}</td>
-                                <td>{{ pa.vigencia_desde|date:"d/m/y H:i" }} - {{ pa.vigencia_hasta|date:"d/m/y H:i" }}</td>
-                                <td><span class="status-{{ pa.estado }}">{{ pa.get_estado_display }}</span></td>
-                                <td class="action-links">
+                        <tr class="hover:bg-blue-50/30 transition-colors group">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 font-medium">
+                                {{ pa.nombre_visitante }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                {{ pa.documento_visitante }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                {{ pa.vigencia_desde|date:"d M Y, H:i" }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                {{ pa.vigencia_hasta|date:"d M Y, H:i" }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border
+                                            {% if pa.estado == 'usado' %}bg-green-50 text-green-700 border-green-100
+                                            {% elif pa.estado == 'pendiente' %}bg-yellow-50 text-yellow-700 border-yellow-100
+                                            {% elif pa.estado == 'cancelado' or pa.estado == 'vencido' %}bg-red-50 text-red-700 border-red-100
+                                            {% else %}bg-gray-50 text-gray-700 border-gray-200{% endif %}">
+                                    {{ pa.get_estado_display }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                <div class="flex gap-2 opacity-70 group-hover:opacity-100 transition-opacity">
                                     {% if pa.estado == 'pendiente' %}
-                                        <a href="{% url 'residente_editar_preautorizacion' pa.id %}" class="btn-edit" title="Editar"><i class="fa-solid fa-pencil"></i></a>
-                                        <a href="{% url 'residente_cancelar_preautorizacion' pa.id %}" class="btn-cancel" title="Cancelar"><i class="fa-solid fa-ban"></i></a>
+                                    <a href="{% url 'residente_editar_preautorizacion' pa.id %}"
+                                        class="w-8 h-8 flex items-center justify-center rounded-lg text-yellow-600 hover:bg-yellow-50 transition-colors"
+                                        title="Editar">
+                                        <i class="fa-solid fa-pen"></i>
+                                    </a>
+                                    <!-- Assuming we use the specific cancellation view or generic if exists. Using link from old template logic -->
+                                    <!-- Original template used 'residente_cancelar_preautorizacion' -->
+                                    <form method="POST" action="{% url 'residente_cancelar_preautorizacion' pa.id %}"
+                                        style="display:inline;">
+                                        {% csrf_token %}
+                                        <button type="submit"
+                                            onclick="return confirm('¿Estás seguro de cancelar esta autorización?')"
+                                            class="w-8 h-8 flex items-center justify-center rounded-lg text-red-600 hover:bg-red-50 transition-colors"
+                                            title="Cancelar">
+                                            <i class="fa-solid fa-ban"></i>
+                                        </button>
+                                    </form>
                                     {% else %}
-                                        -
+                                    <span class="text-gray-400">-</span>
                                     {% endif %}
-                                </td>     
-                            </tr>
+                                </div>
+                            </td>
+                        </tr>
                         {% endfor %}
                     </tbody>
                 </table>
+            </div>
+            <!-- Pagination (Placeholder) -->
+            <div class="bg-gray-50 px-6 py-4 border-t border-gray-100 flex items-center justify-between">
+                <span class="text-sm text-gray-500">Mostrando {{ autorizaciones|length }} registros</span>
+            </div>
             {% else %}
-                <p>No tienes ninguna pre-autorización registrada.</p>
+            <div class="flex flex-col items-center justify-center py-20">
+                <div class="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mb-6">
+                    <i class="fa-solid fa-id-card-clip text-3xl text-gray-400"></i>
+                </div>
+                <h3 class="text-xl font-bold text-gray-900 mb-2">Sin autorizaciones activas</h3>
+                <p class="text-gray-500 text-center max-w-md">
+                    No has registrado ninguna pre-autorización. Crea una para facilitar el acceso a tus visitas.
+                </p>
+                {% if has_active_contract %}
+                <a href="{% url 'residente_crear_preautorizacion' %}"
+                    class="mt-6 px-6 py-2.5 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 transition-colors shadow-sm">
+                    Crear primera autorización
+                </a>
+                {% endif %}
+            </div>
             {% endif %}
         </div>
     </main>
