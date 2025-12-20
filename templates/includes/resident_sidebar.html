@@ -17,19 +17,19 @@
         </div>
 
         <a href="{% url 'dashboard' %}"
-            class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {% if request.resolver_match.url_name == 'dashboard' %}bg-blue-50 text-blue-600{% else %}text-gray-700 hover:bg-gray-50{% endif %}">
+            class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {% if request.resolver_match.url_name == 'dashboard' %}bg-blue-50 text-blue-600{% else %}text-gray-700 hover:bg-gray-50{% endif %} hover:no-underline">
             <i class="fa-solid fa-table-columns w-5 text-center"></i>
             <span class="font-medium">Dashboard</span>
         </a>
 
         {% if request.user.rol == 'GERENTE' %}
         <a href="{% url 'lista_facturas' %}"
-            class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {% if 'facturas' in request.resolver_match.url_name %}bg-blue-50 text-blue-600{% else %}text-gray-700 hover:bg-gray-50{% endif %}">
+            class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {% if 'facturas' in request.resolver_match.url_name %}bg-blue-50 text-blue-600{% else %}text-gray-700 hover:bg-gray-50{% endif %} hover:no-underline">
             <i class="fa-solid fa-file-invoice w-5 text-center"></i>
             <span class="font-medium">Gestionar Facturas</span>
         </a>
         <a href="{% url 'reporte_cobranza' %}"
-            class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {% if 'reporte_cobranza' in request.resolver_match.url_name %}bg-blue-50 text-blue-600{% else %}text-gray-700 hover:bg-gray-50{% endif %}">
+            class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {% if 'reporte_cobranza' in request.resolver_match.url_name %}bg-blue-50 text-blue-600{% else %}text-gray-700 hover:bg-gray-50{% endif %} hover:no-underline">
             <i class="fa-solid fa-chart-line w-5 text-center"></i>
             <span class="font-medium">Reporte de Cobranza</span>
         </a>
@@ -39,32 +39,32 @@
 
 
         <a href="{% url 'mis_reservas' %}"
-            class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {% if 'mis_reservas' in request.resolver_match.url_name %}bg-blue-50 text-blue-600{% else %}text-gray-700 hover:bg-gray-50{% endif %}">
+            class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {% if 'mis_reservas' in request.resolver_match.url_name %}bg-blue-50 text-blue-600{% else %}text-gray-700 hover:bg-gray-50{% endif %} hover:no-underline">
             <i class="fa-solid fa-calendar-check w-5 text-center"></i>
             <span class="font-medium">Mis Reservas</span>
         </a>
 
         <a href="{% url 'mis_preautorizaciones' %}"
-            class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {% if 'preautorizaciones' in request.resolver_match.url_name %}bg-blue-50 text-blue-600{% else %}text-gray-700 hover:bg-gray-50{% endif %}">
+            class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {% if 'preautorizacion' in request.resolver_match.url_name %}bg-blue-50 text-blue-600{% else %}text-gray-700 hover:bg-gray-50{% endif %} hover:no-underline">
             <i class="fa-solid fa-id-card-clip w-5 text-center"></i>
             <span class="font-medium">Pre-Autorizaciones</span>
         </a>
 
         <a href="{% url 'mis_facturas' %}"
-            class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {% if 'mis_facturas' in request.resolver_match.url_name %}bg-blue-50 text-blue-600{% else %}text-gray-700 hover:bg-gray-50{% endif %}">
+            class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {% if 'mis_facturas' in request.resolver_match.url_name %}bg-blue-50 text-blue-600{% else %}text-gray-700 hover:bg-gray-50{% endif %} hover:no-underline">
             <i class="fa-solid fa-file-invoice-dollar w-5 text-center"></i>
             <span class="font-medium">Mis Facturas</span>
         </a>
 
         <a href="{% url 'ver_contrato_residente' %}"
-            class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {% if 'contrato' in request.resolver_match.url_name %}bg-blue-50 text-blue-600{% else %}text-gray-700 hover:bg-gray-50{% endif %}">
+            class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {% if 'contrato' in request.resolver_match.url_name %}bg-blue-50 text-blue-600{% else %}text-gray-700 hover:bg-gray-50{% endif %} hover:no-underline">
             <i class="fa-solid fa-file-contract w-5 text-center"></i>
             <span class="font-medium">Mi Contrato</span>
         </a>
         {% endif %}
 
         <a href="{% url 'avisos:lista_avisos' %}"
-            class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {% if 'avisos' in request.resolver_match.url_name %}bg-blue-50 text-blue-600{% else %}text-gray-700 hover:bg-gray-50{% endif %}">
+            class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {% if 'avisos' in request.resolver_match.url_name %}bg-blue-50 text-blue-600{% else %}text-gray-700 hover:bg-gray-50{% endif %} hover:no-underline">
             <i class="fa-solid fa-bullhorn w-5 text-center"></i>
             <span class="font-medium">Ver Avisos</span>
         </a>
