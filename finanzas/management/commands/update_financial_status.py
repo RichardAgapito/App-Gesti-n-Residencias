@@ -54,7 +54,7 @@ class Command(BaseCommand):
                     complejo=complejo,
                     defaults={
                         'tipo': 'EXTRAORDINARIO',
-                        'descripcion': 'Recargo automático por pago fuera de fecha',
+                        # 'descripcion': 'Recargo automático por pago fuera de fecha', # Removed: Field does not exist
                         'obligatorio': True
                     }
                 )
