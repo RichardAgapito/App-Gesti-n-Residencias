@@ -1,95 +1,243 @@
-{% extends 'base_dashboard.html' %}
+{% extends 'base.html' %}
 {% load static %}
 
-{% block extra_css %}
-    <link rel="stylesheet" href="{% static 'css/visitas_form.css' %}">
-{% endblock extra_css %}
-
 {% block content %}
-<div class="form-container">
-    <h2><i class="fa-solid fa-car-side"></i> Registrar Nueva Visita</h2>
+<div class="h-screen bg-gray-50 font-sans overflow-hidden flex">
     
-    <form method="post" enctype="multipart/form-data">
-        {% csrf_token %}
+    <!-- Sidebar -->
+    {% include 'includes/guard_sidebar.html' %}
+
+    <!-- Main Content Wrapper -->
+    <div class="flex-1 flex flex-col h-full lg:ml-64 overflow-hidden">
         
-        {% if form.non_field_errors %}
-            <div class="form-errors">{{ form.non_field_errors }}</div>
-        {% endif %}
+        <!-- Mobile Header -->
+        <header class="bg-white border-b border-gray-200 p-4 lg:hidden">
+            <div class="flex items-center justify-between">
+                <span class="font-bold text-gray-800">ResidencialApp</span>
+            </div>
+        </header>
 
-        <p style="display: flex; flex-direction: column; width: 40%; gap: 5px;">
-            <label for="{{ form.propiedad.id_for_label }}">
-                {{ form.propiedad.label }}<span class="required-field">*</span>
-            </label>
-            {{ form.propiedad }}
-            <small>Propiedad a la que se dirige la visita.</small>
-            {{ form.propiedad.errors }}
-        </p>
+        <main class="flex-1 overflow-y-auto p-4 md:p-8">
+            <div class="max-w-5xl mx-auto space-y-6">
+                
+                <!-- Page Header -->
+                <div class="flex items-center gap-4">
+                    <a href="{% url 'lista_visitas' %}" class="w-10 h-10 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-600 hover:text-blue-600 hover:border-blue-300 transition-all">
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </a>
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900 tracking-tight">Registrar Nueva Visita</h1>
+                        <p class="text-sm text-gray-500 mt-1">Registra el ingreso de un visitante al complejo.</p>
+                    </div>
+                </div>
 
-        <p style="display: flex; flex-direction: column;width: 40%; gap: 5px;">
-            <label for="{{ form.residente_autoriza.id_for_label }}">
-                {{ form.residente_autoriza.label }}
-            </label>
-            {{ form.residente_autoriza }}
-            <small>Selecciona una propiedad para cargar los residentes. (Opcional)</small>
-            {{ form.residente_autoriza.errors }}
-        </p>
-        
-        <hr>
+                <!-- Form Card -->
+                <div class="bg-white rounded-2xl shadow-xl shadow-gray-200/60 border border-gray-100 overflow-hidden">
+                    <form method="post" enctype="multipart/form-data" class="divide-y divide-gray-100">
+                        {% csrf_token %}
+                        
+                        {% if form.non_field_errors %}
+                        <div class="p-6 pb-0">
+                            <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl flex items-center gap-3">
+                                <i class="fa-solid fa-circle-exclamation text-red-500"></i>
+                                <div>{{ form.non_field_errors }}</div>
+                            </div>
+                        </div>
+                        {% endif %}
 
-        <p>
-            <label for="{{ form.visitante.id_for_label }}">
-                {{ form.visitante.label }}<span class="required-field">*</span>
-            </label>
-            {{ form.visitante }}
-            <small>El visitante que ingresa.</small>
-            {{ form.visitante.errors }}
-        </p>
+                        <!-- Main Grid Layout -->
+                        <div class="p-6 md:p-8 grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
+                            
+                            <!-- Left Column: Primary Info -->
+                            <div class="space-y-6">
+                                <h3 class="text-lg font-semibold text-gray-900 flex items-center gap-2 border-b border-gray-100 pb-2">
+                                    <span class="w-8 h-8 rounded-lg bg-blue-100/50 text-blue-600 flex items-center justify-center text-sm">
+                                        <i class="fa-solid fa-map-location-dot"></i>
+                                    </span>
+                                    Destino y Autorización
+                                </h3>
 
-        <p>
-            <label for="{{ form.fecha_hora_ingreso.id_for_label }}">
-                {{ form.fecha_hora_ingreso.label }}<span class="required-field">*</span>
-            </label>
-            {{ form.fecha_hora_ingreso }}
-            {{ form.fecha_hora_ingreso.errors }}
-        </p>
+                                <div class="space-y-4">
+                                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                                        <label for="{{ form.propiedad.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-1.5">
+                                            {{ form.propiedad.label }} <span class="text-red-500">*</span>
+                                        </label>
+                                        <div class="relative">
+                                            {{ form.propiedad }}
+                                        </div>
+                                        {% if form.propiedad.errors %}
+                                            <p class="mt-1.5 text-xs text-red-600 flex items-center gap-1"><i class="fa-solid fa-circle-xmark"></i> {{ form.propiedad.errors.0 }}</p>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div>
+                                        <label for="{{ form.residente_autoriza.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-1.5">
+                                            {{ form.residente_autoriza.label }}
+                                        </label>
+                                        <div class="relative">
+                                            {{ form.residente_autoriza }}
+                                        </div>
+                                        <p class="mt-1.5 text-xs text-gray-500 flex items-center gap-1">
+                                            <i class="fa-solid fa-circle-info text-gray-400"></i>
+                                            Selecciona propiedad para cargar residentes
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
 
-        <p>
-            <label for="{{ form.motivo_visita.id_for_label }}">
-                {{ form.motivo_visita.label }}<span class="required-field">*</span>
-            </label>
-            {{ form.motivo_visita }}
-            {{ form.motivo_visita.errors }}
-        </p>
+                            <!-- Right Column: Visitor Info -->
+                            <div class="space-y-6">
+                                <h3 class="text-lg font-semibold text-gray-900 flex items-center gap-2 border-b border-gray-100 pb-2">
+                                    <span class="w-8 h-8 rounded-lg bg-purple-100/50 text-purple-600 flex items-center justify-center text-sm">
+                                        <i class="fa-solid fa-user-check"></i>
+                                    </span>
+                                    Datos del Visitante
+                                </h3>
 
-        <p>
-            <label for="{{ form.placa_vehiculo.id_for_label }}">
-                {{ form.placa_vehiculo.label }}
-            </label>
-            {{ form.placa_vehiculo }}
-            {{ form.placa_vehiculo.errors }}
-        </p>
+                                <div class="space-y-4">
+                                    <div>
+                                        <label for="{{ form.visitante.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-1.5">
+                                            {{ form.visitante.label }} <span class="text-red-500">*</span>
+                                        </label>
+                                        <div class="relative">
+                                            {{ form.visitante }}
+                                        </div>
+                                        {% if form.visitante.errors %}
+                                            <p class="mt-1.5 text-xs text-red-600 flex items-center gap-1"><i class="fa-solid fa-circle-xmark"></i> {{ form.visitante.errors.0 }}</p>
+                                        {% endif %}
+                                    </div>
 
-        <p>
-            <label for="{{ form.cantidad_acompanantes.id_for_label }}">
-                {{ form.cantidad_acompanantes.label }}<span class="required-field">*</span>
-            </label>
-            {{ form.cantidad_acompanantes }}
-            {{ form.cantidad_acompanantes.errors }}
-        </p>
+                                    <div>
+                                        <label for="{{ form.fecha_hora_ingreso.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-1.5">
+                                            {{ form.fecha_hora_ingreso.label }} <span class="text-red-500">*</span>
+                                        </label>
+                                        <div class="relative">
+                                            {{ form.fecha_hora_ingreso }}
+                                        </div>
+                                        {% if form.fecha_hora_ingreso.errors %}
+                                            <p class="mt-1.5 text-xs text-red-600 flex items-center gap-1"><i class="fa-solid fa-circle-xmark"></i> {{ form.fecha_hora_ingreso.errors.0 }}</p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
 
-        <p style="display: flex; flex-direction: column; gap: 5px;">
-            <label for="{{ form.observaciones.id_for_label }}">
-                {{ form.observaciones.label }}
-            </label>
-            {{ form.observaciones }}
-            {{ form.observaciones.errors }}
-        </p>
-        
-        <button type="submit" class="btn-submit">Guardar Visita</button>
-    </form>
-    
-    <a href="{% url 'lista_visitas' %}" class="back-link">← Volver a la Lista</a>
+                        <!-- Secondary Info (Full Width) -->
+                        <div class="p-6 md:p-8 bg-gray-50/30">
+                            <h3 class="text-lg font-semibold text-gray-900 flex items-center gap-2 mb-6">
+                                <span class="w-8 h-8 rounded-lg bg-green-100/50 text-green-600 flex items-center justify-center text-sm">
+                                    <i class="fa-solid fa-circle-info"></i>
+                                </span>
+                                Detalles Adicionales
+                            </h3>
+
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div>
+                                    <label for="{{ form.motivo_visita.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-1.5">
+                                        {{ form.motivo_visita.label }} <span class="text-red-500">*</span>
+                                    </label>
+                                    {{ form.motivo_visita }}
+                                </div>
+
+                                <div>
+                                    <div class="flex items-center justify-between mb-1.5">
+                                        <label for="{{ form.placa_vehiculo.id_for_label }}" class="block text-sm font-semibold text-gray-700">
+                                            {{ form.placa_vehiculo.label }}
+                                        </label>
+                                        <label class="inline-flex items-center cursor-pointer">
+                                            <input type="checkbox" id="hasVehicleToggle" class="sr-only peer">
+                                            <div class="relative w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
+                                            <span class="ms-2 text-xs font-medium text-gray-500">¿Vehículo?</span>
+                                        </label>
+                                    </div>
+                                    <div id="vehiclePlateContainer" class="hidden transition-all duration-300">
+                                        {{ form.placa_vehiculo }}
+                                    </div>
+                                    <div id="vehiclePlatePlaceholder" class="text-xs text-gray-400 italic py-2">
+                                        Sin vehículo
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label for="{{ form.cantidad_acompanantes.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-1.5">
+                                        {{ form.cantidad_acompanantes.label }} <span class="text-red-500">*</span>
+                                    </label>
+                                    {{ form.cantidad_acompanantes }}
+                                </div>
+                            </div>
+                            
+                            <!-- Compact Observations -->
+                            <div class="mt-6">
+                                <label for="{{ form.observaciones.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-1.5">
+                                    {{ form.observaciones.label }}
+                                </label>
+                                <div>
+                                    {{ form.observaciones }}
+                                    <p class="mt-1.5 text-xs text-gray-400">Breve descripción adicional si es necesaria.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="px-6 py-4 bg-gray-50 flex items-center justify-end gap-3">
+                            <a href="{% url 'lista_visitas' %}" class="px-6 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-200 transition-all shadow-sm">
+                                Cancelar
+                            </a>
+                            <button type="submit" class="w-auto flex-none inline-flex justify-center px-6 py-2.5 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all">
+                                <i class="fa-solid fa-check mr-2"></i>
+                                Guardar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
 </div>
+
+<style>
+    /* Custom Styling for Form Elements */
+    /* Broad selector to catch all inputs */
+    input:not([type="checkbox"]):not([type="radio"]), select, textarea {
+        width: 100%;
+        border-color: #d1d5db; /* gray-300 */
+        background-color: #ffffff;
+        border-radius: 0.75rem; /* rounded-xl */
+        padding: 0.625rem 1rem;
+        font-size: 0.875rem;
+        border-width: 1px;
+        border-style: solid;
+        transition: all 0.2s;
+        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        appearance: none; /* Removes default OS styling which might hide borders */
+    }
+    
+    input:hover, select:hover, textarea:hover {
+        border-color: #d1d5db; /* gray-300 */
+    }
+
+    input:focus, select:focus, textarea:focus {
+        border-color: #3b82f6; /* blue-500 */
+        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); /* blue ring with opacity */
+        outline: none;
+    }
+
+    /* Shorten Observations Field as requested */
+    textarea[name="observaciones"] {
+        height: 48px !important; /* Force short height */
+        min-height: 48px;
+        resize: none; /* Prevent manual sizing if desired, or 'vertical' */
+    }
+
+    /* DateTime input styling fix for consistent look */
+    input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+        opacity: 0.6;
+        cursor: pointer;
+    }
+    input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
+        opacity: 1;
+    }
+</style>
 {% endblock %}
 
 {% block extra_js %}
@@ -97,12 +245,47 @@
         document.addEventListener('DOMContentLoaded', function() {
             const propiedadSelect = document.getElementById('id_propiedad');
             const residenteSelect = document.getElementById('id_residente_autoriza');
+            
+            // Vehicle Toggle Logic
+            const hasVehicleToggle = document.getElementById('hasVehicleToggle');
+            const vehiclePlateContainer = document.getElementById('vehiclePlateContainer');
+            const vehiclePlatePlaceholder = document.getElementById('vehiclePlatePlaceholder');
+            const vehicleInput = document.getElementById('id_placa_vehiculo');
+
+            function toggleVehicleField() {
+                if (hasVehicleToggle.checked) {
+                    vehiclePlateContainer.classList.remove('hidden');
+                    vehiclePlatePlaceholder.classList.add('hidden');
+                    vehicleInput.required = true;
+                    // Focus if becoming visible
+                    setTimeout(() => vehicleInput.focus(), 100);
+                } else {
+                    vehiclePlateContainer.classList.add('hidden');
+                    vehiclePlatePlaceholder.classList.remove('hidden');
+                    vehicleInput.required = false;
+                    vehicleInput.value = ''; // Clear value if unchecked
+                }
+            }
+
+            if (hasVehicleToggle && vehicleInput) {
+                hasVehicleToggle.addEventListener('change', toggleVehicleField);
+                
+                // Check if prepopulated (e.g. edit mode with value)
+                if (vehicleInput.value.trim() !== '') {
+                    hasVehicleToggle.checked = true;
+                }
+                toggleVehicleField(); // Initialize state
+            }
 
             function cargarResidentes() {
                 const propiedadId = propiedadSelect.value;
                 residenteSelect.innerHTML = '<option value="">Cargando...</option>';
+                residenteSelect.disabled = true;
 
                 if (propiedadId) {
+                    // Visual feedback
+                    residenteSelect.classList.add('bg-gray-50', 'text-gray-400');
+
                     fetch(`/visitas/propiedad/${propiedadId}/residentes/`) 
                         .then(response => {
                             if (!response.ok) {
@@ -111,6 +294,8 @@
                             return response.json();
                         })
                         .then(data => {
+                            residenteSelect.disabled = false;
+                            residenteSelect.classList.remove('bg-gray-50', 'text-gray-400');
                             residenteSelect.innerHTML = '<option value="">---------</option>';
                             if (data.length > 0) {
                                 data.forEach(residente => {
@@ -124,18 +309,19 @@
                         .catch(error => {
                             console.error('Error al cargar residentes:', error);
                             residenteSelect.innerHTML = '<option value="">Error al cargar</option>';
+                            residenteSelect.disabled = false;
                         });
                 } else {
                     residenteSelect.innerHTML = '<option value="">Selecciona una propiedad</option>';
+                    residenteSelect.disabled = false;
                 }
             }
 
-            propiedadSelect.addEventListener('change', cargarResidentes);
-
-            if (propiedadSelect.value) {
-                cargarResidentes();
-            } else {
-                 residenteSelect.innerHTML = '<option value="">Selecciona una propiedad</G</option>';
+            if (propiedadSelect) {
+                propiedadSelect.addEventListener('change', cargarResidentes);
+                if (propiedadSelect.value) {
+                    cargarResidentes();
+                }
             }
         });
     </script>
