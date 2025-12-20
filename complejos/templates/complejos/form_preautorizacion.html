@@ -1,128 +1,247 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block bootstrap_css %}{% endblock %}
-{% block global_styles %}{% endblock %}
-
 {% block extra_css %}
-    <link rel="stylesheet" href="{% static 'css/resident_dashboard.css' %}">
-    <link rel="stylesheet" href="{% static 'css/crear_complejo.css' %}">
+<!-- Tailwind CSS included in base.html -->
 {% endblock %}
 
 {% block content %}
-<div class="dashboard-container">
+<div class="min-h-screen bg-gray-50 flex font-sans">
     
     {% include 'includes/resident_sidebar.html' %}
 
-    <div class="main-content">
+    <div class="flex-1 lg:ml-64 p-8">
         
-        <header>
-            <h1><i class="fa-solid fa-id-card-clip"></i> 
-                {% if autorizacion %}Editar{% else %}Crear{% endif %} Pre-Autorización
-            </h1>
-            <a href="{% url 'mis_preautorizaciones' %}" class="btn btn-secondary" style="background-color: #95a5a6;">
-                <i class="fa-solid fa-arrow-left"></i> Volver al Listado
-            </a>
+        <header class="mb-8">
+            <div class="flex items-center gap-3 mb-2">
+                <a href="{% url 'mis_preautorizaciones' %}" class="w-10 h-10 flex items-center justify-center rounded-xl bg-white text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-all shadow-sm border border-gray-100 hover:no-underline">
+                    <i class="fa-solid fa-arrow-left"></i>
+                </a>
+                <h1 class="text-3xl font-bold text-gray-900 tracking-tight">
+                    {% if autorizacion %}Editar{% else %}Nueva{% endif %} Pre-Autorización
+                </h1>
+            </div>
+            <p class="text-gray-500 text-lg ml-13">Completa los datos para autorizar el acceso.</p>
         </header>
 
-        <div class="form-container" style="max-width: 800px; margin: 1rem 0;">
-            <form method="post">
-                {% csrf_token %}
-                
-                {% if form.non_field_errors %}
-                    <div class="alert alert-danger">{{ form.non_field_errors }}</div>
-                {% endif %}
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden w-full">
+            <!-- Header Gradient -->
+            <div class="h-1.5 bg-gradient-to-r from-blue-500 to-indigo-600"></div>
 
-                <div class="form-group">
-                    {{ form.nombre_visitante.label_tag }}
-                    {{ form.nombre_visitante }}
-                    {% for error in form.nombre_visitante.errors %}
-                        <div class_alert="alert-danger" style="color: red; margin-top: 5px; font-size: 0.9em;">{{ error }}</div>
-                    {% endfor %}
-                </div>
-
-                <div class="form-group">
-                    {{ form.numero_documento.label_tag }}
-                    {{ form.numero_documento }}
-                    {% for error in form.numero_documento.errors %}
-                        <div class_alert="alert-danger" style="color: red; margin-top: 5px; font-size: 0.9em;">{{ error }}</div>
-                    {% endfor %}
-                </div>
-
-                <div class="form-group">
-                    {{ form.fecha_hora_esperada.label_tag }}
-                    {{ form.fecha_hora_esperada }}
-                    {% for error in form.fecha_hora_esperada.errors %}
-                        <div class_alert="alert-danger" style="color: red; margin-top: 5px; font-size: 0.9em;">{{ error }}</div>
-                    {% endfor %}
-                </div>
-
-                <div class="form-group">
-                    {{ form.vigencia_desde.label_tag }}
-                    {{ form.vigencia_desde }}
-                    {% for error in form.vigencia_desde.errors %}
-                        <div class_alert="alert-danger" style="color: red; margin-top: 5px; font-size: 0.9em;">{{ error }}</div>
-                    {% endfor %}
-                </div>
-
-                <div class="form-group">
-                    {{ form.vigencia_hasta.label_tag }}
-                    {{ form.vigencia_hasta }}
-                    {% for error in form.vigencia_hasta.errors %}
-                        <div class_alert="alert-danger" style="color: red; margin-top: 5px; font-size: 0.9em;">{{ error }}</div>
-                    {% endfor %}
-                </div>
-
-                <div class="form-group" style="display: flex; flex-direction: row; align-items: center; gap: 10px; background-color: #f8f9fa; padding: 1rem; border-radius: 5px;">
-                    {{ form.es_recurrente }}
-                    {{ form.es_recurrente.label_tag }}
-                    {% for error in form.es_recurrente.errors %}
-                        <div class_alert="alert-danger" style="color: red; margin-top: 5px; font-size: 0.9em;">{{ error }}</div>
-                    {% endfor %}
-                </div>
-
-                <div class="form-group" id="dias-semana-field" style="display: none;">
-                    {{ form.dias_semana.label_tag }}
-                    <div class="dias-semana-container">
-                        {% for choice in form.dias_semana %}
-                        <div class="dia-choice">
-                            {{ choice.tag }}
-                            <label for="{{ choice.id_for_label }}">{{ choice.choice_label }}</label>
+            <div class="p-8">
+                <form method="post" class="space-y-6">
+                    {% csrf_token %}
+                    
+                    {% if form.non_field_errors %}
+                        <div class="p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-r-lg">
+                            {{ form.non_field_errors }}
                         </div>
-                        {% endfor %}
-                    </div>
-                    {% for error in form.dias_semana.errors %}
-                        <div class_alert="alert-danger" style="color: red; margin-top: 5px; font-size: 0.9em;">{{ error }}</div>
-                    {% endfor %}
-                </div>
+                    {% endif %}
 
-                <button type="submit" class="btn-submit" style="background-color: #f39c12;">Guardar Autorización</button>
-            </form>
+                    <!-- Grid Layout for Personal Data -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Nombre -->
+                        <div>
+                            <label for="{{ form.nombre_visitante.id_for_label }}" class="block text-sm font-bold text-gray-700 mb-1.5">
+                                {{ form.nombre_visitante.label }}
+                            </label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                                    <i class="fa-solid fa-user"></i>
+                                </div>
+                                {{ form.nombre_visitante }}
+                            </div>
+                            {% if form.nombre_visitante.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ form.nombre_visitante.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+
+                        <!-- Documento -->
+                        <div>
+                            <label for="{{ form.numero_documento.id_for_label }}" class="block text-sm font-bold text-gray-700 mb-1.5">
+                                {{ form.numero_documento.label }}
+                            </label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                                    <i class="fa-solid fa-id-card"></i>
+                                </div>
+                                {{ form.numero_documento }}
+                            </div>
+                            {% if form.numero_documento.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ form.numero_documento.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Fecha Esperada -->
+                    <div>
+                        <label for="{{ form.fecha_hora_esperada.id_for_label }}" class="block text-sm font-bold text-gray-700 mb-1.5">
+                            {{ form.fecha_hora_esperada.label }}
+                        </label>
+                        <div class="relative">
+                            {{ form.fecha_hora_esperada }}
+                        </div>
+                        <p class="mt-1 text-xs text-gray-500">¿Cuándo esperas que llegue?</p>
+                        {% if form.fecha_hora_esperada.errors %}
+                            <p class="mt-1 text-sm text-red-600">{{ form.fecha_hora_esperada.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+
+                    <div class="border-t border-gray-100 my-6"></div>
+
+                    <!-- Vigencia Grid -->
+                    <h3 class="text-sm font-bold text-blue-600 uppercase tracking-wide mb-4">Vigencia de la Autorización</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Desde -->
+                        <div>
+                            <label for="{{ form.vigencia_desde.id_for_label }}" class="block text-sm font-bold text-gray-700 mb-1.5">
+                                {{ form.vigencia_desde.label }}
+                            </label>
+                            {{ form.vigencia_desde }}
+                            {% if form.vigencia_desde.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ form.vigencia_desde.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+
+                        <!-- Hasta -->
+                        <div>
+                            <label for="{{ form.vigencia_hasta.id_for_label }}" class="block text-sm font-bold text-gray-700 mb-1.5">
+                                {{ form.vigencia_hasta.label }}
+                            </label>
+                            {{ form.vigencia_hasta }}
+                            {% if form.vigencia_hasta.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ form.vigencia_hasta.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Recurrent Toggle -->
+                    <div class="bg-gray-50 rounded-xl p-4 border border-gray-100 mt-6">
+                        <div class="flex items-center justify-between">
+                            <label for="{{ form.es_recurrente.id_for_label }}" class="text-sm font-bold text-gray-700 cursor-pointer select-none flex-1">
+                                {{ form.es_recurrente.label }}
+                                <p class="text-xs text-gray-500 font-normal mt-0.5">Habilitar acceso periódico</p>
+                            </label>
+                            <label class="inline-flex items-center cursor-pointer">
+                                {{ form.es_recurrente }}
+                                <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-100 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                            </label>
+                        </div>
+
+                        <!-- Days Selection -->
+                        <div id="dias-semana-field" class="hidden mt-4 pt-4 border-t border-gray-200">
+                            <label class="block text-sm font-bold text-gray-700 mb-3">
+                                {{ form.dias_semana.label }}
+                            </label>
+                            <div class="dias-semana-container grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                {% for choice in form.dias_semana %}
+                                <label class="relative flex items-center justify-center p-2 rounded-lg border border-gray-200 cursor-pointer hover:bg-white hover:border-blue-300 transition-all select-none bg-white has-[:checked]:bg-blue-50 has-[:checked]:border-blue-500 has-[:checked]:text-blue-700">
+                                    {{ choice.tag }}
+                                    <span class="text-sm font-medium">{{ choice.choice_label }}</span>
+                                </label>
+                                {% endfor %}
+                            </div>
+                            {% if form.dias_semana.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ form.dias_semana.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex items-center justify-end gap-3 pt-6 mt-6 border-t border-gray-100">
+                        <a href="{% url 'mis_preautorizaciones' %}" class="px-6 py-2.5 text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 font-medium transition-colors shadow-sm hover:no-underline">
+                            Cancelar
+                        </a>
+                        <button type="submit" class="px-8 py-2.5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-colors shadow-md hover:shadow-lg flex items-center gap-2">
+                            <i class="fa-solid fa-check"></i>
+                            Guardar
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 </div>
+
+<style>
+    /* Styling for the checkbox toggle */
+    input[type="checkbox"].sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border-width: 0;
+    }
+
+    /* Custom Input Styling to match premium theme */
+    input[type="text"], input[type="email"], input[type="number"], input[type="datetime-local"], select, textarea {
+        width: 100%;
+        border-color: #d1d5db;
+        background-color: #ffffff;
+        border-radius: 0.75rem; /* rounded-xl */
+        padding: 0.625rem 1rem;
+        padding-left: 2.5rem; /* for icons */
+        font-size: 0.875rem;
+        border-width: 1px;
+        border-style: solid;
+        transition: all 0.2s;
+        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        appearance: none;
+    }
+    
+    input[type="datetime-local"] {
+        padding-left: 1rem; /* No icon for datetime inputs by default in this layout */
+    }
+
+    input:focus, select:focus, textarea:focus {
+        border-color: #3b82f6; /* blue-500 */
+        outline: none;
+        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+    }
+
+    /* Hide default checkbox for day selection */
+    .dias-semana-container input[type="checkbox"] {
+         appearance: none;
+         background-color: transparent;
+         margin: 0;
+         font: inherit;
+         color: currentColor;
+         width: 1.15em;
+         height: 1.15em;
+         border: 0.15em solid currentColor;
+         border-radius: 0.15em;
+         display: none; /* Actually hidden, we style the label */
+    }
+
+    /* Toggle switch specific styling */
+    /* Handled via JS adding 'sr-only' class */
+</style>
 {% endblock %}
 
 {% block extra_js %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Seleccionamos los elementos del DOM
         const recurrenteCheckbox = document.getElementById('id_es_recurrente');
         const diasSemanaField = document.getElementById('dias-semana-field');
 
-        // Función para mostrar u ocultar el campo de días
+        // Add class to standard checkbox to match toggle expectation if not manually added
+        if (recurrenteCheckbox) {
+            recurrenteCheckbox.classList.add('sr-only', 'peer');
+        }
+
         function toggleDiasSemana() {
             if (recurrenteCheckbox.checked) {
-                diasSemanaField.style.display = 'block'; // Mostrar
+                diasSemanaField.classList.remove('hidden');
             } else {
-                diasSemanaField.style.display = 'none'; // Ocultar
+                diasSemanaField.classList.add('hidden');
             }
         }
 
-        // Ejecutar la función una vez al cargar la página (por si se está editando)
         toggleDiasSemana();
-
-        // Añadir un "listener" para que la función se ejecute cada vez que se haga clic
         recurrenteCheckbox.addEventListener('change', toggleDiasSemana);
     });
 </script>

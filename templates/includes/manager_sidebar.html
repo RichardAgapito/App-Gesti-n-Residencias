@@ -8,13 +8,13 @@
     
     <nav class="p-4 space-y-2">
         <a href="{% url 'dashboard' %}" 
-           class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {% if request.resolver_match.url_name == 'dashboard' %}bg-indigo-50 text-indigo-600{% else %}text-gray-700 hover:bg-gray-50{% endif %}">
+           class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {% if request.resolver_match.url_name == 'dashboard' %}bg-indigo-50 text-indigo-600{% else %}text-gray-700 hover:bg-gray-50{% endif %} hover:no-underline">
             <i class="fa-solid fa-table-columns w-5 text-center"></i>
             <span class="font-medium whitespace-nowrap">Dashboard</span>
         </a>
 
         <a href="{% url 'detalle_complejo' request.user.complejo_asignado.id %}"
-           class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {% if 'complejo' in request.resolver_match.url_name and 'contrato' not in request.resolver_match.url_name or 'crear_propiedad' in request.resolver_match.url_name or 'crear_propiedades_multiples' in request.resolver_match.url_name %}bg-indigo-50 text-indigo-600{% else %}text-gray-700 hover:bg-gray-50{% endif %}">
+           class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {% if 'complejo' in request.resolver_match.url_name and 'contrato' not in request.resolver_match.url_name or 'crear_propiedad' in request.resolver_match.url_name or 'crear_propiedades_multiples' in request.resolver_match.url_name %}bg-indigo-50 text-indigo-600{% else %}text-gray-700 hover:bg-gray-50{% endif %} hover:no-underline">
             <i class="fa-solid fa-building-user w-5 text-center"></i>
             <span class="font-medium whitespace-nowrap">Mi Complejo</span>
         </a>
@@ -22,15 +22,21 @@
         <!-- "Gestionar Complejos" removed for Manager -->
 
         <a href="{% url 'gestionar_amenidades' %}" 
-           class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {% if 'amenidad' in request.resolver_match.url_name or 'bloquear_horario' in request.resolver_match.url_name or 'unblock_horario' in request.resolver_match.url_name %}bg-indigo-50 text-indigo-600{% else %}text-gray-700 hover:bg-gray-50{% endif %}">
+           class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {% if 'amenidad' in request.resolver_match.url_name or 'bloquear_horario' in request.resolver_match.url_name or 'unblock_horario' in request.resolver_match.url_name %}bg-indigo-50 text-indigo-600{% else %}text-gray-700 hover:bg-gray-50{% endif %} hover:no-underline">
             <i class="fa-solid fa-star w-5 text-center"></i>
             <span class="font-medium whitespace-nowrap">Gestionar Amenidades</span>
         </a>
 
         <a href="{% url 'admin_reservas' %}" 
-           class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {% if 'reserva' in request.resolver_match.url_name %}bg-indigo-50 text-indigo-600{% else %}text-gray-700 hover:bg-gray-50{% endif %}">
+           class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {% if 'reserva' in request.resolver_match.url_name %}bg-indigo-50 text-indigo-600{% else %}text-gray-700 hover:bg-gray-50{% endif %} hover:no-underline">
             <i class="fa-solid fa-calendar-days w-5 text-center"></i>
             <span class="font-medium whitespace-nowrap">Gestionar Reservas</span>
+        </a>
+
+        <a href="{% url 'avisos:lista_avisos' %}"
+           class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {% if 'aviso' in request.resolver_match.url_name %}bg-indigo-50 text-indigo-600{% else %}text-gray-700 hover:bg-gray-50{% endif %} hover:no-underline">
+            <i class="fa-solid fa-bullhorn w-5 text-center"></i>
+            <span class="font-medium whitespace-nowrap">Gestionar Avisos</span>
         </a>
 
         <!-- Finanzas Accordion -->
@@ -46,25 +52,25 @@
             
             <div id="finanzas-menu" class="max-h-0 opacity-0 overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] pl-4 space-y-1">
                 <a href="{% url 'lista_planes_cuota' %}" 
-                   class="flex items-center gap-3 px-4 py-2 rounded-lg transition-colors {% if 'planes_cuota' in request.resolver_match.url_name %}bg-indigo-50 text-indigo-600{% else %}text-gray-600 hover:bg-gray-50{% endif %}">
+                   class="flex items-center gap-3 px-4 py-2 rounded-lg transition-colors {% if 'planes_cuota' in request.resolver_match.url_name %}bg-indigo-50 text-indigo-600{% else %}text-gray-600 hover:bg-gray-50{% endif %} hover:no-underline">
                     <i class="fa-solid fa-file-invoice-dollar w-5 text-center text-xs"></i>
                     <span class="text-sm whitespace-nowrap">Planes de Cuota</span>
                 </a>
 
                 <a href="{% url 'lista_conceptos_cobro' %}" 
-                   class="flex items-center gap-3 px-4 py-2 rounded-lg transition-colors {% if 'conceptos_cobro' in request.resolver_match.url_name %}bg-indigo-50 text-indigo-600{% else %}text-gray-600 hover:bg-gray-50{% endif %}">
+                   class="flex items-center gap-3 px-4 py-2 rounded-lg transition-colors {% if 'conceptos_cobro' in request.resolver_match.url_name %}bg-indigo-50 text-indigo-600{% else %}text-gray-600 hover:bg-gray-50{% endif %} hover:no-underline">
                     <i class="fa-solid fa-tags w-5 text-center text-xs"></i>
                     <span class="text-sm whitespace-nowrap">Conceptos de Cobro</span>
                 </a>
 
                 <a href="{% url 'lista_facturas' %}" 
-                   class="flex items-center gap-3 px-4 py-2 rounded-lg transition-colors {% if 'facturas' in request.resolver_match.url_name %}bg-indigo-50 text-indigo-600{% else %}text-gray-600 hover:bg-gray-50{% endif %}">
+                   class="flex items-center gap-3 px-4 py-2 rounded-lg transition-colors {% if 'facturas' in request.resolver_match.url_name %}bg-indigo-50 text-indigo-600{% else %}text-gray-600 hover:bg-gray-50{% endif %} hover:no-underline">
                     <i class="fa-solid fa-file-invoice w-5 text-center text-xs"></i>
                     <span class="text-sm whitespace-nowrap">Gestionar Facturas</span>
                 </a>
 
                 <a href="{% url 'reporte_cobranza' %}" 
-                   class="flex items-center gap-3 px-4 py-2 rounded-lg transition-colors {% if 'reporte_cobranza' in request.resolver_match.url_name %}bg-indigo-50 text-indigo-600{% else %}text-gray-600 hover:bg-gray-50{% endif %}">
+                   class="flex items-center gap-3 px-4 py-2 rounded-lg transition-colors {% if 'reporte_cobranza' in request.resolver_match.url_name %}bg-indigo-50 text-indigo-600{% else %}text-gray-600 hover:bg-gray-50{% endif %} hover:no-underline">
                     <i class="fa-solid fa-chart-line w-5 text-center text-xs"></i>
                     <span class="text-sm whitespace-nowrap">Reporte de Cobranza</span>
                 </a>
